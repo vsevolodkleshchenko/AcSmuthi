@@ -1,7 +1,9 @@
 import numpy as np
+import matplotlib.pyplot as plt
 import scipy
 import scipy.special
 from sympy.physics.quantum.matrixutils import scipy
+
 
 
 def second_derivation_spherical_jn(n, z):
@@ -23,7 +25,7 @@ def second_derivation_spherical_jn(n, z):
 
 def Q_n(p0, n):
     r"""
-    Coefficient Q_n of decomposition (plane) wave
+    Coefficient Q_n in decomposition of (plane) wave
     Expression (9) from [http://dx.doi.org/10.1121/1.4773924 - Sapozhnikov]
 
     :param p0: amplitude of incident wave
@@ -101,10 +103,10 @@ def incident_wave_decomposition(x, y, z, k, p0, N):
     :param N: number of terms in sum (decomposition)
     :return: decomposition of plane wave
     """
-    r = x * x + y * y + z * z
+    r = np.sqrt(x * x + y * y + z * z)
     p_i = 0
     for n in range(N):
-        p_i += Q_n(p0, n) * scipy.special.lpn(n, z / r)[0][-1] * \
+        p_i += Q_n(p0, n) * scipy.special.lpmv(0, n, z / r) * \
                scipy.special.spherical_jn(n, k * r)
     return p_i
 
@@ -128,13 +130,22 @@ def scattered_field(x, y, z, p0, c_t, c_l, w, k, a, ro, ro_s, N):
     :param N: number of terms in sum (decomposition)
     :return: scattered on sphere field decomposition
     """
-    r = x * x + y * y + z * z
+    r = np.sqrt(x * x + y * y + z * z)
     p_s = 0
     for n in range(N):
         p_s += Q_n(p0, n) * c_n(n, c_t, c_l, w, k, a, ro, ro_s) * \
-               scipy.special.hankel1(n, k * r) * scipy.special.lpn(n, z / r)[0][-1]
+               scipy.special.hankel1(n, k * r) * scipy.special.lpmv(0, n, z / r)
     return p_s
 
+
+def radiation_force(p0, c_t, c_l, w, k, a, ro, ro_s, N):
+    f_z = 0
+    for n in range(N):
+        f_z += (n + 1) * np.real(c_n(n, c_t, c_l, w, k, a, ro, ro_s) +
+                                 np.conj(c_n(n + 1, c_t, c_l, w, k, a, ro, ro_s)) +
+                                 2 * c_n(n, c_t, c_l, w, k, a, ro, ro_s) *
+                                 np.conj(c_n(n + 1, c_t, c_l, w, k, a, ro, ro_s)))
+    return - 2 * np.pi * p0 * p0 / ro / w / w
 
 def count_field():
     r"""
@@ -144,9 +155,13 @@ def count_field():
     :return: field in point with coordinates(x, y, z)
     """
     # coordinates
-    x = 10
-    y = 10
-    z = 10
+    span_x = np.linspace(16, 19, 3)
+    span_y = np.linspace(1, 10, 3)
+    span_z = np.linspace(2, 8, 3)
+    grid = np.vstack(np.meshgrid(span_x, span_y, span_z)).reshape(3, -1).T
+    x = grid[:, 0]
+    y = grid[:, 1]
+    z = grid[:, 2]
 
     # parameters of the sphere
     a = 1
@@ -154,14 +169,14 @@ def count_field():
     c_l = 1
     c_t = 3
 
-    #parametres of fluid
+    # parameters of fluid
     ro = 1
 
     # parameters of the field
     p0 = 1
     k = 1
     c = 300
-    w = k / c
+    w = k * c
 
     # order of decomposition
     N = 3
@@ -170,6 +185,12 @@ def count_field():
     p_s = scattered_field(x, y, z, p0, c_t, c_l, w, k, a, ro, ro_s, N)
     total_field = p_i + p_s
 
+    # print values of total field for all coordinates
     print(total_field)
+
+    # draw heat plot of amplitude of total field in Oxz slice for y = span_x[0] (axes are wrong) - it is in progress
+    zx = np.asarray(np.abs(total_field[0:9])).reshape(3, 3)
+    plt.imshow(zx)
+    plt.show()
 
 count_field()
