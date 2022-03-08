@@ -23,7 +23,7 @@ def second_derivation_spherical_jn(n, z):
                (n + 1) / z / z * scipy.special.spherical_jn(n, z)
 
 
-def Q_n(p0, n):
+def coef_Qn(p0, n):
     r"""
     Coefficient Q_n in decomposition of (plane) wave
     Expression (9) from [http://dx.doi.org/10.1121/1.4773924 - Sapozhnikov]
@@ -35,7 +35,7 @@ def Q_n(p0, n):
     return p0 * 1j ** n * (2 * n + 1)
 
 
-def G_n(n, c_t, c_l, w, a, ro, ro_s):
+def coef_Gn(n, c_t, c_l, w, a, ro, ro_s):
     r"""
     Coefficient Г_n to express coefficient c_n in composition of scattered wave
     Expression (13) from [http://dx.doi.org/10.1121/1.4773924 - Sapozhnikov]
@@ -69,7 +69,7 @@ def G_n(n, c_t, c_l, w, a, ro, ro_s):
            (a_n * d_n + b_n * xi_n) / (a_n * eta_n + b_n * eps_n)
 
 
-def c_n(n, c_t, c_l, w, k, a, ro, ro_s):
+def coef_cn(n, c_t, c_l, w, k, a, ro, ro_s):
     r"""
     Coefficient c_n in decomposition of scattered wave
     Expression (12) from [http://dx.doi.org/10.1121/1.4773924 - Sapozhnikov]
@@ -84,9 +84,9 @@ def c_n(n, c_t, c_l, w, k, a, ro, ro_s):
     :param ro_s: sphere density
     :return: nth coefficient
     """
-    return (G_n(n, c_t, c_l, w, a, ro, ro_s) * scipy.special.spherical_jn(n, k * a) -
+    return (coef_Gn(n, c_t, c_l, w, a, ro, ro_s) * scipy.special.spherical_jn(n, k * a) -
           k * a * scipy.special.spherical_jn(n, k * a, derivative=True)) / \
-         (G_n(n, c_t, c_l, w, a, ro, ro_s) * scipy.special.hankel1(n, k * a) -
+         (coef_Gn(n, c_t, c_l, w, a, ro, ro_s) * scipy.special.hankel1(n, k * a) -
           k * a * scipy.special.h1vp(n, k * a, 1))
 
 
@@ -106,7 +106,7 @@ def incident_wave_decomposition(x, y, z, k, p0, N):
     r = np.sqrt(x * x + y * y + z * z)
     p_i = 0
     for n in range(N):
-        p_i += Q_n(p0, n) * scipy.special.lpmv(0, n, z / r) * \
+        p_i += coef_Qn(p0, n) * scipy.special.lpmv(0, n, z / r) * \
                scipy.special.spherical_jn(n, k * r)
     return p_i
 
@@ -133,7 +133,7 @@ def scattered_field(x, y, z, p0, c_t, c_l, w, k, a, ro, ro_s, N):
     r = np.sqrt(x * x + y * y + z * z)
     p_s = 0
     for n in range(N):
-        p_s += Q_n(p0, n) * c_n(n, c_t, c_l, w, k, a, ro, ro_s) * \
+        p_s += coef_Qn(p0, n) * coef_cn(n, c_t, c_l, w, k, a, ro, ro_s) * \
                scipy.special.hankel1(n, k * r) * scipy.special.lpmv(0, n, z / r)
     return p_s
 
@@ -141,10 +141,10 @@ def scattered_field(x, y, z, p0, c_t, c_l, w, k, a, ro, ro_s, N):
 def radiation_force(p0, c_t, c_l, w, k, a, ro, ro_s, N):
     f_z = 0
     for n in range(N):
-        f_z += (n + 1) * np.real(c_n(n, c_t, c_l, w, k, a, ro, ro_s) +
-                                 np.conj(c_n(n + 1, c_t, c_l, w, k, a, ro, ro_s)) +
-                                 2 * c_n(n, c_t, c_l, w, k, a, ro, ro_s) *
-                                 np.conj(c_n(n + 1, c_t, c_l, w, k, a, ro, ro_s)))
+        f_z += (n + 1) * np.real(coef_cn(n, c_t, c_l, w, k, a, ro, ro_s) +
+                                 np.conj(coef_cn(n + 1, c_t, c_l, w, k, a, ro, ro_s)) +
+                                 2 * coef_cn(n, c_t, c_l, w, k, a, ro, ro_s) *
+                                 np.conj(coef_cn(n + 1, c_t, c_l, w, k, a, ro, ro_s)))
     return - 2 * np.pi * p0 * p0 / ro / w / w
 
 def count_field():
