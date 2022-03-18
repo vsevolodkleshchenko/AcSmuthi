@@ -136,4 +136,4 @@ def spheres_simulation():
     field = total_Field(x, y, z, alpha, c_t, c_l, w, k, a, ro, ro_s, d, order)
     print(field)
 
-spheres_simulation()
+
