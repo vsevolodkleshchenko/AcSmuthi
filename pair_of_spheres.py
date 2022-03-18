@@ -72,13 +72,21 @@ def coef_Qpqpn2(p, q, n, x, y, z, k, d):
     return const * sum
 
 
+def solve_system(order, k, a):
+     b = np.zeros((order, 2))
+     c = np.zeros((order, 2))
+
+
+
 def coef_Bpq(p, q, alpha, c_t, c_l, w, k, a, ro, ro_s):
-    return coef_Apq(p, q, alpha) * \
-           plane_one_sphere.coef_cn(q, c_t, c_l, w, k, a, ro, ro_s)
+    return 1
+#    return coef_Apq(p, q, alpha) * \
+#           plane_one_sphere.coef_cn(q, c_t, c_l, w, k, a, ro, ro_s)
 
 
 def coef_Cpq(p, q, alpha, c_t, c_l, w, k, a, ro, ro_s, d):
-    return coef_Bpq(p, q, alpha, c_t, c_l, w, k, a, ro, ro_s) * np.exp(1j * k * d)
+    return 1
+#    return coef_Bpq(p, q, alpha, c_t, c_l, w, k, a, ro, ro_s) * np.exp(1j * k * d)
 
 
 def total_Field(x, y, z, alpha, c_t, c_l, w, k, a, ro, ro_s, d, order):

@@ -147,6 +147,7 @@ def radiation_force(p0, c_t, c_l, w, k, a, ro, ro_s, N):
                                  np.conj(coef_cn(n + 1, c_t, c_l, w, k, a, ro, ro_s)))
     return - 2 * np.pi * p0 * p0 / ro / w / w
 
+
 def count_field():
     r"""
     Simulatoin function:
@@ -155,9 +156,9 @@ def count_field():
     :return: field in point with coordinates(x, y, z)
     """
     # coordinates
-    span_x = np.linspace(16, 19, 3)
-    span_y = np.linspace(1, 10, 3)
-    span_z = np.linspace(2, 8, 3)
+    span_x = np.linspace(-10.2, 11.1, 50)
+    span_y = np.linspace(-9.4, 9.3, 50)
+    span_z = np.linspace(-10.6, 9.5, 50)
     grid = np.vstack(np.meshgrid(span_x, span_y, span_z)).reshape(3, -1).T
     x = grid[:, 0]
     y = grid[:, 1]
@@ -189,7 +190,7 @@ def count_field():
     print(total_field)
 
     # draw heat plot of amplitude of total field in Oxz slice for y = span_x[0] (axes are wrong) - it is in progress
-    zx = np.asarray(np.abs(total_field[0:9])).reshape(3, 3)
+    zx = np.asarray(np.abs(total_field[0:2500])).reshape(50, 50)
     plt.imshow(zx)
     plt.show()
 
