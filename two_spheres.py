@@ -6,45 +6,67 @@ import matplotlib.pyplot as plt
 
 
 def neyman1(n, z):
-    """ Neyman function first kind"""
+    r""" Neyman function of the first kind
+    :param n: array_like - order (float)
+    :param z: array_like - argument (float or complex)
+    :return: array_like """
     return -1j * scipy.special.hankel1(n, z) + 1j * scipy.special.jv(n, z)
 
 
 def sph_neyman(n, z):
-    """ spherical Neyman function """
+    r""" spherical Neyman function
+    :param n: array_like - order (float)
+    :param z: array_like - argument (float or complex)
+    :return: array_like """
     return (-1) ** (n + 1) * np.sqrt(np.pi / 2 / z) * scipy.special.jv(-n - 0.5, z)
 
 
 def sph_neyman_der(n, z):
-    """ first derivative of Neyman function """
+    r""" first derivative of spherical Neyman function
+    :param n: array_like - order (float)
+    :param z: array_like - argument (float or complex)
+    :return: array_like """
     return (-1) ** n * np.sqrt(np.pi / (8 * z ** 3)) * scipy.special.jv(-n - 0.5, z) + \
            (-1) ** (n + 1) * np.sqrt(np.pi / 2 / z) * scipy.special.jvp(-n - 0.5, z)
 
 
 def sph_hankel1(n, z):
-    """ spherical Hankel function first kind """
+    r""" spherical Hankel function of the first kind
+    :param n: array_like - order (float)
+    :param z: array_like - argument (float or complex)
+    :return: array_like """
     return scipy.special.spherical_jn(n, z) + 1j * sph_neyman(n, z)
 
 
 def sph_hankel1_der(n, z):
-    """ first derivative of spherical Hankel function first kind """
+    """ first derivative of spherical Hankel function of the first kind
+    :param n: array_like - order (float)
+    :param z: array_like - argument (float or complex)
+    :return: array_like"""
     return scipy.special.spherical_jn(n, z, derivative=True) + 1j * sph_neyman_der(n, z)
 
 
-def coef_plane_wave(m, n, alpha_x, alpha_y, alpha_z):
-    """coefficients in decomposition of plane wave
-    d_mn - eq(4.40) of Encyclopedia"""
-    alpha = np.sqrt(alpha_x * alpha_x + alpha_y * alpha_y + alpha_z * alpha_z)
-    alpha_phi = np.arccos(alpha_x / alpha)
-    alpha_theta = np.arccos(alpha_z / alpha)
-    return 4 * np.pi * 1j ** n * scipy.special.sph_harm(m, n, alpha_theta, alpha_phi)
+def coef_plane_wave(m, n, k_x, k_y, k_z):
+    r""" coefficients in decomposition of plane wave
+    d^m_n - eq(4.40) of Encyclopedia
+    :param m, n: array_like - order and degree of the harmonic (int)
+    :param k_x, k_y, k_z: coordinates of incident wave vector
+    :return: array_like (complex float) """
+    k = np.sqrt(k_x * k_x + k_y * k_y + k_z * k_z)
+    k_phi = np.arctan(k_y / k_x)
+    k_theta = np.arccos(k_z / k)
+    return 4 * np.pi * 1j ** n * scipy.special.sph_harm(m, n, k_phi, k_theta)
 
 
 def regular_wvfs(m, n, x, y, z, k):
-    """regular basis spherical wave functions
-    psi^_mn - eq(between 4.37 and 4.38) of Encyclopedia"""
+    """ regular basis spherical wave functions
+    ^psi^m_n - eq(between 4.37 and 4.38) of Encyclopedia
+    :param m, n: array_like - order and degree of the wave function(int)
+    :param x, y, z: array_like - coordinates
+    :param k: absolute value of incident wave vector
+    :return: array_like (complex float) """
     r = np.sqrt(x * x + y * y + z * z)
-    phi = np.arccos(x / r)
+    phi = np.arctan(x / y)
     theta = np.arccos(z / r)
     return scipy.special.spherical_jn(n, k * r) * \
            scipy.special.sph_harm(m, n, theta, phi)
@@ -52,9 +74,13 @@ def regular_wvfs(m, n, x, y, z, k):
 
 def outgoing_wvfs(m, n, x, y, z, k):
     """outgoing basis spherical wave functions
-    psi_mn - eq(between 4.37 and 4.38) of Encyclopedia"""
+    psi^m_n - eq(between 4.37 and 4.38) of Encyclopedia
+    :param m, n: array_like - order and degree of the wave function(int)
+    :param x, y, z: array_like - coordinates
+    :param k: absolute value of incident wave vector
+    :return: array_like (complex float) """
     r = np.sqrt(x * x + y * y + z * z)
-    phi = np.arccos(x / r)
+    phi = np.arctan(x / y)
     theta = np.arccos(z / r)
     return sph_hankel1(n, k * r) * \
            scipy.special.sph_harm(m, n, theta, phi)
@@ -133,20 +159,21 @@ def solve_system(q1, q2, sz1, sz2, d1, d2):
     return c1, c2
 
 
-def field_near_sphere1(x, y, z, k, alpha_x, alpha_y, alpha_z, r_sph1, l_sph1, r_sph2,
+def field_near_sphere1(x, y, z, k_x, k_y, k_z, r_sph1, l_sph1, r_sph2,
                        l_sph2, dist, order):
     """Scattered and incident field near first sphere
     eq(between 4.52 and 4.53) in Encyclopedia"""
+    k = np.sqrt(k_x * k_x + k_y * k_y + k_z * k_z)
     u = 0
     for m in range(-order, order + 1):
         q1 = matrix_q(m, k, r_sph1, l_sph1, order)
         q2 = matrix_q(m, k, r_sph2, l_sph2, order)
         sz1 = matrix_sz1(m, k, dist, order)
         sz2 = matrix_sz2(m, k, dist, order)
-        d1 = [coef_plane_wave(m, n, alpha_x, alpha_y, alpha_z) for n in
+        d1 = [coef_plane_wave(m, n, k_x, k_y, k_z) for n in
               range(np.abs(m), order + 1)]
-        d2 = [coef_plane_wave(m, n, alpha_x, alpha_y, alpha_z) for n in
-              range(np.abs(m), order + 1)]  # not right
+        d2 = [coef_plane_wave(m, n, k_x, k_y, k_z) for n in
+              range(np.abs(m), order + 1)]
         c1, c2 = solve_system(q1, q2, sz1, sz2, d1, d2)
         for n in range(np.abs(m), order + 1):
             transl = 0
@@ -176,19 +203,18 @@ def simulation():
     l_sph2 = 1.1
     r_sph2 = 2
 
-    # parameters of space
+    # parameters of configuration
     dist = 5
 
     # parameters of the field
-    k = 1
-    alpha_x = 2.1
-    alpha_y = 2.2
-    alpha_z = 2.3
+    k_x = 2.1
+    k_y = 0
+    k_z = 2.3
 
     # order of decomposition
     order = 3
 
-    total_field = field_near_sphere1(x, y, z, k, alpha_x, alpha_y, alpha_z, r_sph1,
+    total_field = field_near_sphere1(x, y, z, k_x, k_y, k_z, r_sph1,
                                      l_sph1, r_sph2, l_sph2, dist, order)
 
     # print values of total field for all coordinates
