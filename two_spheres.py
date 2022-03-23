@@ -221,11 +221,14 @@ def simulation():
                                      l_sph1, r_sph2, l_sph2, dist, order)
 
     # print values of total field for all coordinates
-    print(total_field)
+    # print(total_field)
 
     # draw heat plot of amplitude of total field in Oxz slice for y = span_x[0] (axes are wrong) - it is in progress
     zx = np.asarray(np.abs(total_field[0:2500])).reshape(50, 50)
-    plt.imshow(zx)
+    fig, ax = plt.subplots()
+    ax.imshow(zx, cmap='viridis')
+    # ax.set_xticks(span_x[::10])
+    # ax.set_xticklabels(span_x[::10])
     plt.show()
 
 
