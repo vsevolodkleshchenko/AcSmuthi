@@ -3,6 +3,9 @@ import numpy.linalg
 import scipy
 import scipy.special
 import matplotlib.pyplot as plt
+import numba as nb
+import time
+
 
 
 def neyman1(n, z):
@@ -197,18 +200,18 @@ def simulation():
 
     # parameters of the sphere 1
     l_sph1 = 1.1
-    r_sph1 = 2
+    r_sph1 = 2.0
 
     # parameters of the sphere 2
     l_sph2 = 1.1
-    r_sph2 = 2
+    r_sph2 = 2.0
 
     # parameters of configuration
-    dist = 5
+    dist = 5.0
 
     # parameters of the field
     k_x = 2.1
-    k_y = 0
+    k_y = 0.0
     k_z = 2.3
 
     # order of decomposition
@@ -226,4 +229,11 @@ def simulation():
     plt.show()
 
 
-simulation()
+def timetest(simulation):
+    start = time.process_time()
+    simulation()
+    end = time.process_time()
+    print(start-end)
+
+
+timetest(simulation)
