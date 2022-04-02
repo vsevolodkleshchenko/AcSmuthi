@@ -188,15 +188,37 @@ def field_near_sphere1(x, y, z, k_x, k_y, k_z, r_sph1, l_sph1, r_sph2,
     return np.real(u)
 
 
-def simulation():
-    # coordinates
-    span_x = np.linspace(-10.2, 11.1, 50)
-    span_y = np.linspace(-9.4, 9.3, 50)
-    span_z = np.linspace(-10.6, 9.5, 50)
+# def xy_plot(span_x, span_y, span_z, z_n):
+#     grid = np.vstack(np.meshgrid(span_x, span_y, span_z, indexing='ij')).reshape(3, -1)
+#     x = grid[:, 0]
+#     y = grid[:, 1]
+#     z = grid[:, 2]
+#
+#
+# xy_plot()
+
+
+def xz_plot(span_x, span_y, span_z, k_x, k_y, k_z, r_sph1, l_sph1, r_sph2,
+            l_sph2, dist, order):
     grid = np.vstack(np.meshgrid(span_x, span_y, span_z)).reshape(3, -1).T
+
     x = grid[:, 0]
     y = grid[:, 1]
     z = grid[:, 2]
+
+    total_field = field_near_sphere1(x, y, z, k_x, k_y, k_z, r_sph1,
+                                     l_sph1, r_sph2, l_sph2, dist, order)
+
+    xz = np.asarray(np.abs(total_field[0:2500])).reshape(50, 50)
+    fig, ax = plt.subplots()
+    ax.imshow(xz, cmap='viridis')
+    plt.show()
+
+def simulation():
+    # coordinates
+    span_x = np.linspace(2, 11.1, 50)
+    span_y = np.linspace(20, 30, 50)
+    span_z = np.linspace(41, 49, 50)
 
     # parameters of the sphere 1
     l_sph1 = 1.1
@@ -210,33 +232,22 @@ def simulation():
     dist = 5.0
 
     # parameters of the field
-    k_x = 2.1
+    k_x = 0.2
     k_y = 0.0
     k_z = 2.3
 
     # order of decomposition
     order = 3
 
-    total_field = field_near_sphere1(x, y, z, k_x, k_y, k_z, r_sph1,
-                                     l_sph1, r_sph2, l_sph2, dist, order)
-
-    # print values of total field for all coordinates
-    # print(total_field)
-
-    # draw heat plot of amplitude of total field in Oxz slice for y = span_x[0] (axes are wrong) - it is in progress
-    zx = np.asarray(np.abs(total_field[0:2500])).reshape(50, 50)
-    fig, ax = plt.subplots()
-    ax.imshow(zx, cmap='viridis')
-    # ax.set_xticks(span_x[::10])
-    # ax.set_xticklabels(span_x[::10])
-    plt.show()
+    xz_plot(span_x, span_y, span_z, k_x, k_y, k_z, r_sph1, l_sph1, r_sph2,
+            l_sph2, dist, order)
 
 
 def timetest(simulation):
     start = time.process_time()
     simulation()
     end = time.process_time()
-    print(start-end)
+    print(end-start)
 
 
 timetest(simulation)
