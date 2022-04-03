@@ -208,7 +208,7 @@ def xz_plot(span_x, span_y, span_z, plane_number, k_x, k_y, k_z, r_sph1, l_sph1,
     ax.imshow(xz, cmap='viridis')
     plt.show()
 
-    print(grid, x, y, z, total_field, xz, sep='\n')
+    # print(grid, x, y, z, total_field, xz, sep='\n')
 
 
 def yz_plot(span_x, span_y, span_z, plane_number, k_x, k_y, k_z, r_sph1, l_sph1, r_sph2,
@@ -232,7 +232,7 @@ def yz_plot(span_x, span_y, span_z, plane_number, k_x, k_y, k_z, r_sph1, l_sph1,
     ax.imshow(yz, cmap='viridis')
     plt.show()
 
-    print(grid, x, y, z, total_field, yz, sep='\n')
+    # print(grid, x, y, z, total_field, yz, sep='\n')
 
 
 def xy_plot(span_x, span_y, span_z, plane_number, k_x, k_y, k_z, r_sph1, l_sph1, r_sph2,
@@ -255,12 +255,12 @@ def xy_plot(span_x, span_y, span_z, plane_number, k_x, k_y, k_z, r_sph1, l_sph1,
     ax.imshow(xy, cmap='viridis')
     plt.show()
 
-    print(grid, x, y, z, total_field, xy, sep='\n')
+    # print(grid, x, y, z, total_field, xy, sep='\n')
 
 
 def simulation():
     # coordinates
-    number_of_points = 3
+    number_of_points = 50
     span_x = np.linspace(2, 11.1, number_of_points)
     span_y = np.linspace(20, 30, number_of_points)
     span_z = np.linspace(41, 49, number_of_points)
