@@ -53,7 +53,7 @@ def coef_plane_wave(m, n, k_x, k_y, k_z):
     r""" coefficients in decomposition of plane wave
     d^m_n - eq(4.40) of Encyclopedia
     :param m, n: array_like - order and degree of the harmonic (int)
-    :param k_x, k_y, k_z: coordinates of incident wave vector
+    :param k_x, k_y, k_z: array_like coordinates of incident wave vector
     :return: array_like (complex float) """
     k = np.sqrt(k_x * k_x + k_y * k_y + k_z * k_z)
     k_phi = np.arctan(k_y / k_x)
@@ -66,7 +66,7 @@ def regular_wvfs(m, n, x, y, z, k):
     ^psi^m_n - eq(between 4.37 and 4.38) of Encyclopedia
     :param m, n: array_like - order and degree of the wave function(int)
     :param x, y, z: array_like - coordinates
-    :param k: absolute value of incident wave vector
+    :param k: array_like - absolute value of incident wave vector
     :return: array_like (complex float) """
     r = np.sqrt(x * x + y * y + z * z)
     phi = np.arctan(x / y)
@@ -80,7 +80,7 @@ def outgoing_wvfs(m, n, x, y, z, k):
     psi^m_n - eq(between 4.37 and 4.38) of Encyclopedia
     :param m, n: array_like - order and degree of the wave function(int)
     :param x, y, z: array_like - coordinates
-    :param k: absolute value of incident wave vector
+    :param k: array_like - absolute value of incident wave vector
     :return: array_like (complex float) """
     r = np.sqrt(x * x + y * y + z * z)
     phi = np.arctan(x / y)
@@ -90,23 +90,48 @@ def outgoing_wvfs(m, n, x, y, z, k):
 
 
 def coef_f(n, k, r_sph, l_sph):
-    """coefficient in linear system = jn' + lambda * jn"""
+    """coefficient in linear system for plane wave scattering on
+    2 spheres : jn' + lambda * jn
+    :param n: array_like - degree of the wave function(int)
+    :param k: array_like - absolute value of incident wave vector
+    :param r_sph: float - radius of sphere
+    :param l_sph: float complex - lambda parameter of sphere
+    :return: array_like (complex float)"""
     return scipy.special.spherical_jn(n, k * r_sph, derivative=True) + \
            l_sph * scipy.special.spherical_jn(n, k * r_sph)
 
 
 def coef_g(n, k, r_sph, l_sph):
-    """coefficient in linear system = hn' + lambda * hn"""
+    """coefficient in linear system for plane wave scattering on
+    2 spheres: hn' + lambda * hn
+    :param n: array_like - degree of the wave function(int)
+    :param k: array_like - absolute value of incident wave vector
+    :param r_sph: float - radius of sphere
+    :param l_sph: float complex - lambda parameter of sphere
+    :return: array_like (complex float)"""
     return sph_hankel1_der(n, k * r_sph) + l_sph * sph_hankel1(n, k * r_sph)
 
 
 def coef_q(n, k, r_sph, l_sph):
-    """coefficient qn = gn/fn in modified system"""
+    """coefficient in modified linear system for plane wave scattering on
+    2 spheres: qn = gn/fn
+    :param n: array_like - degree of the wave function(int)
+    :param k: array_like - absolute value of incident wave vector
+    :param r_sph: float - radius of sphere
+    :param l_sph: float complex - lambda parameter of sphere
+    :return: array_like (complex float)"""
     return coef_f(n, k, r_sph, l_sph) / coef_g(n, k, r_sph, l_sph)
 
 
 def matrix_q(m, k, r_sph, l_sph, order):
-    """matrix of coefficients qn for every m"""
+    """matrix of coefficients qn for every m in modified
+    linear system for plane wave scattering on 2 spheres
+    :param m: array_like - order of the wave function(int)
+    :param k: array_like - absolute value of incident wave vector
+    :param r_sph: float - radius of sphere
+    :param l_sph: float complex - lambda parameter of sphere
+    :param order: int - order of decomposition
+    :return: np.array (complex float)"""
     q = np.eye(order - np.abs(m) + 1, dtype=complex)
     for i in range(0, order - np.abs(m) + 1):
         q[i, i] = coef_q(i, k, r_sph, l_sph)
@@ -115,15 +140,26 @@ def matrix_q(m, k, r_sph, l_sph, order):
 
 def coef_a(s, nu, m):
     """coefficient A_s(m, n) for S
-    eq.(3.124) in Encyclopedia"""
+    eq.(3.124) in Encyclopedia
+    :param s: array_like - number of coefficient(int)
+    :param nu: array_like - number of coefficient(int)
+    :param m: array_like - number of coefficient(int)
+    :return: array_like"""
     return np.sqrt(scipy.special.factorial(nu + m) / scipy.special.factorial(nu - m)) * \
            scipy.special.factorial(nu + s) / scipy.special.factorial(s + m) / \
            scipy.special.factorial(s) * scipy.special.factorial(nu - s) * np.sqrt(2 * nu + 1)
 
 
 def coef_sz(m, n, nu, k, dist):
-    """coefficient S^m_nnu(kb) if (b || z)
-    eq(3.126) in Encyclopedia"""
+    """coefficient S^m_nnu(kb) if (b || z) in linear system for
+    plane wave scattering on 2 spheres
+    eq(3.126) in Encyclopedia
+    :param m: array_like - number of coefficient(int)
+    :param n: array_like - number of coefficient(int)
+    :param nu: array_like - number of coefficient(int)
+    :param k: array_like - absolute value of incident wave vector
+    :param dist: float - distance between 2 spheres
+    :return: array_like"""
     w = 1j / (2 * k * dist)
     sum = 0
     for j in range(np.abs(m), n + nu + 1):
@@ -137,7 +173,13 @@ def coef_sz(m, n, nu, k, dist):
 
 
 def matrix_sz1(m, k, dist, order):
-    """matrix of coefficients Sz in first equation in linear system"""
+    """matrix of coefficients Sz in first equation in linear
+    system for plane wave scattering on 2 spheres
+    :param m: array_like - number of coefficient(int)
+    :param k: array_like - absolute value of incident wave vector
+    :param dist: float - distance between 2 spheres
+    :param order: int - order of decomposition
+    :return: np.array"""
     sz1 = np.empty((order - np.abs(m) + 1, order - np.abs(m) + 1), dtype=complex)
     for n in range(np.abs(m), order + 1):
         for nu in range(np.abs(m), order + 1):
@@ -146,7 +188,13 @@ def matrix_sz1(m, k, dist, order):
 
 
 def matrix_sz2(m, k, dist, order):
-    """matrix of coefficients Sz in second equation in linear system"""
+    """matrix of coefficients Sz in second equation in linear
+    system for plane wave scattering on 2 spheres
+    :param m: array_like - number of coefficient(int)
+    :param k: array_like - absolute value of incident wave vector
+    :param dist: float - distance between 2 spheres
+    :param order: int - order of decomposition
+    :return np.array"""
     sz2 = np.empty((order - np.abs(m) + 1, order - np.abs(m) + 1), dtype=complex)
     for n in range(np.abs(m), order + 1):
         for nu in range(np.abs(m), order + 1):
@@ -155,7 +203,16 @@ def matrix_sz2(m, k, dist, order):
 
 
 def solve_system(q1, q2, sz1, sz2, d1, d2):
-    """solve final system"""
+    r"""
+    solve final system
+    :param q1: np.array - matrix q1
+    :param q2: np.array - matrix q2
+    :param sz1: np.array - matrix sz1
+    :param sz2: np.array - matrix sz2
+    :param d1: np.array - matrix d1
+    :param d2: np.arrai - matrix d2
+    :return: np.array, np.array
+    """
     c2 = np.linalg.solve(q2 - sz2.dot(np.linalg.inv(q1)).dot(sz1),
                          d2 - sz2.dot(np.linalg.inv(q1)).dot(d1))
     c1 = np.linalg.inv(q1).dot(d1) - np.linalg.inv(q1).dot(sz1).dot(c2)
@@ -164,8 +221,18 @@ def solve_system(q1, q2, sz1, sz2, d1, d2):
 
 def field_near_sphere1(x, y, z, k_x, k_y, k_z, r_sph1, l_sph1, r_sph2,
                        l_sph2, dist, order):
-    """Scattered and incident field near first sphere
-    eq(between 4.52 and 4.53) in Encyclopedia"""
+    r"""
+    Scattered + incident field for plane wave scattering on 2 spheres (near first)
+    eq(between 4.52 and 4.53) in Encyclopedia
+    :param x, y, z: array_like - coordinates
+    :param k_x, k_y, k_z:  array_like coordinates of incident wave vector
+    :param r_sph1: float - radius of sphere 1
+    :param l_sph1: float complex - lambda parameter of sphere 1
+    :param r_sph2: float - radius of sphere 2
+    :param l_sph2: float complex - lambda parameter of sphere 2
+    :param dist: float - distance between 2 spheres
+    :param order: int - order of decomposition
+    :return: np.array (float)"""
     k = np.sqrt(k_x * k_x + k_y * k_y + k_z * k_z)
     u = 0
     for m in range(-order, order + 1):
@@ -191,8 +258,18 @@ def field_near_sphere1(x, y, z, k_x, k_y, k_z, r_sph1, l_sph1, r_sph2,
 def xz_plot(span_x, span_y, span_z, plane_number, k_x, k_y, k_z, r_sph1, l_sph1, r_sph2,
             l_sph2, dist, order):
     r"""
+    Count field and build a 2D heat-plot in XZ plane for y[plane_number]
     --->z
-    """
+    :param span_x, span_y, span_z: np.array (float)
+    :param plane_number: int
+    :param k_x, k_y, k_z:  array_like coordinates of incident wave vector
+    :param r_sph1: float - radius of sphere 1
+    :param l_sph1: float complex - lambda parameter of sphere 1
+    :param r_sph2: float - radius of sphere 2
+    :param l_sph2: float complex - lambda parameter of sphere 2
+    :param dist: float - distance between 2 spheres
+    :param order: int - order of decomposition
+    :return: 2D heat-plot"""
     grid = np.vstack(np.meshgrid(span_y, span_x, span_z, indexing='ij')).reshape(3, -1).T
     y = grid[:, 0]
     x = grid[:, 1]
@@ -201,9 +278,9 @@ def xz_plot(span_x, span_y, span_z, plane_number, k_x, k_y, k_z, r_sph1, l_sph1,
     total_field = field_near_sphere1(x, y, z, k_x, k_y, k_z, r_sph1,
                                      l_sph1, r_sph2, l_sph2, dist, order)
 
-    xz = np.asarray(total_field[(plane_number - 1) * len(span_x) * len(span_z):
+    xz = np.flip(np.asarray(total_field[(plane_number - 1) * len(span_x) * len(span_z):
                                 (plane_number - 1) * len(span_x) * len(span_z) +
-                                len(span_x) * len(span_z)]).reshape(len(span_x), len(span_z))
+                                len(span_x) * len(span_z)]).reshape(len(span_x), len(span_z)), axis=0)
     fig, ax = plt.subplots()
     ax.imshow(xz, cmap='viridis')
     plt.show()
@@ -214,8 +291,18 @@ def xz_plot(span_x, span_y, span_z, plane_number, k_x, k_y, k_z, r_sph1, l_sph1,
 def yz_plot(span_x, span_y, span_z, plane_number, k_x, k_y, k_z, r_sph1, l_sph1, r_sph2,
             l_sph2, dist, order):
     r"""
-    ---->z
-    """
+    Count field and build a 2D heat-plot in YZ plane for x[plane_number]
+    --->z
+    :param span_x, span_y, span_z: np.array (float)
+    :param plane_number: int
+    :param k_x, k_y, k_z:  array_like coordinates of incident wave vector
+    :param r_sph1: float - radius of sphere 1
+    :param l_sph1: float complex - lambda parameter of sphere 1
+    :param r_sph2: float - radius of sphere 2
+    :param l_sph2: float complex - lambda parameter of sphere 2
+    :param dist: float - distance between 2 spheres
+    :param order: int - order of decomposition
+    :return: 2D heat-plot"""
     grid = np.vstack(np.meshgrid(span_x, span_y, span_z, indexing='ij')).reshape(3, -1).T
     x = grid[:, 0]
     y = grid[:, 1]
@@ -224,9 +311,9 @@ def yz_plot(span_x, span_y, span_z, plane_number, k_x, k_y, k_z, r_sph1, l_sph1,
     total_field = field_near_sphere1(x, y, z, k_x, k_y, k_z, r_sph1,
                                      l_sph1, r_sph2, l_sph2, dist, order)
 
-    yz = np.asarray(total_field[(plane_number - 1) * len(span_y) * len(span_z):
+    yz = np.flip(np.asarray(total_field[(plane_number - 1) * len(span_y) * len(span_z):
                                 (plane_number - 1) * len(span_y) * len(span_z) +
-                                len(span_y) * len(span_z)]).reshape(len(span_y), len(span_z))
+                                len(span_y) * len(span_z)]).reshape(len(span_y), len(span_z)), axis=0)
 
     fig, ax = plt.subplots()
     ax.imshow(yz, cmap='viridis')
@@ -238,8 +325,18 @@ def yz_plot(span_x, span_y, span_z, plane_number, k_x, k_y, k_z, r_sph1, l_sph1,
 def xy_plot(span_x, span_y, span_z, plane_number, k_x, k_y, k_z, r_sph1, l_sph1, r_sph2,
             l_sph2, dist, order):
     r"""
-    ---->y
-    """
+    Count field and build a 2D heat-plot in XZ plane for z[plane_number]
+    --->y
+    :param span_x, span_y, span_z: np.array (float)
+    :param plane_number: int
+    :param k_x, k_y, k_z:  array_like coordinates of incident wave vector
+    :param r_sph1: float - radius of sphere 1
+    :param l_sph1: float complex - lambda parameter of sphere 1
+    :param r_sph2: float - radius of sphere 2
+    :param l_sph2: float complex - lambda parameter of sphere 2
+    :param dist: float - distance between 2 spheres
+    :param order: int - order of decomposition
+    :return: 2D heat-plot"""
     grid = np.vstack(np.meshgrid(span_z, span_x, span_y, indexing='ij')).reshape(3, -1).T
     z = grid[:, 0]
     x = grid[:, 1]
@@ -248,9 +345,9 @@ def xy_plot(span_x, span_y, span_z, plane_number, k_x, k_y, k_z, r_sph1, l_sph1,
     total_field = field_near_sphere1(x, y, z, k_x, k_y, k_z, r_sph1,
                                      l_sph1, r_sph2, l_sph2, dist, order)
 
-    xy = np.asarray(total_field[(plane_number-1)*len(span_x)*len(span_y):
+    xy = np.flip(np.asarray(total_field[(plane_number-1)*len(span_x)*len(span_y):
                                 (plane_number-1)*len(span_x)*len(span_y)+
-                                len(span_x)*len(span_y)]).reshape(len(span_x), len(span_y))
+                                len(span_x)*len(span_y)]).reshape(len(span_x), len(span_y)), axis=0)
     fig, ax = plt.subplots()
     ax.imshow(xy, cmap='viridis')
     plt.show()
@@ -260,7 +357,7 @@ def xy_plot(span_x, span_y, span_z, plane_number, k_x, k_y, k_z, r_sph1, l_sph1,
 
 def simulation():
     # coordinates
-    number_of_points = 50
+    number_of_points = 3
     span_x = np.linspace(2, 11.1, number_of_points)
     span_y = np.linspace(20, 30, number_of_points)
     span_z = np.linspace(41, 49, number_of_points)
