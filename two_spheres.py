@@ -3,7 +3,6 @@ import numpy.linalg
 import scipy
 import scipy.special
 import matplotlib.pyplot as plt
-import numba as nb
 import time
 
 
@@ -120,7 +119,7 @@ def coef_q(n, k, r_sph, l_sph):
     :param r_sph: float - radius of sphere
     :param l_sph: float complex - lambda parameter of sphere
     :return: array_like (complex float)"""
-    return coef_f(n, k, r_sph, l_sph) / coef_g(n, k, r_sph, l_sph)
+    return coef_g(n, k, r_sph, l_sph) / coef_f(n, k, r_sph, l_sph)
 
 
 def matrix_q(m, k, r_sph, l_sph, order):
@@ -357,10 +356,10 @@ def xy_plot(span_x, span_y, span_z, plane_number, k_x, k_y, k_z, r_sph1, l_sph1,
 
 def simulation():
     # coordinates
-    number_of_points = 3
-    span_x = np.linspace(2, 11.1, number_of_points)
-    span_y = np.linspace(20, 30, number_of_points)
-    span_z = np.linspace(41, 49, number_of_points)
+    number_of_points = 50
+    span_x = np.linspace(-20, 20, number_of_points)
+    span_y = np.linspace(-20, 20, number_of_points)
+    span_z = np.linspace(-20, 20, number_of_points)
 
     # parameters of the sphere 1
     l_sph1 = 1.1
@@ -382,7 +381,7 @@ def simulation():
     order = 3
 
     plane_number = int(number_of_points / 2) + 1
-    xy_plot(span_x, span_y, span_z, plane_number, k_x, k_y, k_z,
+    yz_plot(span_x, span_y, span_z, plane_number, k_x, k_y, k_z,
             r_sph1, l_sph1, r_sph2, l_sph2, dist, order)
 
 
@@ -393,4 +392,4 @@ def timetest(simulation):
     print(end-start)
 
 
-timetest(simulation)
+# timetest(simulation)
