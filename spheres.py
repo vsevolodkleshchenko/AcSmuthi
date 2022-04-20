@@ -48,7 +48,7 @@ def sph_hankel1_der(n, z):
     :return: array_like"""
     return scipy.special.spherical_jn(n, z, derivative=True) + 1j * sph_neyman_der(n, z)
 
-def inc_wave_coef(m, n, k_x, k_y, k_z):
+def inc_coef(m, n, k_x, k_y, k_z):
     r""" coefficients in decomposition of plane wave
     d^m_n - eq(4.40) of Encyclopedia
     :param m, n: array_like - order and degree of the harmonic (int)
@@ -89,29 +89,15 @@ def outgoing_wvfs(m, n, x, y, z, k):
 
 
 def gaunt_coef(n, m, nu, mu, q):
-    r"""
-    Gaunt coefficient: G(n,m;nu,mu;q)
-    p.329 in Encyclopedia
-    :param n:
-    :param m:
-    :param nu:
-    :param mu:
-    :param q:
-    :return:
-    """
+    r"""Gaunt coefficient: G(n,m;nu,mu;q)
+    p.329 in Encyclopedia"""
     return np.sqrt((2 * n + 1) * (2 * nu + 1) / (4 * np.pi ) / (2 * q + 1)) * \
            clebsch_gordan(n, 0, nu, 0, q, 0) * clebsch_gordan(n, m, nu, mu, q, m + mu)
 
 
 def sep_matr_coef(m, mu, n, nu, k, dist_x, dist_y, dist_z, order):
     """coefficient S^mmu_nnu(b) of separation matrix
-    eq(3.86) in Encyclopedia
-    :param m: array_like - number of coefficient(int)
-    :param n: array_like - number of coefficient(int)
-    :param nu: array_like - number of coefficient(int)
-    :param k: array_like - absolute value of incident wave vector
-    :param dist: float - distance between 2 spheres
-    :return: array_like"""
+    eq(3.86) in Encyclopedia"""
     dist = np.sqrt(dist_x * dist_x + dist_y * dist_y + dist_z * dist_z)
     dist_phi = np.arctan(dist_x / dist_y)
     dist_theta = np.arccos(dist_z . dist)
@@ -123,30 +109,166 @@ def sep_matr_coef(m, mu, n, nu, k, dist_x, dist_y, dist_z, order):
     return 4 * np.pi * 1j ** (nu - n) * sum
 
 
-def t_matrix(k, ro, k_sph, r_sph, ro_sph, order):
+def syst_matr(k, ro, k_sph, r_sph, ro_sph, order):
+    r""" build T matrix from spheres.pdf"""
     num_of_coef = (order + 1) ** 2
-    t = np.zeros((num_of_coef * 2, num_of_coef * 2), dtype=complex)
-    for i in range(num_of_coef):
-        t[2 * i, i] = - sph_hankel1(i, k * r_sph)
-        t[2 * i + 1, i] = - sph_hankel1_der(i, k * r_sph)
-        j = i + num_of_coef
-        t[2 * i, j] = scipy.special.spherical_jn(i, k_sph * r_sph)
-        t[2 * i + 1, j] = ro / ro_sph * scipy.special.spherical_jn(i, k_sph * r_sph, derivative=True)
-    return t
+    width = num_of_coef * 2
+    height = num_of_coef * 2
+    t_matrix = np.zeros((height, width), dtype=complex)
+    for n in range(order + 1):
+        col_idx_1 = np.arange(n ** 2, (n + 1) ** 2)
+        col_idx_2 = col_idx_1 + num_of_coef
+        row_idx_1 = np.arange(2 * n ** 2, 2 * (n + 1) ** 2 - 1, 2)
+        row_idx_2 = np.arange(2 * n ** 2 + 1, 2 * (n + 1) ** 2, 2)
+        t_matrix[row_idx_1, col_idx_1] = - sph_hankel1(n, k * r_sph)
+        t_matrix[row_idx_2, col_idx_1] = - sph_hankel1_der(n, k * r_sph)
+        t_matrix[row_idx_1, col_idx_2] = scipy.special.spherical_jn(n, k_sph * r_sph)
+        t_matrix[row_idx_2, col_idx_2] = ro / ro_sph * scipy.special.spherical_jn(n, k_sph * r_sph, derivative=True)
+    return t_matrix
 
 
-def decomp_coef(k_x, k_y, k_z, ro, k_sph, r_sph, ro_sph, order):
+def syst_rhs(k_x, k_y, k_z, r_sph, order):
+    r""" build right hand side of system from spheres.pdf"""
     k = np.sqrt(k_x * k_x + k_y * k_y + k_z * k_z)
-    num_of_coef = ((order + 1) ** 2) * 2
-    b = np.zeros(num_of_coef, dtype=complex)
-    for n in range(order):
-        idx = np.arange(2 * (n ** 2), 2 * (n + 1) ** 2)
+    num_of_coef = (order + 1) ** 2
+    rhs = np.zeros(num_of_coef * 2, dtype=complex)
+    for n in range(order + 1):
+        idx_1 = np.arange(2 * n ** 2, 2 * (n + 1) ** 2 - 1, 2)
+        idx_2 = np.arange(2 * n ** 2 + 1, 2 * (n + 1) ** 2, 2)
         m = np.arange(-n, n + 1)
-        m2 = np.concatenate(np.array([m, m]).T)
-        b[idx] = inc_wave_coef(m2, n, k_x, k_y, k_z)
-    t = t_matrix(k, ro, k_sph, r_sph, ro_sph, order)
-    c = np.linalg.solve(t, b)
+        # m2 = np.concatenate(np.array([m, m]).T)
+        rhs[idx_1] = inc_coef(m, n, k_x, k_y, k_z) * \
+                   scipy.special.spherical_jn(n, k * r_sph)
+        rhs[idx_2] = inc_coef(m, n, k_x, k_y, k_z) * \
+                   scipy.special.spherical_jn(n, k * r_sph, derivative=True)
+    return rhs
 
 
-decomp_coef(2, 3, 1, 2, 3, 4, 5, 2)
-# print(t_matrix(3,1,2,6,4,3))
+def syst_solve(k_x, k_y, k_z, ro, k_sph, r_sph, ro_sph, order):
+    r""" solve T matrix system and counts a coefficients in decomposition
+    of scattered field and field inside the sphere """
+    num_of_coef = (order + 1) ** 2
+    k = np.sqrt(k_x * k_x + k_y * k_y + k_z * k_z)
+    t_matrix = syst_matr(k, ro, k_sph, r_sph, ro_sph, order)
+    rhs = syst_rhs(k_x, k_y, k_z, r_sph, order)
+    coef = np.linalg.solve(t_matrix, rhs)
+    sc_coef = coef[:num_of_coef]
+    in_coef = coef[num_of_coef:]
+    return sc_coef, in_coef
+
+
+# def sc_coef(m, n, k_x, k_y, k_z, ro, k_sph, r_sph, ro_sph, order):
+#     sc_coef = syst_solve(k_x, k_y, k_z, ro, k_sph, r_sph, ro_sph, order)[0]
+#     return sc_coef[n ** 2 + n + m]
+
+
+def total_field(x, y, z, k_x, k_y, k_z, ro, k_sph, r_sph, ro_sph, order):
+    """ counts field outside the sphere"""
+    k = np.sqrt(k_x * k_x + k_y * k_y + k_z * k_z)
+    sc_coef = syst_solve(k_x, k_y, k_z, ro, k_sph, r_sph, ro_sph, order)[0]
+    tot_field = 0
+    for n in range(order + 1):
+        for m in range(-n, n + 1):
+            tot_field += inc_coef(m, n, k_x, k_y, k_z) * regular_wvfs(m, n, x, y, z, k) + \
+                         sc_coef[n ** 2 + n + m] * outgoing_wvfs(m, n, x, y, z, k)
+    return tot_field
+
+
+def xz_plot(span_x, span_y, span_z, plane_number, k_x, k_y, k_z, ro, k_sph, r_sph, ro_sph, order):
+    r"""
+    Count field and build a 2D heat-plot in XZ plane for span_y[plane_number]
+    --->z """
+    grid = np.vstack(np.meshgrid(span_y, span_x, span_z, indexing='ij')).reshape(3, -1).T
+    y = grid[:, 0]
+    x = grid[:, 1]
+    z = grid[:, 2]
+
+    tot_field = np.abs(total_field(x, y, z, k_x, k_y, k_z, ro, k_sph, r_sph, ro_sph, order))
+
+    xz = np.flip(np.asarray(tot_field[(plane_number - 1) * len(span_x) * len(span_z):
+                                (plane_number - 1) * len(span_x) * len(span_z) +
+                                len(span_x) * len(span_z)]).reshape(len(span_x), len(span_z)), axis=0)
+    fig, ax = plt.subplots()
+    ax.imshow(xz, cmap='viridis')
+    plt.show()
+
+    # print(grid, x, y, z, total_field, xz, sep='\n')
+
+
+def yz_plot(span_x, span_y, span_z, plane_number, k_x, k_y, k_z, ro, k_sph, r_sph, ro_sph, order):
+    r"""
+    Count field and build a 2D heat-plot in YZ plane for x[plane_number]
+    --->z """
+    grid = np.vstack(np.meshgrid(span_x, span_y, span_z, indexing='ij')).reshape(3, -1).T
+    x = grid[:, 0]
+    y = grid[:, 1]
+    z = grid[:, 2]
+
+    tot_field = np.abs(total_field(x, y, z, k_x, k_y, k_z, ro, k_sph, r_sph, ro_sph, order))
+
+    yz = np.flip(np.asarray(tot_field[(plane_number - 1) * len(span_y) * len(span_z):
+                                (plane_number - 1) * len(span_y) * len(span_z) +
+                                len(span_y) * len(span_z)]).reshape(len(span_y), len(span_z)), axis=0)
+
+    fig, ax = plt.subplots()
+    ax.imshow(yz, cmap='viridis')
+    plt.show()
+
+    # print(grid, x, y, z, total_field, yz, sep='\n')
+
+
+def xy_plot(span_x, span_y, span_z, plane_number, k_x, k_y, k_z, ro, k_sph, r_sph, ro_sph, order):
+    r"""
+    Count field and build a 2D heat-plot in XZ plane for z[plane_number]
+    --->y """
+    grid = np.vstack(np.meshgrid(span_z, span_x, span_y, indexing='ij')).reshape(3, -1).T
+    z = grid[:, 0]
+    x = grid[:, 1]
+    y = grid[:, 2]
+
+    tot_field = np.abs(total_field(x, y, z, k_x, k_y, k_z, ro, k_sph, r_sph, ro_sph, order))
+
+    xy = np.flip(np.asarray(tot_field[(plane_number-1)*len(span_x)*len(span_y):
+                                (plane_number-1)*len(span_x)*len(span_y)+
+                                len(span_x)*len(span_y)]).reshape(len(span_x), len(span_y)), axis=0)
+    fig, ax = plt.subplots()
+    ax.imshow(xy, cmap='viridis')
+    plt.show()
+
+    # print(grid, x, y, z, total_field, xy, sep='\n')
+
+
+def simulation():
+    # coordinates
+    number_of_points = 20
+    span_x = np.linspace(-20, 20, number_of_points)
+    span_y = np.linspace(-20, 20, number_of_points)
+    span_z = np.linspace(-20, 20, number_of_points)
+
+    # parameters of fluid
+    ro = 4
+
+    # parameters of the sphere
+    k_sph = 1
+    r_sph = 3
+    ro_sph = 3
+
+    # parameters of the field
+    k_x = 0.2
+    k_y = 0.0
+    k_z = 2.3
+
+    # order of decomposition
+    order = 3
+
+    plane_number = int(number_of_points / 2) + 1
+    yz_plot(span_x, span_y, span_z, plane_number, k_x, k_y, k_z, ro, k_sph, r_sph, ro_sph, order)
+
+
+simulation()
+
+# print(total_field(1,2,3,4,2,3,5,1,3,5,6))
+# solve_syst(2, 3, 1, 2, 3, 4, 5, 2)
+# print(t_matrix(3,1,2,6,4,2))
+# print(rhs_for_tmatr_syst(3,1,2,6,2))
+# print(syst_solve(2, 3, 1, 2, 3, 4, 5, 2))
