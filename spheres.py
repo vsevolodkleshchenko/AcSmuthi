@@ -100,8 +100,8 @@ def gaunt_coef(n, m, nu, mu, q):
     r"""Gaunt coefficient: G(n,m;nu,mu;q)
     eq(3.71) in Encyclopedia"""
     s = np.sqrt((2 * n + 1) * (2 * nu + 1) * (2 * q + 1) / 4 / np.pi)
-    return (-1) ** (m + mu) * s * wigner_3j(n, 0, nu, 0, q, 0) * \
-           wigner_3j(n, m, nu, mu, q, - m - mu)
+    return (-1) ** (m + mu) * s * complex(wigner_3j(n, 0, nu, 0, q, 0)) * \
+           complex(wigner_3j(n, m, nu, mu, q, - m - mu))
 
 
 def sep_matr_coef(m, mu, n, nu, k, dist):
@@ -115,9 +115,9 @@ def sep_matr_coef(m, mu, n, nu, k, dist):
         q0 = abs(m - mu) + 1
     q_lim = (n + nu - q0) // 2
     sum = 0
-    for q in range(0, q_lim, 2):
+    for q in range(0, q_lim + 1, 2):
         sum += (-1) ** q * outgoing_wvfs(m - mu, q0 + 2 * q, dist[0], dist[1], dist[2], k) * \
-               gaunt_coef(n, m, nu, -mu, q0 + 2 * q_lim)
+               gaunt_coef(n, m, nu, -mu, q0 + 2 * q)
     return 4 * np.pi * (-1) ** (mu + nu + q_lim) * sum
 
 
@@ -181,13 +181,13 @@ def syst_matr2(k, ro, dist, spheres, order):
         for m in range(-n, n + 1):
             for nu in range(order + 1):
                 for mu in range(-nu, nu + 1):
-                    t_matrix[2*(n**2+n+m), num_of_coef*2+nu**2+nu+mu] = - scipy.special.spherical_jn(n, k_sph1 * r_sph1) * \
+                    t_matrix[2*(n**2+n+m), num_of_coef*2+nu**2+nu+mu] = - scipy.special.spherical_jn(n, k_abs * r_sph1) * \
                                                                                sep_matr_coef(mu, m, nu, n, k, dist)
-                    t_matrix[2*(n**2+n+m)+1, num_of_coef*2+nu**2+nu+mu] = - scipy.special.spherical_jn(n, k_sph1 * r_sph1, derivative=True) * \
+                    t_matrix[2*(n**2+n+m)+1, num_of_coef*2+nu**2+nu+mu] = - scipy.special.spherical_jn(n, k_abs * r_sph1, derivative=True) * \
                                                                                sep_matr_coef(mu, m, nu, n, k, dist)
-                    t_matrix[num_of_coef*2+2*(n**2+n+m), nu**2+nu+mu] = - scipy.special.spherical_jn(n, k_sph1 * r_sph1) * \
-                                                                               sep_matr_coef(mu, m, nu, n, k,  -dist)
-                    t_matrix[num_of_coef*2+2*(n**2+n+m)+1, nu**2+nu+mu] = - scipy.special.spherical_jn(n, k_sph1 * r_sph1, derivative=True) * \
+                    t_matrix[num_of_coef*2+2*(n**2+n+m), nu**2+nu+mu] = - scipy.special.spherical_jn(n, k_abs * r_sph2) * \
+                                                                               sep_matr_coef(mu, m, nu, n, k, -dist)
+                    t_matrix[num_of_coef*2+2*(n**2+n+m)+1, nu**2+nu+mu] = - scipy.special.spherical_jn(n, k_abs * r_sph2, derivative=True) * \
                                                                                sep_matr_coef(mu, m, nu, n, k, -dist)
 
         t_matrix[row_idx_1, col_idx_1] = - sph_hankel1(n, k_abs * r_sph1)
@@ -217,8 +217,8 @@ def syst_rhs(k, spheres, order):
     for n in range(order + 1):
         idx_1 = np.arange(2 * n ** 2, 2 * (n + 1) ** 2 - 1, 2)
         idx_2 = np.arange(2 * n ** 2 + 1, 2 * (n + 1) ** 2, 2)
+        m = np.arange(-n, n + 1)
         for sph in range(num_of_sph):
-            m = np.arange(-n, n + 1)
             rhs[idx_1] = inc_coef(m, n, k) * \
                        scipy.special.spherical_jn(n, k_abs * spheres[sph, 1])
             rhs[idx_2] = inc_coef(m, n, k) * \
@@ -255,6 +255,7 @@ def total_field(x, y, z, k, ro, dist, spheres, order):
                     for mu in range(-nu, nu + 1):
                         other_sph += sep_matr_coef(mu, m, nu, n, k, dist) * \
                                            sc_coef_sph[nu ** 2 + nu + mu]
+                        # print(sep_matr_coef(mu, m, nu, n, k, dist))
             tot_field += inc_coef(m, n, k) * regular_wvfs(m, n, x, y, z, k) + \
                         coef[0][n ** 2 + n + m] * outgoing_wvfs(m, n, x, y, z, k) + \
                         other_sph * regular_wvfs(m, n, x, y, z, k)
@@ -273,7 +274,7 @@ def xz_plot(span, plane_number, k, ro, dist, spheres, order):
     x = grid[:, 1]
     z = grid[:, 2]
 
-    tot_field = np.abs(total_field(x, y, z, k, ro, dist, spheres, order))
+    tot_field = np.real(total_field(x, y, z, k, ro, dist, spheres, order))
 
     xz = np.flip(np.asarray(tot_field[(plane_number - 1) * len(span_x) * len(span_z):
                                 (plane_number - 1) * len(span_x) * len(span_z) +
@@ -297,7 +298,7 @@ def yz_plot(span, plane_number, k, ro, dist, spheres, order):
     y = grid[:, 1]
     z = grid[:, 2]
 
-    tot_field = np.abs(total_field(x, y, z, k, ro, dist, spheres, order))
+    tot_field = np.real(total_field(x, y, z, k, ro, dist, spheres, order))
 
     yz = np.flip(np.asarray(tot_field[(plane_number - 1) * len(span_y) * len(span_z):
                                 (plane_number - 1) * len(span_y) * len(span_z) +
@@ -322,7 +323,7 @@ def xy_plot(span, plane_number, k, ro, dist, spheres, order):
     x = grid[:, 1]
     y = grid[:, 2]
 
-    tot_field = np.abs(total_field(x, y, z, k, ro, dist, spheres, order))
+    tot_field = np.real(total_field(x, y, z, k, ro, dist, spheres, order))
 
     xy = np.flip(np.asarray(tot_field[(plane_number-1)*len(span_x)*len(span_y):
                                 (plane_number-1)*len(span_x)*len(span_y) +
@@ -337,9 +338,9 @@ def xy_plot(span, plane_number, k, ro, dist, spheres, order):
 def simulation():
     # coordinates
     number_of_points = 30
-    span_x = np.linspace(-40, 40, number_of_points)
-    span_y = np.linspace(-40, 40, number_of_points)
-    span_z = np.linspace(-40, 40, number_of_points)
+    span_x = np.linspace(-100, 100, number_of_points)
+    span_y = np.linspace(-100, 100, number_of_points)
+    span_z = np.linspace(-100, 100, number_of_points)
     span = np.array([span_x, span_y, span_z])
 
     # parameters of fluid
@@ -347,17 +348,18 @@ def simulation():
 
     # parameters of the spheres
     k_sph1 = 0.015
-    r_sph1 = 1
-    ro_sph1 = 1050
+    r_sph1 = 3
+    ro_sph1 = 1011
     sphere1 = np.array([k_sph1, r_sph1, ro_sph1])
     k_sph2 = 0.016
-    r_sph2 = 1
-    ro_sph2 = 1060
+    r_sph2 = 5
+    ro_sph2 = 1011
     sphere2 = np.array([k_sph2, r_sph2, ro_sph2])
 
     # parameters of configuration
-    dist_x = dist_y = 0.5
-    dist_z = 4
+    dist_x = 2
+    dist_y = 10
+    dist_z = 2
 
     # choose simulation 1 or 2
     # simulation 1
@@ -368,22 +370,16 @@ def simulation():
     dist = np.array([dist_x, dist_y, dist_z])
 
     # parameters of the field
-    k_x = 0.09
-    k_y = 0.1
-    k_z = 0.11
+    k_x = 0.009
+    k_y = 0.001
+    k_z = 0.2
     k = np.array([k_x, k_y, k_z])
 
     # order of decomposition
-    order = 3
+    order = 8
 
     plane_number = int(number_of_points / 2) + 1
     yz_plot(span, plane_number, k, ro, dist, spheres, order)
 
 
 simulation()
-
-# print(total_field(1,2,3,4,2,3,5,1,3,5,6))
-# solve_syst(2, 3, 1, 2, 3, 4, 5, 2)
-# print(t_matrix(3,1,2,6,4,2))
-# print(rhs_for_tmatr_syst(3,1,2,6,2))
-# print(syst_solve(2, 3, 1, 2, 3, 4, 5, 2))
