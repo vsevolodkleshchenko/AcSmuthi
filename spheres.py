@@ -6,14 +6,6 @@ from sympy.physics.wigner import wigner_3j
 import matplotlib.pyplot as plt
 
 
-def neyman1(n, z):
-    r""" Neyman function of the first kind
-    :param n: array_like - order (float)
-    :param z: array_like - argument (float or complex)
-    :return: array_like """
-    return -1j * scipy.special.hankel1(n, z) + 1j * scipy.special.jv(n, z)
-
-
 def sph_neyman(n, z):
     r""" spherical Neyman function
     :param n: array_like - order (float)
@@ -58,7 +50,7 @@ def inc_coef(m, n, k):
     k_abs = np.sqrt(k_x * k_x + k_y * k_y + k_z * k_z)
     k_phi = np.arctan(k_y / k_x)
     k_theta = np.arccos(k_z / k_abs)
-    return 4 * np.pi * 1j ** n * scipy.special.sph_harm(m, n, k_phi, k_theta)
+    return 4 * np.pi * 1j ** n * np.conj(scipy.special.sph_harm(m, n, k_phi, k_theta))
 
 
 def regular_wvfs(m, n, x, y, z, k):
@@ -255,8 +247,7 @@ def total_field(x, y, z, k, ro, dist, spheres, order):
                     for mu in range(-nu, nu + 1):
                         other_sph += sep_matr_coef(mu, m, nu, n, k, dist) * \
                                            sc_coef_sph[nu ** 2 + nu + mu]
-                        # print(sep_matr_coef(mu, m, nu, n, k, dist))
-            tot_field += inc_coef(m, n, k) * regular_wvfs(m, n, x, y, z, k) + \
+            tot_field += 0 * regular_wvfs(m, n, x, y, z, k) + \
                         coef[0][n ** 2 + n + m] * outgoing_wvfs(m, n, x, y, z, k) + \
                         other_sph * regular_wvfs(m, n, x, y, z, k)
     return tot_field
@@ -283,7 +274,7 @@ def xz_plot(span, plane_number, k, ro, dist, spheres, order):
     ax.imshow(xz, cmap='viridis')
     plt.show()
 
-    # print(tot_field, xz, sep='\n')
+    # print(grid, x, y, z, tot_field, xz, sep='\n')
 
 
 def yz_plot(span, plane_number, k, ro, dist, spheres, order):
@@ -338,28 +329,28 @@ def xy_plot(span, plane_number, k, ro, dist, spheres, order):
 def simulation():
     # coordinates
     number_of_points = 30
-    span_x = np.linspace(-100, 100, number_of_points)
-    span_y = np.linspace(-100, 100, number_of_points)
-    span_z = np.linspace(-100, 100, number_of_points)
+    span_x = np.linspace(-0.02, 0.02, number_of_points)
+    span_y = np.linspace(-0.02, 0.02, number_of_points)
+    span_z = np.linspace(-0.02, 0.02, number_of_points)
     span = np.array([span_x, span_y, span_z])
 
     # parameters of fluid
-    ro = 1.225
+    ro = 1000
 
     # parameters of the spheres
-    k_sph1 = 0.015
-    r_sph1 = 3
-    ro_sph1 = 1011
+    k_sph1 = 100000
+    r_sph1 = 0.001
+    ro_sph1 = 700
     sphere1 = np.array([k_sph1, r_sph1, ro_sph1])
-    k_sph2 = 0.016
-    r_sph2 = 5
-    ro_sph2 = 1011
+    k_sph2 = 100000
+    r_sph2 = 0.002
+    ro_sph2 = 700
     sphere2 = np.array([k_sph2, r_sph2, ro_sph2])
 
     # parameters of configuration
-    dist_x = 2
-    dist_y = 10
-    dist_z = 2
+    dist_x = 0.01
+    dist_y = 0.000001
+    dist_z = 0.01
 
     # choose simulation 1 or 2
     # simulation 1
@@ -370,16 +361,16 @@ def simulation():
     dist = np.array([dist_x, dist_y, dist_z])
 
     # parameters of the field
-    k_x = 0.009
-    k_y = 0.001
-    k_z = 0.2
+    k_x = 5000
+    k_y = 1
+    k_z = 5000
     k = np.array([k_x, k_y, k_z])
 
     # order of decomposition
-    order = 8
+    order = 5
 
     plane_number = int(number_of_points / 2) + 1
-    yz_plot(span, plane_number, k, ro, dist, spheres, order)
+    xz_plot(span, plane_number, k, ro, dist, spheres, order)
 
 
 simulation()
