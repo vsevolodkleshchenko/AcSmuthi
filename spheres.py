@@ -235,21 +235,21 @@ def syst_solve(k, ro, dist, spheres, order):
 
 def total_field(x, y, z, k, ro, dist, spheres, order):
     """ counts field outside the sphere"""
-    num_of_sph = len(spheres)
     coef = syst_solve(k, ro, dist, spheres, order)
     tot_field = 0
     for n in range(order + 1):
         for m in range(-n, n + 1):
-            other_sph = 0
-            for sph in range(1, num_of_sph):
-                sc_coef_sph = coef[2 * sph]
-                for nu in range(order + 1):
-                    for mu in range(-nu, nu + 1):
-                        other_sph += sep_matr_coef(mu, m, nu, n, k, dist) * \
-                                           sc_coef_sph[nu ** 2 + nu + mu]
-            tot_field += 0 * regular_wvfs(m, n, x, y, z, k) + \
+            print(coef[0][n ** 2 + n + m])
+            tot_field += 0 * inc_coef(m, n, k) * regular_wvfs(m, n, x, y, z, k) + \
                         coef[0][n ** 2 + n + m] * outgoing_wvfs(m, n, x, y, z, k) + \
-                        other_sph * regular_wvfs(m, n, x, y, z, k)
+                         coef[2][n ** 2 + n + m] * outgoing_wvfs(m, n, x - dist[0], y - dist[1], z - dist[2], k)
+            # other_sph = 0
+            # for sph in range(0, num_of_sph):
+            #     sc_coef_sph = coef[2 * sph]
+            #     for nu in range(order + 1):
+            #         for mu in range(-nu, nu + 1):
+            #             other_sph += sep_matr_coef(mu, m, nu, n, k, dist) * \
+            #                                sc_coef_sph[nu ** 2 + nu + mu]
     return tot_field
 
 
@@ -291,7 +291,7 @@ def yz_plot(span, plane_number, k, ro, dist, spheres, order):
 
     tot_field = np.real(total_field(x, y, z, k, ro, dist, spheres, order))
 
-    # draw spheres
+    # start draw quadrospheres
     x_min1 = y_min1 = z_min1 = -spheres[0, 1]
     x_max1 = y_max1 = z_max1 = spheres[0, 1]
     tot_field = np.where((grid[:, 0] >= x_min1) & (grid[:, 0] <= x_max1) & (grid[:, 1] >= y_min1) & (grid[:, 1] <= y_max1) &
@@ -305,7 +305,7 @@ def yz_plot(span, plane_number, k, ro, dist, spheres, order):
         z_max2 = dist[2] + spheres[1, 1]
         tot_field = np.where((grid[:, 0] >= x_min2) & (grid[:, 0] <= x_max2) & (grid[:, 1] >= y_min2) & (grid[:, 1] <= y_max2) &
                              (grid[:, 2] >= z_min2) & (grid[:, 2] <= z_max2), 0, tot_field)
-    # draw spheres
+    # end draw quadrospheres
 
     yz = np.flip(np.asarray(tot_field[(plane_number - 1) * len(span_y) * len(span_z):
                                 (plane_number - 1) * len(span_y) * len(span_z) +
@@ -344,42 +344,42 @@ def xy_plot(span, plane_number, k, ro, dist, spheres, order):
 
 def simulation():
     # coordinates
-    number_of_points = 50
-    span_x = np.linspace(-0.02, 0.02, number_of_points)
-    span_y = np.linspace(-0.02, 0.02, number_of_points)
-    span_z = np.linspace(-0.02, 0.02, number_of_points)
+    number_of_points = 100
+    span_x = np.linspace(-0.03, 0.03, number_of_points)
+    span_y = np.linspace(-0.03, 0.03, number_of_points)
+    span_z = np.linspace(-0.03, 0.03, number_of_points)
     span = np.array([span_x, span_y, span_z])
 
     # parameters of fluid
     ro = 1000
 
     # parameters of the spheres
-    k_sph1 = 100000
+    k_sph1 = 1000
     r_sph1 = 0.003
     ro_sph1 = 700
     sphere1 = np.array([k_sph1, r_sph1, ro_sph1])
-    k_sph2 = 100000
+    k_sph2 = 1000
     r_sph2 = 0.003
     ro_sph2 = 700
     sphere2 = np.array([k_sph2, r_sph2, ro_sph2])
 
     # parameters of configuration
     dist_x = 0.000001
-    dist_y = 0.01
-    dist_z = 0.01
+    dist_y = 0.000001
+    dist_z = 0.015
 
     # choose simulation 1 or 2
     # simulation 1
-    spheres = np.array([sphere1])
-    dist = np.array([])
+    # spheres = np.array([sphere1])
+    # dist = np.array([])
     # simulation 2
     spheres = np.array([sphere1, sphere2])
     dist = np.array([dist_x, dist_y, dist_z])
 
     # parameters of the field
     k_x = 1
-    k_y = 5000
-    k_z = 5000
+    k_y = 500
+    k_z = 500
     k = np.array([k_x, k_y, k_z])
 
     # order of decomposition
