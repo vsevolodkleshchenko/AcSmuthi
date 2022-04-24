@@ -239,7 +239,6 @@ def total_field(x, y, z, k, ro, dist, spheres, order):
     tot_field = 0
     for n in range(order + 1):
         for m in range(-n, n + 1):
-            print(coef[0][n ** 2 + n + m])
             tot_field += 0 * inc_coef(m, n, k) * regular_wvfs(m, n, x, y, z, k) + \
                         coef[0][n ** 2 + n + m] * outgoing_wvfs(m, n, x, y, z, k) + \
                          coef[2][n ** 2 + n + m] * outgoing_wvfs(m, n, x - dist[0], y - dist[1], z - dist[2], k)
