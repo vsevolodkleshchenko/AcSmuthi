@@ -291,6 +291,22 @@ def yz_plot(span, plane_number, k, ro, dist, spheres, order):
 
     tot_field = np.real(total_field(x, y, z, k, ro, dist, spheres, order))
 
+    # draw spheres
+    x_min1 = y_min1 = z_min1 = -spheres[0, 1]
+    x_max1 = y_max1 = z_max1 = spheres[0, 1]
+    tot_field = np.where((grid[:, 0] >= x_min1) & (grid[:, 0] <= x_max1) & (grid[:, 1] >= y_min1) & (grid[:, 1] <= y_max1) &
+                         (grid[:, 2] >= z_min1) & (grid[:, 2] <= z_max1), 0, tot_field)
+    if len(spheres) == 2:
+        x_min2 = dist[0] - spheres[1, 1]
+        y_min2 = dist[1] - spheres[1, 1]
+        z_min2 = dist[2] - spheres[1, 1]
+        x_max2 = dist[0] + spheres[1, 1]
+        y_max2 = dist[1] + spheres[1, 1]
+        z_max2 = dist[2] + spheres[1, 1]
+        tot_field = np.where((grid[:, 0] >= x_min2) & (grid[:, 0] <= x_max2) & (grid[:, 1] >= y_min2) & (grid[:, 1] <= y_max2) &
+                             (grid[:, 2] >= z_min2) & (grid[:, 2] <= z_max2), 0, tot_field)
+    # draw spheres
+
     yz = np.flip(np.asarray(tot_field[(plane_number - 1) * len(span_y) * len(span_z):
                                 (plane_number - 1) * len(span_y) * len(span_z) +
                                 len(span_y) * len(span_z)]).reshape(len(span_y), len(span_z)), axis=0)
@@ -328,7 +344,7 @@ def xy_plot(span, plane_number, k, ro, dist, spheres, order):
 
 def simulation():
     # coordinates
-    number_of_points = 30
+    number_of_points = 50
     span_x = np.linspace(-0.02, 0.02, number_of_points)
     span_y = np.linspace(-0.02, 0.02, number_of_points)
     span_z = np.linspace(-0.02, 0.02, number_of_points)
@@ -339,30 +355,30 @@ def simulation():
 
     # parameters of the spheres
     k_sph1 = 100000
-    r_sph1 = 0.001
+    r_sph1 = 0.003
     ro_sph1 = 700
     sphere1 = np.array([k_sph1, r_sph1, ro_sph1])
     k_sph2 = 100000
-    r_sph2 = 0.002
+    r_sph2 = 0.003
     ro_sph2 = 700
     sphere2 = np.array([k_sph2, r_sph2, ro_sph2])
 
     # parameters of configuration
-    dist_x = 0.01
-    dist_y = 0.000001
+    dist_x = 0.000001
+    dist_y = 0.01
     dist_z = 0.01
 
     # choose simulation 1 or 2
     # simulation 1
-    # spheres = np.array([sphere1])
-    # dist = np.array([])
+    spheres = np.array([sphere1])
+    dist = np.array([])
     # simulation 2
     spheres = np.array([sphere1, sphere2])
     dist = np.array([dist_x, dist_y, dist_z])
 
     # parameters of the field
-    k_x = 5000
-    k_y = 1
+    k_x = 1
+    k_y = 5000
     k_z = 5000
     k = np.array([k_x, k_y, k_z])
 
@@ -370,7 +386,8 @@ def simulation():
     order = 5
 
     plane_number = int(number_of_points / 2) + 1
-    xz_plot(span, plane_number, k, ro, dist, spheres, order)
+    yz_plot(span, plane_number, k, ro, dist, spheres, order)
 
 
 simulation()
+
