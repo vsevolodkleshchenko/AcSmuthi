@@ -270,11 +270,8 @@ def xz_plot(span, plane_number, k, ro, dist, spheres, order):
                                 (plane_number - 1) * len(span_x) * len(span_z) +
                                 len(span_x) * len(span_z)]).reshape(len(span_x), len(span_z)), axis=0)
     fig, ax = plt.subplots()
-    k, l = span_x, span_z
-    ax.imshow(xz, cmap='viridis', origin='lower', extent=[k.min(),
-                                                          k.max(),
-                                                          l.min(),
-                                                          l.max()])
+    ax.imshow(xz, cmap='viridis', origin='lower', extent=[span_x.min(), span_x.max(),
+                                                          span_z.min(), span_z.max()])
     plt.show()
 
     # print(grid, x, y, z, tot_field, xz, sep='\n')
@@ -315,11 +312,8 @@ def yz_plot(span, plane_number, k, ro, dist, spheres, order):
                                 len(span_y) * len(span_z)]).reshape(len(span_y), len(span_z)), axis=0)
 
     fig, ax = plt.subplots()
-    k, l = span_y, span_z
-    ax.imshow(yz, cmap='viridis', origin='lower', extent=[k.min(),
-                                                          k.max(),
-                                                          l.min(),
-                                                          l.max()])
+    ax.imshow(yz, cmap='viridis', origin='lower', extent=[span_y.min(), span_y.max(),
+                                                          span_z.min(), span_z.max()])
     plt.show()
 
     # print(grid, x, y, z, total_field, yz, sep='\n')
@@ -343,11 +337,8 @@ def xy_plot(span, plane_number, k, ro, dist, spheres, order):
                                 (plane_number-1)*len(span_x)*len(span_y) +
                                 len(span_x)*len(span_y)]).reshape(len(span_x), len(span_y)), axis=0)
     fig, ax = plt.subplots()
-    k, l = span_x, span_y
-    ax.imshow(xy, cmap='viridis', origin='lower', extent=[k.min(),
-                                                          k.max(),
-                                                          l.min(),
-                                                          l.max()])
+    ax.imshow(xy, cmap='viridis', origin='lower', extent=[span_x.min(), span_x.max(),
+                                                          span_y.min(), span_y.max()])
     plt.show()
 
     # print(grid, x, y, z, total_field, xy, sep='\n')
@@ -355,7 +346,7 @@ def xy_plot(span, plane_number, k, ro, dist, spheres, order):
 
 def simulation():
     # coordinates
-    number_of_points = 100
+    number_of_points = 30
     span_x = np.linspace(-0.03, 0.03, number_of_points)
     span_y = np.linspace(-0.03, 0.03, number_of_points)
     span_z = np.linspace(-0.03, 0.03, number_of_points)
