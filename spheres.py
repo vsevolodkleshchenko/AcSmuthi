@@ -239,16 +239,9 @@ def total_field(x, y, z, k, ro, dist, spheres, order):
     tot_field = 0
     for n in range(order + 1):
         for m in range(-n, n + 1):
-            tot_field += 0 * inc_coef(m, n, k) * regular_wvfs(m, n, x, y, z, k) + \
-                        coef[0][n ** 2 + n + m] * outgoing_wvfs(m, n, x, y, z, k) + \
-                         coef[2][n ** 2 + n + m] * outgoing_wvfs(m, n, x - dist[0], y - dist[1], z - dist[2], k)
-            # other_sph = 0
-            # for sph in range(0, num_of_sph):
-            #     sc_coef_sph = coef[2 * sph]
-            #     for nu in range(order + 1):
-            #         for mu in range(-nu, nu + 1):
-            #             other_sph += sep_matr_coef(mu, m, nu, n, k, dist) * \
-            #                                sc_coef_sph[nu ** 2 + nu + mu]
+            tot_field += 0*np.exp(1j*k[0]*x+ 1j *k[1] *y +1j * k[2]*z ) + inc_coef(m, n, k) * regular_wvfs(m, n, x, y, z, k) + \
+                    coef[0][n ** 2 + n + m] * outgoing_wvfs(m, n, x, y, z, k) + \
+                       coef[2][n ** 2 + n + m] * outgoing_wvfs(m, n, x - dist[0], y - dist[1], z - dist[2], k)
     return tot_field
 
 
@@ -271,10 +264,13 @@ def xz_plot(span, plane_number, k, ro, dist, spheres, order):
                                 len(span_x) * len(span_z)]).reshape(len(span_x), len(span_z)), axis=0)
     fig, ax = plt.subplots()
     k, l = span_x, span_z
-    ax.imshow(xz, cmap='viridis', origin='lower', extent=[k.min(),
+    plt.xlabel('z axis')
+    plt.ylabel('x axis')
+    im=ax.imshow(xz, cmap='viridis', origin='lower', extent=[k.min(),
                                                           k.max(),
                                                           l.min(),
                                                           l.max()])
+    plt.colorbar(im)
     plt.show()
 
     # print(grid, x, y, z, tot_field, xz, sep='\n')
@@ -292,7 +288,7 @@ def yz_plot(span, plane_number, k, ro, dist, spheres, order):
     y = grid[:, 1]
     z = grid[:, 2]
 
-    tot_field = np.real(total_field(x, y, z, k, ro, dist, spheres, order))
+    tot_field = np.abs(total_field(x, y, z, k, ro, dist, spheres, order))
 
     # start draw quadrospheres
     x_min1 = y_min1 = z_min1 = -spheres[0, 1]
@@ -310,16 +306,19 @@ def yz_plot(span, plane_number, k, ro, dist, spheres, order):
                              (grid[:, 2] >= z_min2) & (grid[:, 2] <= z_max2), 0, tot_field)
     # end draw quadrospheres
 
-    yz = np.flip(np.asarray(tot_field[(plane_number - 1) * len(span_y) * len(span_z):
+    yz = np.asarray(tot_field[(plane_number - 1) * len(span_y) * len(span_z):
                                 (plane_number - 1) * len(span_y) * len(span_z) +
-                                len(span_y) * len(span_z)]).reshape(len(span_y), len(span_z)), axis=0)
+                                len(span_y) * len(span_z)]).reshape(len(span_y), len(span_z))
 
     fig, ax = plt.subplots()
-    k, l = span_y, span_z
-    ax.imshow(yz, cmap='viridis', origin='lower', extent=[k.min(),
+    l, k = span_y, span_z
+    plt.xlabel('z axis')
+    plt.ylabel('y axis')
+    im=ax.imshow(yz, cmap='viridis', origin='lower', extent=[k.min(),
                                                           k.max(),
                                                           l.min(),
                                                           l.max()])
+    plt.colorbar(im)
     plt.show()
 
     # print(grid, x, y, z, total_field, yz, sep='\n')
@@ -343,11 +342,15 @@ def xy_plot(span, plane_number, k, ro, dist, spheres, order):
                                 (plane_number-1)*len(span_x)*len(span_y) +
                                 len(span_x)*len(span_y)]).reshape(len(span_x), len(span_y)), axis=0)
     fig, ax = plt.subplots()
-    k, l = span_x, span_y
-    ax.imshow(xy, cmap='viridis', origin='lower', extent=[k.min(),
+    l, k = span_x, span_y
+    plt.xlabel('y axis')
+    plt.ylabel('x axis')
+    im=ax.imshow(xy, cmap='viridis', origin='lower', extent=[k.min(),
                                                           k.max(),
                                                           l.min(),
-                                                          l.max()])
+                                                          l.max()],)
+    plt.colorbar(im)
+
     plt.show()
 
     # print(grid, x, y, z, total_field, xy, sep='\n')
@@ -355,7 +358,7 @@ def xy_plot(span, plane_number, k, ro, dist, spheres, order):
 
 def simulation():
     # coordinates
-    number_of_points = 100
+    number_of_points = 50
     span_x = np.linspace(-0.03, 0.03, number_of_points)
     span_y = np.linspace(-0.03, 0.03, number_of_points)
     span_z = np.linspace(-0.03, 0.03, number_of_points)
@@ -367,11 +370,11 @@ def simulation():
     # parameters of the spheres
     k_sph1 = 1000
     r_sph1 = 0.003
-    ro_sph1 = 700
+    ro_sph1 = 2730
     sphere1 = np.array([k_sph1, r_sph1, ro_sph1])
     k_sph2 = 1000
     r_sph2 = 0.003
-    ro_sph2 = 700
+    ro_sph2 = 2730
     sphere2 = np.array([k_sph2, r_sph2, ro_sph2])
 
     # parameters of configuration
@@ -381,21 +384,20 @@ def simulation():
 
     # choose simulation 1 or 2
     # simulation 1
-    # spheres = np.array([sphere1])
-    # dist = np.array([])
+    #spheres = np.array([sphere1])
+    #dist = np.array([])
     # simulation 2
     spheres = np.array([sphere1, sphere2])
     dist = np.array([dist_x, dist_y, dist_z])
 
     # parameters of the field
     k_x = 1
-    k_y = 500
-    k_z = 500
+    k_y = 1
+    k_z = 50
     k = np.array([k_x, k_y, k_z])
 
     # order of decomposition
-    order = 5
-
+    order = 15
     plane_number = int(number_of_points / 2) + 1
     yz_plot(span, plane_number, k, ro, dist, spheres, order)
 
