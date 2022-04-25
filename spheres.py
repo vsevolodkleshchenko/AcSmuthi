@@ -4,6 +4,28 @@ import scipy
 import scipy.special
 from sympy.physics.wigner import wigner_3j
 import matplotlib.pyplot as plt
+import numba
+
+
+def dec_to_sph(x, y, z):
+    # a little slower but true
+    e = 1e-3
+    r = np.sqrt(x * x + y * y + z * z)
+    phi = np.zeros(np.size(r))
+    theta = np.zeros(np.size(r))
+    theta = np.where(r != 0, np.arccos(z / r), theta)
+    phi = np.where((x > e) & (y > e), np.arctan(y / x), phi)
+    phi = np.where((x < -e) & (y > e), np.pi - np.arctan(- y / x), phi)
+    phi = np.where((x < -e) & (y < -e), np.pi + np.arctan(y / x), phi)
+    phi = np.where((x > e) & (y < -e), 2 * np.pi - np.arctan(- y / x), phi)
+    phi = np.where((np.abs(x) <= e) & (y > e), np.pi, phi)
+    phi = np.where((np.abs(x) <= e) & (y < -e), 3 * np.pi / 2, phi)
+    phi = np.where((np.abs(y) <= e) & (x < -e), np.pi, phi)
+    # faster but wrong
+    # r = np.sqrt(x * x + y * y + z * z)
+    # phi = np.arctan(y / x)
+    # theta = np.arccos(z / r)
+    return r, phi, theta
 
 
 def sph_neyman(n, z):
@@ -44,12 +66,7 @@ def inc_coef(m, n, k):
     d^m_n - eq(4.40) of Encyclopedia
     :param m, n: array_like - order and degree of the harmonic (int)
     :return: array_like (complex float) """
-    k_x = k[0]
-    k_y = k[1]
-    k_z = k[2]
-    k_abs = np.sqrt(k_x * k_x + k_y * k_y + k_z * k_z)
-    k_phi = np.arctan(k_y / k_x)
-    k_theta = np.arccos(k_z / k_abs)
+    k_abs, k_phi, k_theta = dec_to_sph(k[0], k[1], k[2])
     return 4 * np.pi * 1j ** n * np.conj(scipy.special.sph_harm(m, n, k_phi, k_theta))
 
 
@@ -59,13 +76,8 @@ def regular_wvfs(m, n, x, y, z, k):
     :param m, n: array_like - order and degree of the wave function(int)
     :param x, y, z: array_like - coordinates
     :return: array_like (complex float) """
-    k_x = k[0]
-    k_y = k[1]
-    k_z = k[2]
-    k_abs = np.sqrt(k_x * k_x + k_y * k_y + k_z * k_z)
-    r = np.sqrt(x * x + y * y + z * z)
-    phi = np.arctan(y / x)
-    theta = np.arccos(z / r)
+    k_abs, k_phi, k_theta = dec_to_sph(k[0], k[1], k[2])
+    r, phi, theta = dec_to_sph(x, y, z)
     return scipy.special.spherical_jn(n, k_abs * r) * \
            scipy.special.sph_harm(m, n, phi, theta)
 
@@ -77,13 +89,8 @@ def outgoing_wvfs(m, n, x, y, z, k):
     :param x, y, z: array_like - coordinates
     :param k: array_like - absolute value of incident wave vector
     :return: array_like (complex float) """
-    k_x = k[0]
-    k_y = k[1]
-    k_z = k[2]
-    k_abs = np.sqrt(k_x * k_x + k_y * k_y + k_z * k_z)
-    r = np.sqrt(x * x + y * y + z * z)
-    phi = np.arctan(y / x)
-    theta = np.arccos(z / r)
+    k_abs, k_phi, k_theta = dec_to_sph(k[0], k[1], k[2])
+    r, phi, theta = dec_to_sph(x, y, z)
     return sph_hankel1(n, k_abs * r) * \
            scipy.special.sph_harm(m, n, phi, theta)
 
@@ -115,10 +122,7 @@ def sep_matr_coef(m, mu, n, nu, k, dist):
 
 def syst_matr(k, ro, spheres, order):
     r""" build T matrix from spheres.pdf"""
-    k_x = k[0]
-    k_y = k[1]
-    k_z = k[2]
-    k_abs = np.sqrt(k_x * k_x + k_y * k_y + k_z * k_z)
+    k_abs = dec_to_sph(k[0], k[1], k[2])[0]
 
     k_sph = spheres[0, 0]
     r_sph = spheres[0, 1]
@@ -140,12 +144,11 @@ def syst_matr(k, ro, spheres, order):
     return t_matrix
 
 
-def syst_matr2(k, ro, dist, spheres, order):
+def syst_matr2(k, ro, pos, spheres, order):
     r""" build T matrix for 2 spheres from spheres.pdf"""
-    k_x = k[0]
-    k_y = k[1]
-    k_z = k[2]
-    k_abs = np.sqrt(k_x * k_x + k_y * k_y + k_z * k_z)
+    k_abs = dec_to_sph(k[0], k[1], k[2])[0]
+
+    dist = pos[1] - pos[0]
 
     k_sph1 = spheres[0,0]
     r_sph1 = spheres[0,1]
@@ -198,11 +201,7 @@ def syst_matr2(k, ro, dist, spheres, order):
 
 def syst_rhs(k, spheres, order):
     r""" build right hand side of system from spheres.pdf"""
-    k_x = k[0]
-    k_y = k[1]
-    k_z = k[2]
-    k_abs = np.sqrt(k_x * k_x + k_y * k_y + k_z * k_z)
-
+    k_abs = dec_to_sph(k[0], k[1], k[2])[0]
     num_of_sph = len(spheres)
     num_of_coef = (order + 1) ** 2
     rhs = np.zeros(num_of_coef * 2 * num_of_sph, dtype=complex)
@@ -220,12 +219,12 @@ def syst_rhs(k, spheres, order):
     return rhs
 
 
-def syst_solve(k, ro, dist, spheres, order):
+def syst_solve(k, ro, pos, spheres, order):
     r""" solve T matrix system and counts a coefficients in decomposition
     of scattered field and field inside the spheres """
     num_of_sph = len(spheres)
     if num_of_sph == 2:
-        t_matrix = syst_matr2(k, ro, dist, spheres, order)
+        t_matrix = syst_matr2(k, ro, pos, spheres, order)
     elif num_of_sph == 1:
         t_matrix = syst_matr(k, ro, spheres, order)
     rhs = syst_rhs(k, spheres, order)
@@ -233,22 +232,17 @@ def syst_solve(k, ro, dist, spheres, order):
     return np.split(coef, 2 * num_of_sph)
 
 
-def total_field(x, y, z, k, ro, dist, spheres, order):
+def total_field(x, y, z, k, ro, pos, spheres, order):
     """ counts field outside the sphere"""
-    coef = syst_solve(k, ro, dist, spheres, order)
+    coef = syst_solve(k, ro, pos, spheres, order)
     tot_field = 0
+    scat_field = 0
     for n in range(order + 1):
         for m in range(-n, n + 1):
-            tot_field += 0 * inc_coef(m, n, k) * regular_wvfs(m, n, x, y, z, k) + \
-                        coef[0][n ** 2 + n + m] * outgoing_wvfs(m, n, x, y, z, k) + \
-                         coef[2][n ** 2 + n + m] * outgoing_wvfs(m, n, x - dist[0], y - dist[1], z - dist[2], k)
-            # other_sph = 0
-            # for sph in range(0, num_of_sph):
-            #     sc_coef_sph = coef[2 * sph]
-            #     for nu in range(order + 1):
-            #         for mu in range(-nu, nu + 1):
-            #             other_sph += sep_matr_coef(mu, m, nu, n, k, dist) * \
-            #                                sc_coef_sph[nu ** 2 + nu + mu]
+            for sph in range(len(spheres)):
+                scat_field += coef[2 * sph][n ** 2 + n + m] * \
+                             outgoing_wvfs(m, n, x - pos[sph][0], y - pos[sph][1], z - pos[sph][2], k)
+    tot_field += np.exp(1j * (k[0] * x + k[1] * y + k[2] * z)) + scat_field
     return tot_field
 
 
@@ -270,13 +264,15 @@ def xz_plot(span, plane_number, k, ro, dist, spheres, order):
                                 (plane_number - 1) * len(span_x) * len(span_z) +
                                 len(span_x) * len(span_z)]).reshape(len(span_x), len(span_z)), axis=0)
     fig, ax = plt.subplots()
-    ax.imshow(xz, cmap='viridis')
+    plt.xlabel('z axis')
+    plt.ylabel('x axis')
+    im = ax.imshow(xz, cmap='viridis', origin='lower', extent=[span_z.min(), span_z.max(),
+                                                          span_x.min(), span_x.max()])
+    plt.colorbar(im)
     plt.show()
 
-    # print(grid, x, y, z, tot_field, xz, sep='\n')
 
-
-def yz_plot(span, plane_number, k, ro, dist, spheres, order):
+def yz_plot(span, plane_number, k, ro, pos, spheres, order):
     r"""
     Count field and build a 2D heat-plot in YZ plane for x[plane_number]
     --->z """
@@ -288,33 +284,39 @@ def yz_plot(span, plane_number, k, ro, dist, spheres, order):
     y = grid[:, 1]
     z = grid[:, 2]
 
-    tot_field = np.real(total_field(x, y, z, k, ro, dist, spheres, order))
-
+    tot_field = np.real(total_field(x, y, z, k, ro, pos, spheres, order))
     # start draw quadrospheres
-    x_min1 = y_min1 = z_min1 = -spheres[0, 1]
-    x_max1 = y_max1 = z_max1 = spheres[0, 1]
-    tot_field = np.where((grid[:, 0] >= x_min1) & (grid[:, 0] <= x_max1) & (grid[:, 1] >= y_min1) & (grid[:, 1] <= y_max1) &
+    x_min1 = pos[0, 0] - spheres[0, 1]
+    y_min1 = pos[0, 1] - spheres[0, 1]
+    z_min1 = pos[0, 2] - spheres[0, 1]
+    x_max1 = pos[0, 0] + spheres[0, 1]
+    y_max1 = pos[0, 1] + spheres[0, 1]
+    z_max1 = pos[0, 2] + spheres[0, 1]
+    tot_field = np.where((grid[:, 0] >= x_min1) & (grid[:, 0] <= x_max1) &
+                         (grid[:, 1] >= y_min1) & (grid[:, 1] <= y_max1) &
                          (grid[:, 2] >= z_min1) & (grid[:, 2] <= z_max1), 0, tot_field)
     if len(spheres) == 2:
-        x_min2 = dist[0] - spheres[1, 1]
-        y_min2 = dist[1] - spheres[1, 1]
-        z_min2 = dist[2] - spheres[1, 1]
-        x_max2 = dist[0] + spheres[1, 1]
-        y_max2 = dist[1] + spheres[1, 1]
-        z_max2 = dist[2] + spheres[1, 1]
-        tot_field = np.where((grid[:, 0] >= x_min2) & (grid[:, 0] <= x_max2) & (grid[:, 1] >= y_min2) & (grid[:, 1] <= y_max2) &
+        x_min2 = pos[1, 0] - spheres[1, 1]
+        y_min2 = pos[1, 1] - spheres[1, 1]
+        z_min2 = pos[1, 2] - spheres[1, 1]
+        x_max2 = pos[1, 0] + spheres[1, 1]
+        y_max2 = pos[1, 1] + spheres[1, 1]
+        z_max2 = pos[1, 2] + spheres[1, 1]
+        tot_field = np.where((grid[:, 0] >= x_min2) & (grid[:, 0] <= x_max2) &
+                             (grid[:, 1] >= y_min2) & (grid[:, 1] <= y_max2) &
                              (grid[:, 2] >= z_min2) & (grid[:, 2] <= z_max2), 0, tot_field)
     # end draw quadrospheres
 
-    yz = np.flip(np.asarray(tot_field[(plane_number - 1) * len(span_y) * len(span_z):
-                                (plane_number - 1) * len(span_y) * len(span_z) +
-                                len(span_y) * len(span_z)]).reshape(len(span_y), len(span_z)), axis=0)
-
+    yz = np.asarray(tot_field[(plane_number - 1) * len(span_y) * len(span_z):
+                              (plane_number - 1) * len(span_y) * len(span_z) +
+                              len(span_y) * len(span_z)]).reshape(len(span_y), len(span_z))
     fig, ax = plt.subplots()
-    ax.imshow(yz, cmap='viridis')
+    plt.xlabel('z axis')
+    plt.ylabel('y axis')
+    im = ax.imshow(yz, cmap='viridis', origin='lower', extent=[span_z.min(), span_z.max(),
+                                                          span_y.min(), span_y.max()])
+    plt.colorbar(im)
     plt.show()
-
-    # print(grid, x, y, z, total_field, yz, sep='\n')
 
 
 def xy_plot(span, plane_number, k, ro, dist, spheres, order):
@@ -335,15 +337,17 @@ def xy_plot(span, plane_number, k, ro, dist, spheres, order):
                                 (plane_number-1)*len(span_x)*len(span_y) +
                                 len(span_x)*len(span_y)]).reshape(len(span_x), len(span_y)), axis=0)
     fig, ax = plt.subplots()
-    ax.imshow(xy, cmap='viridis')
+    plt.xlabel('y axis')
+    plt.ylabel('x axis')
+    im = ax.imshow(xy, cmap='viridis', origin='lower', extent=[span_y.min(), span_y.max(),
+                                                          span_x.min(), span_x.max()])
+    plt.colorbar(im)
     plt.show()
-
-    # print(grid, x, y, z, total_field, xy, sep='\n')
 
 
 def simulation():
     # coordinates
-    number_of_points = 100
+    number_of_points = 30
     span_x = np.linspace(-0.03, 0.03, number_of_points)
     span_y = np.linspace(-0.03, 0.03, number_of_points)
     span_z = np.linspace(-0.03, 0.03, number_of_points)
@@ -355,38 +359,35 @@ def simulation():
     # parameters of the spheres
     k_sph1 = 1000
     r_sph1 = 0.003
-    ro_sph1 = 700
+    ro_sph1 = 2700
     sphere1 = np.array([k_sph1, r_sph1, ro_sph1])
     k_sph2 = 1000
     r_sph2 = 0.003
-    ro_sph2 = 700
+    ro_sph2 = 2700
     sphere2 = np.array([k_sph2, r_sph2, ro_sph2])
 
     # parameters of configuration
-    dist_x = 0.000001
-    dist_y = 0.000001
-    dist_z = 0.015
+    pos1 = np.array([0, 0.007, 0])
+    pos2 = np.array([0, 0, 0.015])
+    pos = np.array([pos1, pos2])
 
     # choose simulation 1 or 2
     # simulation 1
     # spheres = np.array([sphere1])
-    # dist = np.array([])
     # simulation 2
     spheres = np.array([sphere1, sphere2])
-    dist = np.array([dist_x, dist_y, dist_z])
 
     # parameters of the field
     k_x = 1
-    k_y = 500
-    k_z = 500
+    k_y = -50
+    k_z = 50
     k = np.array([k_x, k_y, k_z])
 
     # order of decomposition
     order = 5
 
     plane_number = int(number_of_points / 2) + 1
-    yz_plot(span, plane_number, k, ro, dist, spheres, order)
+    yz_plot(span, plane_number, k, ro, pos, spheres, order)
 
 
 simulation()
-
