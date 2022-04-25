@@ -120,82 +120,43 @@ def sep_matr_coef(m, mu, n, nu, k, dist):
     return 4 * np.pi * (-1) ** (mu + nu + q_lim) * sum
 
 
-def syst_matr(k, ro, spheres, order):
-    r""" build T matrix from spheres.pdf"""
+def syst_matr_L(k, ro, pos, spheres, order):
     k_abs = dec_to_sph(k[0], k[1], k[2])[0]
-
-    k_sph = spheres[0, 0]
-    r_sph = spheres[0, 1]
-    ro_sph = spheres[0, 2]
-
     num_of_coef = (order + 1) ** 2
-    width = num_of_coef * 2
-    height = num_of_coef * 2
-    t_matrix = np.zeros((height, width), dtype=complex)
-    for n in range(order + 1):
-        col_idx_1 = np.arange(n ** 2, (n + 1) ** 2)
-        col_idx_2 = col_idx_1 + num_of_coef
-        row_idx_1 = np.arange(2 * n ** 2, 2 * (n + 1) ** 2 - 1, 2)
-        row_idx_2 = np.arange(2 * n ** 2 + 1, 2 * (n + 1) ** 2, 2)
-        t_matrix[row_idx_1, col_idx_1] = - sph_hankel1(n, k_abs * r_sph)
-        t_matrix[row_idx_2, col_idx_1] = - sph_hankel1_der(n, k_abs * r_sph)
-        t_matrix[row_idx_1, col_idx_2] = scipy.special.spherical_jn(n, k_sph * r_sph)
-        t_matrix[row_idx_2, col_idx_2] = ro / ro_sph * scipy.special.spherical_jn(n, k_sph * r_sph, derivative=True)
-    return t_matrix
-
-
-def syst_matr2(k, ro, pos, spheres, order):
-    r""" build T matrix for 2 spheres from spheres.pdf"""
-    k_abs = dec_to_sph(k[0], k[1], k[2])[0]
-
-    dist = pos[1] - pos[0]
-
-    k_sph1 = spheres[0,0]
-    r_sph1 = spheres[0,1]
-    ro_sph1 = spheres[0,2]
-    k_sph2 = spheres[1,0]
-    r_sph2 = spheres[1,1]
-    ro_sph2 = spheres[1,2]
-
-    num_of_coef = (order + 1) ** 2
+    block_width = num_of_coef * 2
+    block_height = num_of_coef * 2
     num_of_sph = len(spheres)
-    width = num_of_coef * 2 * num_of_sph
-    height = num_of_coef * 2 * num_of_sph
-    t_matrix = np.zeros((height, width), dtype=complex)
+    t_matrix = np.zeros((block_height * num_of_sph, block_width * num_of_sph), dtype=complex)
+    all_spheres = np.arange(num_of_sph)
+    for sph in all_spheres:
+        k_sph = spheres[sph, 0]
+        r_sph = spheres[sph, 1]
+        ro_sph = spheres[sph, 2]
+        for n in range(order + 1):
+            # diagonal block
+            col_idx_1 = np.arange(sph * block_width + n ** 2, sph * block_width + (n + 1) ** 2)
+            col_idx_2 = col_idx_1 + num_of_coef
+            row_idx_1 = np.arange(sph * block_height + 2 * n ** 2, sph * block_height + 2 * (n + 1) ** 2 - 1, 2)
+            row_idx_2 = np.arange(sph * block_height + 2 * n ** 2 + 1, sph * block_height + 2 * (n + 1) ** 2, 2)
+            t_matrix[row_idx_1, col_idx_1] = - sph_hankel1(n, k_abs * r_sph)
+            t_matrix[row_idx_2, col_idx_1] = - sph_hankel1_der(n, k_abs * r_sph)
+            t_matrix[row_idx_1, col_idx_2] = scipy.special.spherical_jn(n, k_sph * r_sph)
+            t_matrix[row_idx_2, col_idx_2] = ro / ro_sph * scipy.special.spherical_jn(n, k_sph * r_sph, derivative=True)
 
-    for n in range(order + 1):
-        col_idx_1 = np.arange(n ** 2, (n + 1) ** 2)
-        col_idx_2 = col_idx_1 + num_of_coef
-        col_idx_3 = col_idx_2 + num_of_coef
-        col_idx_4 = col_idx_3 + num_of_coef
-        row_idx_1 = np.arange(2 * n ** 2, 2 * (n + 1) ** 2 - 1, 2)
-        row_idx_2 = np.arange(2 * n ** 2 + 1, 2 * (n + 1) ** 2, 2)
-        row_idx_3 = row_idx_1 + num_of_coef * 2
-        row_idx_4 = row_idx_2 + num_of_coef * 2
-
-        for m in range(-n, n + 1):
-            for nu in range(order + 1):
-                for mu in range(-nu, nu + 1):
-                    t_matrix[2*(n**2+n+m), num_of_coef*2+nu**2+nu+mu] = - scipy.special.spherical_jn(n, k_abs * r_sph1) * \
-                                                                               sep_matr_coef(mu, m, nu, n, k, dist)
-                    t_matrix[2*(n**2+n+m)+1, num_of_coef*2+nu**2+nu+mu] = - scipy.special.spherical_jn(n, k_abs * r_sph1, derivative=True) * \
-                                                                               sep_matr_coef(mu, m, nu, n, k, dist)
-                    t_matrix[num_of_coef*2+2*(n**2+n+m), nu**2+nu+mu] = - scipy.special.spherical_jn(n, k_abs * r_sph2) * \
-                                                                               sep_matr_coef(mu, m, nu, n, k, -dist)
-                    t_matrix[num_of_coef*2+2*(n**2+n+m)+1, nu**2+nu+mu] = - scipy.special.spherical_jn(n, k_abs * r_sph2, derivative=True) * \
-                                                                               sep_matr_coef(mu, m, nu, n, k, -dist)
-
-        t_matrix[row_idx_1, col_idx_1] = - sph_hankel1(n, k_abs * r_sph1)
-        t_matrix[row_idx_2, col_idx_1] = - sph_hankel1_der(n, k_abs * r_sph1)
-
-        t_matrix[row_idx_1, col_idx_2] = scipy.special.spherical_jn(n, k_sph1 * r_sph1)
-        t_matrix[row_idx_2, col_idx_2] = ro / ro_sph1 * scipy.special.spherical_jn(n, k_sph1 * r_sph1, derivative=True)
-
-        t_matrix[row_idx_3, col_idx_3] = - sph_hankel1(n, k_abs * r_sph1)
-        t_matrix[row_idx_4, col_idx_3] = - sph_hankel1_der(n, k_abs * r_sph1)
-
-        t_matrix[row_idx_3, col_idx_4] = scipy.special.spherical_jn(n, k_sph2 * r_sph2)
-        t_matrix[row_idx_4, col_idx_4] = ro / ro_sph2 * scipy.special.spherical_jn(n, k_sph2 * r_sph2, derivative=True)
+            # not diagonal block
+            other_sph = np.where(all_spheres != sph)[0]
+            for osph in other_sph:
+                for m in range(-n, n + 1):
+                    for nu in range(order + 1):
+                        for mu in range(-nu, nu + 1):
+                            t_matrix[sph * block_height + 2 * (n ** 2 + n + m),
+                                     osph * block_width + nu ** 2 + nu + mu] = \
+                                -scipy.special.spherical_jn(n, k_abs * r_sph) * \
+                                sep_matr_coef(mu, m, nu, n, k, pos[osph] - pos[sph])
+                            t_matrix[sph * block_height + 2 * (n ** 2 + n + m) + 1,
+                                     osph * block_width + nu ** 2 + nu + mu] = \
+                                -scipy.special.spherical_jn(n, k_abs * r_sph, derivative=True) * \
+                                sep_matr_coef(mu, m, nu, n, k, pos[osph] - pos[sph])
     return t_matrix
 
 
@@ -223,10 +184,7 @@ def syst_solve(k, ro, pos, spheres, order):
     r""" solve T matrix system and counts a coefficients in decomposition
     of scattered field and field inside the spheres """
     num_of_sph = len(spheres)
-    if num_of_sph == 2:
-        t_matrix = syst_matr2(k, ro, pos, spheres, order)
-    elif num_of_sph == 1:
-        t_matrix = syst_matr(k, ro, spheres, order)
+    t_matrix = syst_matr_L(k, ro, pos, spheres, order)
     rhs = syst_rhs(k, spheres, order)
     coef = np.linalg.solve(t_matrix, rhs)
     return np.split(coef, 2 * num_of_sph)
@@ -285,27 +243,17 @@ def yz_plot(span, plane_number, k, ro, pos, spheres, order):
     z = grid[:, 2]
 
     tot_field = np.real(total_field(x, y, z, k, ro, pos, spheres, order))
-    # start draw quadrospheres
-    x_min1 = pos[0, 0] - spheres[0, 1]
-    y_min1 = pos[0, 1] - spheres[0, 1]
-    z_min1 = pos[0, 2] - spheres[0, 1]
-    x_max1 = pos[0, 0] + spheres[0, 1]
-    y_max1 = pos[0, 1] + spheres[0, 1]
-    z_max1 = pos[0, 2] + spheres[0, 1]
-    tot_field = np.where((grid[:, 0] >= x_min1) & (grid[:, 0] <= x_max1) &
-                         (grid[:, 1] >= y_min1) & (grid[:, 1] <= y_max1) &
-                         (grid[:, 2] >= z_min1) & (grid[:, 2] <= z_max1), 0, tot_field)
-    if len(spheres) == 2:
-        x_min2 = pos[1, 0] - spheres[1, 1]
-        y_min2 = pos[1, 1] - spheres[1, 1]
-        z_min2 = pos[1, 2] - spheres[1, 1]
-        x_max2 = pos[1, 0] + spheres[1, 1]
-        y_max2 = pos[1, 1] + spheres[1, 1]
-        z_max2 = pos[1, 2] + spheres[1, 1]
-        tot_field = np.where((grid[:, 0] >= x_min2) & (grid[:, 0] <= x_max2) &
-                             (grid[:, 1] >= y_min2) & (grid[:, 1] <= y_max2) &
-                             (grid[:, 2] >= z_min2) & (grid[:, 2] <= z_max2), 0, tot_field)
-    # end draw quadrospheres
+
+    for sph in range(len(spheres)):
+        x_min = pos[sph, 0] - spheres[sph, 1]
+        y_min = pos[sph, 1] - spheres[sph, 1]
+        z_min = pos[sph, 2] - spheres[sph, 1]
+        x_max = pos[sph, 0] + spheres[sph, 1]
+        y_max = pos[sph, 1] + spheres[sph, 1]
+        z_max = pos[sph, 2] + spheres[sph, 1]
+        tot_field = np.where((grid[:, 0] >= x_min) & (grid[:, 0] <= x_max) &
+                             (grid[:, 1] >= y_min) & (grid[:, 1] <= y_max) &
+                             (grid[:, 2] >= z_min) & (grid[:, 2] <= z_max), 0, tot_field)
 
     yz = np.asarray(tot_field[(plane_number - 1) * len(span_y) * len(span_z):
                               (plane_number - 1) * len(span_y) * len(span_z) +
@@ -347,7 +295,7 @@ def xy_plot(span, plane_number, k, ro, dist, spheres, order):
 
 def simulation():
     # coordinates
-    number_of_points = 30
+    number_of_points = 80
     span_x = np.linspace(-0.03, 0.03, number_of_points)
     span_y = np.linspace(-0.03, 0.03, number_of_points)
     span_z = np.linspace(-0.03, 0.03, number_of_points)
@@ -365,17 +313,17 @@ def simulation():
     r_sph2 = 0.003
     ro_sph2 = 2700
     sphere2 = np.array([k_sph2, r_sph2, ro_sph2])
+    k_sph2 = 1000
+    r_sph2 = 0.003
+    ro_sph2 = 2700
+    sphere3 = np.array([k_sph2, r_sph2, ro_sph2])
+    spheres = np.array([sphere1, sphere2, sphere3])
 
     # parameters of configuration
     pos1 = np.array([0, 0.007, 0])
     pos2 = np.array([0, 0, 0.015])
-    pos = np.array([pos1, pos2])
-
-    # choose simulation 1 or 2
-    # simulation 1
-    # spheres = np.array([sphere1])
-    # simulation 2
-    spheres = np.array([sphere1, sphere2])
+    pos3 = np.array([0, -0.003, -0.002])
+    pos = np.array([pos1, pos2, pos3])
 
     # parameters of the field
     k_x = 1
@@ -388,6 +336,7 @@ def simulation():
 
     plane_number = int(number_of_points / 2) + 1
     yz_plot(span, plane_number, k, ro, pos, spheres, order)
+
 
 
 simulation()
