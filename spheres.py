@@ -4,7 +4,8 @@ import scipy
 import scipy.special
 from sympy.physics.wigner import wigner_3j
 import matplotlib.pyplot as plt
-import numba
+import multiprocessing as mp
+import time
 
 
 def dec_to_sph(x, y, z):
@@ -208,13 +209,9 @@ def xz_plot(span, plane_number, k, ro, dist, spheres, order):
     r"""
     Count field and build a 2D heat-plot in XZ plane for span_y[plane_number]
     --->z """
-    span_x = span[0]
-    span_y = span[1]
-    span_z = span[2]
+    span_x, span_y, span_z = span[0], span[1], span[2]
     grid = np.vstack(np.meshgrid(span_y, span_x, span_z, indexing='ij')).reshape(3, -1).T
-    y = grid[:, 0]
-    x = grid[:, 1]
-    z = grid[:, 2]
+    y, x, z = grid[:, 0], grid[:, 1], grid[:, 2]
 
     tot_field = np.real(total_field(x, y, z, k, ro, dist, spheres, order))
 
@@ -230,17 +227,13 @@ def xz_plot(span, plane_number, k, ro, dist, spheres, order):
     plt.show()
 
 
-def yz_plot(span, plane_number, k, ro, pos, spheres, order):
+def yz_old(span, plane_number, k, ro, pos, spheres, order):
     r"""
     Count field and build a 2D heat-plot in YZ plane for x[plane_number]
     --->z """
-    span_x = span[0]
-    span_y = span[1]
-    span_z = span[2]
+    span_x, span_y, span_z = span[0], span[1], span[2]
     grid = np.vstack(np.meshgrid(span_x, span_y, span_z, indexing='ij')).reshape(3, -1).T
-    x = grid[:, 0]
-    y = grid[:, 1]
-    z = grid[:, 2]
+    x, y, z = grid[:, 0], grid[:, 1], grid[:, 2]
 
     tot_field = np.real(total_field(x, y, z, k, ro, pos, spheres, order))
 
@@ -251,13 +244,53 @@ def yz_plot(span, plane_number, k, ro, pos, spheres, order):
         x_max = pos[sph, 0] + spheres[sph, 1]
         y_max = pos[sph, 1] + spheres[sph, 1]
         z_max = pos[sph, 2] + spheres[sph, 1]
-        tot_field = np.where((grid[:, 0] >= x_min) & (grid[:, 0] <= x_max) &
-                             (grid[:, 1] >= y_min) & (grid[:, 1] <= y_max) &
-                             (grid[:, 2] >= z_min) & (grid[:, 2] <= z_max), 0, tot_field)
+        tot_field = np.where((x >= x_min) & (x <= x_max) &
+                             (y >= y_min) & (y <= y_max) &
+                             (z >= z_min) & (z <= z_max), 0, tot_field)
 
     yz = np.asarray(tot_field[(plane_number - 1) * len(span_y) * len(span_z):
                               (plane_number - 1) * len(span_y) * len(span_z) +
                               len(span_y) * len(span_z)]).reshape(len(span_y), len(span_z))
+    fig, ax = plt.subplots()
+    plt.xlabel('z axis')
+    plt.ylabel('y axis')
+    im = ax.imshow(yz, cmap='viridis', origin='lower', extent=[span_z.min(), span_z.max(),
+                                                               span_y.min(), span_y.max()])
+    plt.colorbar(im)
+    plt.show()
+
+
+def yz_plot(span, plane_number, k, ro, pos, spheres, order):
+    r"""
+    Count field and build a 2D heat-plot in YZ plane for x[plane_number]
+    --->z """
+    span_x, span_y, span_z = span[0], span[1], span[2]
+    grid = np.vstack(np.meshgrid(span_x, span_y, span_z, indexing='ij')).reshape(3, -1).T
+    x, y, z = grid[:, 0], grid[:, 1], grid[:, 2]
+
+    x1 = x[(plane_number - 1) * len(span_y) * len(span_z):
+                              (plane_number - 1) * len(span_y) * len(span_z) +
+                              len(span_y) * len(span_z)]
+    y1 = y[(plane_number - 1) * len(span_y) * len(span_z):
+                              (plane_number - 1) * len(span_y) * len(span_z) +
+                              len(span_y) * len(span_z)]
+    z1 = z[(plane_number - 1) * len(span_y) * len(span_z):
+                              (plane_number - 1) * len(span_y) * len(span_z) +
+                              len(span_y) * len(span_z)]
+
+    tot_field = np.real(total_field(x1, y1, z1, k, ro, pos, spheres, order))
+    for sph in range(len(spheres)):
+        x_min = pos[sph, 0] - spheres[sph, 1]
+        y_min = pos[sph, 1] - spheres[sph, 1]
+        z_min = pos[sph, 2] - spheres[sph, 1]
+        x_max = pos[sph, 0] + spheres[sph, 1]
+        y_max = pos[sph, 1] + spheres[sph, 1]
+        z_max = pos[sph, 2] + spheres[sph, 1]
+        tot_field = np.where((x1 >= x_min) & (x1 <= x_max) &
+                             (y1 >= y_min) & (y1 <= y_max) &
+                             (z1 >= z_min) & (z1 <= z_max), 0, tot_field)
+    yz = np.asarray(tot_field).reshape(len(span_y), len(span_z))
+
     fig, ax = plt.subplots()
     plt.xlabel('z axis')
     plt.ylabel('y axis')
@@ -271,13 +304,9 @@ def xy_plot(span, plane_number, k, ro, dist, spheres, order):
     r"""
     Count field and build a 2D heat-plot in XZ plane for z[plane_number]
     --->y """
-    span_x = span[0]
-    span_y = span[1]
-    span_z = span[2]
+    span_x, span_y, span_z = span[0], span[1], span[2]
     grid = np.vstack(np.meshgrid(span_z, span_x, span_y, indexing='ij')).reshape(3, -1).T
-    z = grid[:, 0]
-    x = grid[:, 1]
-    y = grid[:, 2]
+    z, x, y = grid[:, 0], grid[:, 1], grid[:, 2]
 
     tot_field = np.real(total_field(x, y, z, k, ro, dist, spheres, order))
 
@@ -295,7 +324,7 @@ def xy_plot(span, plane_number, k, ro, dist, spheres, order):
 
 def simulation():
     # coordinates
-    number_of_points = 80
+    number_of_points = 100
     span_x = np.linspace(-0.03, 0.03, number_of_points)
     span_y = np.linspace(-0.03, 0.03, number_of_points)
     span_z = np.linspace(-0.03, 0.03, number_of_points)
@@ -326,7 +355,7 @@ def simulation():
     pos = np.array([pos1, pos2, pos3])
 
     # parameters of the field
-    k_x = 1
+    k_x = 0
     k_y = -50
     k_z = 50
     k = np.array([k_x, k_y, k_z])
@@ -338,5 +367,11 @@ def simulation():
     yz_plot(span, plane_number, k, ro, pos, spheres, order)
 
 
+def timetest(simulation):
+    start = time.process_time()
+    simulation()
+    end = time.process_time()
+    print(end-start)
 
-simulation()
+
+timetest(simulation)
