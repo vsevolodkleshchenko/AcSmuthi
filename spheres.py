@@ -10,7 +10,7 @@ import time
 
 def dec_to_sph(x, y, z):
     # a little slower but true
-    e = 1e-3
+    e = 1e-8
     r = np.sqrt(x * x + y * y + z * z)
     phi = np.zeros(np.size(r))
     theta = np.zeros(np.size(r))
@@ -195,13 +195,13 @@ def total_field(x, y, z, k, ro, pos, spheres, order):
     """ counts field outside the sphere"""
     coef = syst_solve(k, ro, pos, spheres, order)
     tot_field = 0
-    scat_field = 0
     for n in range(order + 1):
         for m in range(-n, n + 1):
             for sph in range(len(spheres)):
-                scat_field += coef[2 * sph][n ** 2 + n + m] * \
+                tot_field += coef[2 * sph][n ** 2 + n + m] * \
                              outgoing_wvfs(m, n, x - pos[sph][0], y - pos[sph][1], z - pos[sph][2], k)
-    tot_field += np.exp(1j * (k[0] * x + k[1] * y + k[2] * z)) + scat_field
+            tot_field += inc_coef(m, n, k) * regular_wvfs(m, n, x, y, z, k)
+    # tot_field += np.exp(1j * (k[0] * x + k[1] * y + k[2] * z))
     return tot_field
 
 
@@ -209,7 +209,7 @@ def total_field_m(x, y, z, k, ro, pos, spheres, m, order):
     """ counts field outside the spheres for mth harmonic"""
     coef = syst_solve(k, ro, pos, spheres, order)
     tot_field = 0
-    for n in range(0, abs(m) + 1):
+    for n in range(abs(m), order + 1):
         for sph in range(len(spheres)):
             tot_field += coef[2 * sph][n ** 2 + n + m] * \
                          outgoing_wvfs(m, n, x - pos[sph][0], y - pos[sph][1], z - pos[sph][2], k)
@@ -331,7 +331,8 @@ def xy_plot(span, plane_number, k, ro, pos, spheres, order):
     z_p = z[(plane_number - 1) * len(span_y) * len(span_x):
             (plane_number - 1) * len(span_y) * len(span_x) + len(span_y) * len(span_x)]
 
-    # tot_field = np.real(total_field_m(x_p, y_p, z_p, k, ro, pos, spheres, order))
+    # m = 8
+    # tot_field = np.real(total_field_m(x_p, y_p, z_p, k, ro, pos, spheres, m, order))
 
     tot_field = np.real(total_field(x_p, y_p, z_p, k, ro, pos, spheres, order))
 
@@ -376,12 +377,14 @@ def simulation():
     ro_sph3 = 2700
     sphere3 = np.array([k_sph3, r_sph3, ro_sph3])
     spheres = np.array([sphere1, sphere2, sphere3])
+    spherest = np.array([sphere1, sphere2])
 
     # parameters of configuration
     pos1 = np.array([0.007, 0, 0.001])
     pos2 = np.array([0, 0.015, 0])
     pos3 = np.array([-0.003, -0.002, 0])
     pos = np.array([pos1, pos2, pos3])
+    post = np.array([pos1, pos2])
 
     # parameters of the field
     k_x = -500
@@ -393,7 +396,7 @@ def simulation():
     order = 8
 
     plane_number = int(number_of_points / 2) + 1
-    xy_plot(span, plane_number, k, ro, pos, spheres, order)
+    xy_plot(span, plane_number, k, ro, post, spherest, order)
 
 
 def timetest(simulation):
