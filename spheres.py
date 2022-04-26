@@ -205,31 +205,9 @@ def total_field(x, y, z, k, ro, pos, spheres, order):
     return tot_field
 
 
-def xz_plot(span, plane_number, k, ro, dist, spheres, order):
-    r"""
-    Count field and build a 2D heat-plot in XZ plane for span_y[plane_number]
-    --->z """
-    span_x, span_y, span_z = span[0], span[1], span[2]
-    grid = np.vstack(np.meshgrid(span_y, span_x, span_z, indexing='ij')).reshape(3, -1).T
-    y, x, z = grid[:, 0], grid[:, 1], grid[:, 2]
-
-    tot_field = np.real(total_field(x, y, z, k, ro, dist, spheres, order))
-
-    xz = np.flip(np.asarray(tot_field[(plane_number - 1) * len(span_x) * len(span_z):
-                                (plane_number - 1) * len(span_x) * len(span_z) +
-                                len(span_x) * len(span_z)]).reshape(len(span_x), len(span_z)), axis=0)
-    fig, ax = plt.subplots()
-    plt.xlabel('z axis')
-    plt.ylabel('x axis')
-    im = ax.imshow(xz, cmap='viridis', origin='lower', extent=[span_z.min(), span_z.max(),
-                                                          span_x.min(), span_x.max()])
-    plt.colorbar(im)
-    plt.show()
-
-
 def yz_old(span, plane_number, k, ro, pos, spheres, order):
     r"""
-    Count field and build a 2D heat-plot in YZ plane for x[plane_number]
+    OLD 2D heat-plot in YZ plane for x[plane_number]
     --->z """
     span_x, span_y, span_z = span[0], span[1], span[2]
     grid = np.vstack(np.meshgrid(span_x, span_y, span_z, indexing='ij')).reshape(3, -1).T
@@ -254,8 +232,41 @@ def yz_old(span, plane_number, k, ro, pos, spheres, order):
     fig, ax = plt.subplots()
     plt.xlabel('z axis')
     plt.ylabel('y axis')
-    im = ax.imshow(yz, cmap='viridis', origin='lower', extent=[span_z.min(), span_z.max(),
-                                                               span_y.min(), span_y.max()])
+    im = ax.imshow(yz, cmap='viridis', origin='lower',
+                   extent=[span_z.min(), span_z.max(), span_y.min(), span_y.max()])
+    plt.colorbar(im)
+    plt.show()
+
+
+def xz_plot(span, plane_number, k, ro, pos, spheres, order):
+    r"""
+    Count field and build a 2D heat-plot in XZ plane for span_y[plane_number]
+    --->z """
+    span_x, span_y, span_z = span[0], span[1], span[2]
+    grid = np.vstack(np.meshgrid(span_y, span_x, span_z, indexing='ij')).reshape(3, -1).T
+    y, x, z = grid[:, 0], grid[:, 1], grid[:, 2]
+
+    x_p = x[(plane_number - 1) * len(span_x) * len(span_z):
+            (plane_number - 1) * len(span_x) * len(span_z) + len(span_x) * len(span_z)]
+    y_p = y[(plane_number - 1) * len(span_x) * len(span_z):
+            (plane_number - 1) * len(span_x) * len(span_z) + len(span_x) * len(span_z)]
+    z_p = z[(plane_number - 1) * len(span_x) * len(span_z):
+            (plane_number - 1) * len(span_x) * len(span_z) + len(span_x) * len(span_z)]
+
+    tot_field = np.real(total_field(x_p, y_p, z_p, k, ro, pos, spheres, order))
+
+    for sph in range(len(spheres)):
+        rx, ry, rz = x_p - pos[sph, 0], y_p - pos[sph, 1], z_p - pos[sph, 2]
+        r = np.sqrt(rx ** 2 + ry ** 2 + rz ** 2)
+        tot_field = np.where(r < spheres[sph, 1], 0, tot_field)
+
+    xz = tot_field.reshape(len(span_y), len(span_z))
+
+    fig, ax = plt.subplots()
+    plt.xlabel('z axis')
+    plt.ylabel('x axis')
+    im = ax.imshow(xz, cmap='viridis', origin='lower',
+                   extent=[span_z.min(), span_z.max(), span_x.min(), span_x.max()])
     plt.colorbar(im)
     plt.show()
 
@@ -268,63 +279,66 @@ def yz_plot(span, plane_number, k, ro, pos, spheres, order):
     grid = np.vstack(np.meshgrid(span_x, span_y, span_z, indexing='ij')).reshape(3, -1).T
     x, y, z = grid[:, 0], grid[:, 1], grid[:, 2]
 
-    x1 = x[(plane_number - 1) * len(span_y) * len(span_z):
-                              (plane_number - 1) * len(span_y) * len(span_z) +
-                              len(span_y) * len(span_z)]
-    y1 = y[(plane_number - 1) * len(span_y) * len(span_z):
-                              (plane_number - 1) * len(span_y) * len(span_z) +
-                              len(span_y) * len(span_z)]
-    z1 = z[(plane_number - 1) * len(span_y) * len(span_z):
-                              (plane_number - 1) * len(span_y) * len(span_z) +
-                              len(span_y) * len(span_z)]
+    x_p = x[(plane_number - 1) * len(span_y) * len(span_z):
+                              (plane_number - 1) * len(span_y) * len(span_z) + len(span_y) * len(span_z)]
+    y_p = y[(plane_number - 1) * len(span_y) * len(span_z):
+                              (plane_number - 1) * len(span_y) * len(span_z) + len(span_y) * len(span_z)]
+    z_p = z[(plane_number - 1) * len(span_y) * len(span_z):
+                              (plane_number - 1) * len(span_y) * len(span_z) + len(span_y) * len(span_z)]
 
-    tot_field = np.real(total_field(x1, y1, z1, k, ro, pos, spheres, order))
+    tot_field = np.real(total_field(x_p, y_p, z_p, k, ro, pos, spheres, order))
+
     for sph in range(len(spheres)):
-        x_min = pos[sph, 0] - spheres[sph, 1]
-        y_min = pos[sph, 1] - spheres[sph, 1]
-        z_min = pos[sph, 2] - spheres[sph, 1]
-        x_max = pos[sph, 0] + spheres[sph, 1]
-        y_max = pos[sph, 1] + spheres[sph, 1]
-        z_max = pos[sph, 2] + spheres[sph, 1]
-        tot_field = np.where((x1 >= x_min) & (x1 <= x_max) &
-                             (y1 >= y_min) & (y1 <= y_max) &
-                             (z1 >= z_min) & (z1 <= z_max), 0, tot_field)
-    yz = np.asarray(tot_field).reshape(len(span_y), len(span_z))
+        rx, ry, rz = x_p - pos[sph, 0], y_p - pos[sph, 1], z_p - pos[sph, 2]
+        r = np.sqrt(rx ** 2 + ry ** 2 + rz ** 2)
+        tot_field = np.where(r < spheres[sph, 1], 0, tot_field)
+
+    yz = tot_field.reshape(len(span_y), len(span_z))
 
     fig, ax = plt.subplots()
     plt.xlabel('z axis')
     plt.ylabel('y axis')
-    im = ax.imshow(yz, cmap='viridis', origin='lower', extent=[span_z.min(), span_z.max(),
-                                                          span_y.min(), span_y.max()])
+    im = ax.imshow(yz, cmap='viridis', origin='lower',
+                   extent=[span_z.min(), span_z.max(), span_y.min(), span_y.max()])
     plt.colorbar(im)
     plt.show()
 
 
-def xy_plot(span, plane_number, k, ro, dist, spheres, order):
+def xy_plot(span, plane_number, k, ro, pos, spheres, order):
     r"""
-    Count field and build a 2D heat-plot in XZ plane for z[plane_number]
+    Count field and build a 2D heat-plot in XY plane for span_z[plane_number]
     --->y """
     span_x, span_y, span_z = span[0], span[1], span[2]
     grid = np.vstack(np.meshgrid(span_z, span_x, span_y, indexing='ij')).reshape(3, -1).T
     z, x, y = grid[:, 0], grid[:, 1], grid[:, 2]
 
-    tot_field = np.real(total_field(x, y, z, k, ro, dist, spheres, order))
+    x_p = x[(plane_number - 1) * len(span_y) * len(span_x):
+            (plane_number - 1) * len(span_y) * len(span_x) + len(span_y) * len(span_x)]
+    y_p = y[(plane_number - 1) * len(span_y) * len(span_x):
+            (plane_number - 1) * len(span_y) * len(span_x) + len(span_y) * len(span_x)]
+    z_p = z[(plane_number - 1) * len(span_y) * len(span_x):
+            (plane_number - 1) * len(span_y) * len(span_x) + len(span_y) * len(span_x)]
 
-    xy = np.flip(np.asarray(tot_field[(plane_number-1)*len(span_x)*len(span_y):
-                                (plane_number-1)*len(span_x)*len(span_y) +
-                                len(span_x)*len(span_y)]).reshape(len(span_x), len(span_y)), axis=0)
+    tot_field = np.real(total_field(x_p, y_p, z_p, k, ro, pos, spheres, order))
+
+    for sph in range(len(spheres)):
+        rx, ry, rz = x_p - pos[sph, 0], y_p - pos[sph, 1], z_p - pos[sph, 2]
+        r = np.sqrt(rx ** 2 + ry ** 2 + rz ** 2)
+        tot_field = np.where(r < spheres[sph, 1], 0, tot_field)
+
+    xy = tot_field.reshape(len(span_x), len(span_y))
     fig, ax = plt.subplots()
     plt.xlabel('y axis')
     plt.ylabel('x axis')
-    im = ax.imshow(xy, cmap='viridis', origin='lower', extent=[span_y.min(), span_y.max(),
-                                                          span_x.min(), span_x.max()])
+    im = ax.imshow(xy, cmap='viridis', origin='lower',
+                   extent=[span_y.min(), span_y.max(), span_x.min(), span_x.max()])
     plt.colorbar(im)
     plt.show()
 
 
 def simulation():
     # coordinates
-    number_of_points = 100
+    number_of_points = 200
     span_x = np.linspace(-0.03, 0.03, number_of_points)
     span_y = np.linspace(-0.03, 0.03, number_of_points)
     span_z = np.linspace(-0.03, 0.03, number_of_points)
@@ -349,22 +363,22 @@ def simulation():
     spheres = np.array([sphere1, sphere2, sphere3])
 
     # parameters of configuration
-    pos1 = np.array([0, 0.007, 0])
-    pos2 = np.array([0, 0, 0.015])
-    pos3 = np.array([0, -0.003, -0.002])
+    pos1 = np.array([0.007, 0, 0])
+    pos2 = np.array([0, 0.015, 0])
+    pos3 = np.array([-0.003, -0.002, 0])
     pos = np.array([pos1, pos2, pos3])
 
     # parameters of the field
-    k_x = 0
-    k_y = -50
-    k_z = 50
+    k_x = -50
+    k_y = 50
+    k_z = 0
     k = np.array([k_x, k_y, k_z])
 
     # order of decomposition
     order = 5
 
     plane_number = int(number_of_points / 2) + 1
-    yz_plot(span, plane_number, k, ro, pos, spheres, order)
+    xy_plot(span, plane_number, k, ro, pos, spheres, order)
 
 
 def timetest(simulation):
