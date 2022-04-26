@@ -205,6 +205,18 @@ def total_field(x, y, z, k, ro, pos, spheres, order):
     return tot_field
 
 
+def total_field_m(x, y, z, k, ro, pos, spheres, m, order):
+    """ counts field outside the spheres for mth harmonic"""
+    coef = syst_solve(k, ro, pos, spheres, order)
+    tot_field = 0
+    for n in range(0, abs(m) + 1):
+        for sph in range(len(spheres)):
+            tot_field += coef[2 * sph][n ** 2 + n + m] * \
+                         outgoing_wvfs(m, n, x - pos[sph][0], y - pos[sph][1], z - pos[sph][2], k)
+        tot_field += inc_coef(m, n, k) * regular_wvfs(m, n, x, y, z, k)
+    return tot_field
+
+
 def yz_old(span, plane_number, k, ro, pos, spheres, order):
     r"""
     OLD 2D heat-plot in YZ plane for x[plane_number]
@@ -319,6 +331,8 @@ def xy_plot(span, plane_number, k, ro, pos, spheres, order):
     z_p = z[(plane_number - 1) * len(span_y) * len(span_x):
             (plane_number - 1) * len(span_y) * len(span_x) + len(span_y) * len(span_x)]
 
+    # tot_field = np.real(total_field_m(x_p, y_p, z_p, k, ro, pos, spheres, order))
+
     tot_field = np.real(total_field(x_p, y_p, z_p, k, ro, pos, spheres, order))
 
     for sph in range(len(spheres)):
@@ -338,44 +352,45 @@ def xy_plot(span, plane_number, k, ro, pos, spheres, order):
 
 def simulation():
     # coordinates
-    number_of_points = 200
-    span_x = np.linspace(-0.03, 0.03, number_of_points)
-    span_y = np.linspace(-0.03, 0.03, number_of_points)
-    span_z = np.linspace(-0.03, 0.03, number_of_points)
+    number_of_points = 100
+    l = 0.02
+    span_x = np.linspace(-l, l, number_of_points)
+    span_y = np.linspace(-l, l, number_of_points)
+    span_z = np.linspace(-l, l, number_of_points)
     span = np.array([span_x, span_y, span_z])
 
     # parameters of fluid
     ro = 1000
 
     # parameters of the spheres
-    k_sph1 = 1000
-    r_sph1 = 0.003
+    k_sph1 = 500
+    r_sph1 = 0.002
     ro_sph1 = 2700
     sphere1 = np.array([k_sph1, r_sph1, ro_sph1])
-    k_sph2 = 1000
-    r_sph2 = 0.003
+    k_sph2 = 500
+    r_sph2 = 0.002
     ro_sph2 = 2700
     sphere2 = np.array([k_sph2, r_sph2, ro_sph2])
-    k_sph2 = 1000
-    r_sph2 = 0.003
-    ro_sph2 = 2700
-    sphere3 = np.array([k_sph2, r_sph2, ro_sph2])
+    k_sph3 = 500
+    r_sph3 = 0.002
+    ro_sph3 = 2700
+    sphere3 = np.array([k_sph3, r_sph3, ro_sph3])
     spheres = np.array([sphere1, sphere2, sphere3])
 
     # parameters of configuration
-    pos1 = np.array([0.007, 0, 0])
+    pos1 = np.array([0.007, 0, 0.001])
     pos2 = np.array([0, 0.015, 0])
     pos3 = np.array([-0.003, -0.002, 0])
     pos = np.array([pos1, pos2, pos3])
 
     # parameters of the field
-    k_x = -50
-    k_y = 50
+    k_x = -500
+    k_y = 500
     k_z = 0
     k = np.array([k_x, k_y, k_z])
 
     # order of decomposition
-    order = 5
+    order = 8
 
     plane_number = int(number_of_points / 2) + 1
     xy_plot(span, plane_number, k, ro, pos, spheres, order)
