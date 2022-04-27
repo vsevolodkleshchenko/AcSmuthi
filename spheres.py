@@ -4,7 +4,6 @@ import scipy
 import scipy.special
 from sympy.physics.wigner import wigner_3j
 import matplotlib.pyplot as plt
-import multiprocessing as mp
 import time
 
 
@@ -187,7 +186,7 @@ def syst_solve(k, ro, pos, spheres, order):
     num_of_sph = len(spheres)
     t_matrix = syst_matr_L(k, ro, pos, spheres, order)
     rhs = syst_rhs(k, spheres, order)
-    coef = np.linalg.solve(t_matrix, rhs)
+    coef = scipy.linalg.solve(t_matrix, rhs)
     return np.split(coef, 2 * num_of_sph)
 
 
@@ -205,7 +204,7 @@ def total_field(x, y, z, k, ro, pos, spheres, order):
     return tot_field
 
 
-def total_field_m(x, y, z, k, ro, pos, spheres, m, order):
+def total_field_m(x, y, z, k, ro, pos, spheres, order, m=1):
     """ counts field outside the spheres for mth harmonic"""
     coef = syst_solve(k, ro, pos, spheres, order)
     tot_field = 0
@@ -213,7 +212,7 @@ def total_field_m(x, y, z, k, ro, pos, spheres, m, order):
         for sph in range(len(spheres)):
             tot_field += coef[2 * sph][n ** 2 + n + m] * \
                          outgoing_wvfs(m, n, x - pos[sph][0], y - pos[sph][1], z - pos[sph][2], k)
-        tot_field += inc_coef(m, n, k) * regular_wvfs(m, n, x, y, z, k)
+        # tot_field += inc_coef(m, n, k) * regular_wvfs(m, n, x, y, z, k)
     return tot_field
 
 
@@ -244,7 +243,7 @@ def yz_old(span, plane_number, k, ro, pos, spheres, order):
     fig, ax = plt.subplots()
     plt.xlabel('z axis')
     plt.ylabel('y axis')
-    im = ax.imshow(yz, cmap='viridis', origin='lower',
+    im = ax.imshow(yz, cmap='seismic', origin='lower',
                    extent=[span_z.min(), span_z.max(), span_y.min(), span_y.max()])
     plt.colorbar(im)
     plt.show()
@@ -267,6 +266,10 @@ def xz_plot(span, plane_number, k, ro, pos, spheres, order):
 
     tot_field = np.real(total_field(x_p, y_p, z_p, k, ro, pos, spheres, order))
 
+    # print(span_x, span_y, span_z, x, y, z, x_p, y_p, z_p, tot_field, xz, sep="\n")
+
+    # tot_field = np.real(total_field_m(x_p, y_p, z_p, k, ro, pos, spheres, order))
+
     for sph in range(len(spheres)):
         rx, ry, rz = x_p - pos[sph, 0], y_p - pos[sph, 1], z_p - pos[sph, 2]
         r = np.sqrt(rx ** 2 + ry ** 2 + rz ** 2)
@@ -277,7 +280,7 @@ def xz_plot(span, plane_number, k, ro, pos, spheres, order):
     fig, ax = plt.subplots()
     plt.xlabel('z axis')
     plt.ylabel('x axis')
-    im = ax.imshow(xz, cmap='viridis', origin='lower',
+    im = ax.imshow(xz, cmap='seismic', origin='lower',
                    extent=[span_z.min(), span_z.max(), span_x.min(), span_x.max()])
     plt.colorbar(im)
     plt.show()
@@ -300,6 +303,10 @@ def yz_plot(span, plane_number, k, ro, pos, spheres, order):
 
     tot_field = np.real(total_field(x_p, y_p, z_p, k, ro, pos, spheres, order))
 
+    # print(span_x, span_y, span_z, x, y, z, x_p, y_p, z_p, tot_field, yz, sep="\n")
+
+    # tot_field = np.real(total_field_m(x_p, y_p, z_p, k, ro, pos, spheres, order))
+
     for sph in range(len(spheres)):
         rx, ry, rz = x_p - pos[sph, 0], y_p - pos[sph, 1], z_p - pos[sph, 2]
         r = np.sqrt(rx ** 2 + ry ** 2 + rz ** 2)
@@ -310,7 +317,7 @@ def yz_plot(span, plane_number, k, ro, pos, spheres, order):
     fig, ax = plt.subplots()
     plt.xlabel('z axis')
     plt.ylabel('y axis')
-    im = ax.imshow(yz, cmap='viridis', origin='lower',
+    im = ax.imshow(yz, cmap='seismic', origin='lower',
                    extent=[span_z.min(), span_z.max(), span_y.min(), span_y.max()])
     plt.colorbar(im)
     plt.show()
@@ -331,10 +338,11 @@ def xy_plot(span, plane_number, k, ro, pos, spheres, order):
     z_p = z[(plane_number - 1) * len(span_y) * len(span_x):
             (plane_number - 1) * len(span_y) * len(span_x) + len(span_y) * len(span_x)]
 
-    # m = 8
-    # tot_field = np.real(total_field_m(x_p, y_p, z_p, k, ro, pos, spheres, m, order))
-
     tot_field = np.real(total_field(x_p, y_p, z_p, k, ro, pos, spheres, order))
+
+    # print(span_x, span_y, span_z, x, y, z, x_p, y_p, z_p, tot_field, xy, sep="\n")
+
+    # tot_field = np.real(total_field_m(x_p, y_p, z_p, k, ro, pos, spheres, order))
 
     for sph in range(len(spheres)):
         rx, ry, rz = x_p - pos[sph, 0], y_p - pos[sph, 1], z_p - pos[sph, 2]
@@ -342,10 +350,11 @@ def xy_plot(span, plane_number, k, ro, pos, spheres, order):
         tot_field = np.where(r < spheres[sph, 1], 0, tot_field)
 
     xy = tot_field.reshape(len(span_x), len(span_y))
+
     fig, ax = plt.subplots()
     plt.xlabel('y axis')
     plt.ylabel('x axis')
-    im = ax.imshow(xy, cmap='viridis', origin='lower',
+    im = ax.imshow(xy, cmap='seismic', origin='lower',
                    extent=[span_y.min(), span_y.max(), span_x.min(), span_x.max()])
     plt.colorbar(im)
     plt.show()
@@ -353,50 +362,52 @@ def xy_plot(span, plane_number, k, ro, pos, spheres, order):
 
 def simulation():
     # coordinates
-    number_of_points = 100
-    l = 0.02
+    number_of_points = 50
+    l = 10
     span_x = np.linspace(-l, l, number_of_points)
     span_y = np.linspace(-l, l, number_of_points)
     span_z = np.linspace(-l, l, number_of_points)
     span = np.array([span_x, span_y, span_z])
 
     # parameters of fluid
-    ro = 1000
+    ro = 1.225
 
     # parameters of the spheres
-    k_sph1 = 500
-    r_sph1 = 0.002
-    ro_sph1 = 2700
+    k_sph1 = 0.236022
+    r_sph1 = 1
+    ro_sph1 = 1050
     sphere1 = np.array([k_sph1, r_sph1, ro_sph1])
-    k_sph2 = 500
-    r_sph2 = 0.002
-    ro_sph2 = 2700
+    k_sph2 = 0.236022
+    r_sph2 = 1
+    ro_sph2 = 1050
     sphere2 = np.array([k_sph2, r_sph2, ro_sph2])
-    k_sph3 = 500
-    r_sph3 = 0.002
-    ro_sph3 = 2700
+    k_sph3 = 0.236022
+    r_sph3 = 1
+    ro_sph3 = 1050
     sphere3 = np.array([k_sph3, r_sph3, ro_sph3])
-    spheres = np.array([sphere1, sphere2, sphere3])
-    spherest = np.array([sphere1, sphere2])
+    spherest3 = np.array([sphere1, sphere2, sphere3])
+    spherest2 = np.array([sphere1, sphere2])
+    spherest1 = np.array([sphere1])
 
     # parameters of configuration
-    pos1 = np.array([0.007, 0, 0.001])
-    pos2 = np.array([0, 0.015, 0])
+    pos1 = np.array([0, 0, 0])
+    pos2 = np.array([0, 0, 5])
     pos3 = np.array([-0.003, -0.002, 0])
-    pos = np.array([pos1, pos2, pos3])
-    post = np.array([pos1, pos2])
+    post3 = np.array([pos1, pos2, pos3])
+    post2 = np.array([pos1, pos2])
+    post1 = np.array([pos1])
 
     # parameters of the field
-    k_x = -500
-    k_y = 500
-    k_z = 0
+    k_x = 0
+    k_y = 1.09
+    k_z = 1.09
     k = np.array([k_x, k_y, k_z])
 
     # order of decomposition
-    order = 8
+    order = 10
 
     plane_number = int(number_of_points / 2) + 1
-    xy_plot(span, plane_number, k, ro, post, spherest, order)
+    yz_plot(span, plane_number, k, ro, post1, spherest1, order)
 
 
 def timetest(simulation):
