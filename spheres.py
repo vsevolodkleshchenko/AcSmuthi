@@ -18,7 +18,7 @@ def dec_to_sph(x, y, z):
     phi = np.where((x < -e) & (y > e), np.pi - np.arctan(- y / x), phi)
     phi = np.where((x < -e) & (y < -e), np.pi + np.arctan(y / x), phi)
     phi = np.where((x > e) & (y < -e), 2 * np.pi - np.arctan(- y / x), phi)
-    phi = np.where((np.abs(x) <= e) & (y > e), np.pi, phi)
+    phi = np.where((np.abs(x) <= e) & (y > e), np.pi / 2, phi)
     phi = np.where((np.abs(x) <= e) & (y < -e), 3 * np.pi / 2, phi)
     phi = np.where((np.abs(y) <= e) & (x < -e), np.pi, phi)
     # faster but wrong
@@ -301,11 +301,11 @@ def yz_plot(span, plane_number, k, ro, pos, spheres, order):
     z_p = z[(plane_number - 1) * len(span_y) * len(span_z):
                               (plane_number - 1) * len(span_y) * len(span_z) + len(span_y) * len(span_z)]
 
-    tot_field = np.real(total_field(x_p, y_p, z_p, k, ro, pos, spheres, order))
+    # tot_field = np.real(total_field(x_p, y_p, z_p, k, ro, pos, spheres, order))
 
     # print(span_x, span_y, span_z, x, y, z, x_p, y_p, z_p, tot_field, yz, sep="\n")
 
-    # tot_field = np.real(total_field_m(x_p, y_p, z_p, k, ro, pos, spheres, order))
+    tot_field = np.real(total_field_m(x_p, y_p, z_p, k, ro, pos, spheres, order))
 
     for sph in range(len(spheres)):
         rx, ry, rz = x_p - pos[sph, 0], y_p - pos[sph, 1], z_p - pos[sph, 2]
@@ -362,7 +362,7 @@ def xy_plot(span, plane_number, k, ro, pos, spheres, order):
 
 def simulation():
     # coordinates
-    number_of_points = 50
+    number_of_points = 300
     l = 10
     span_x = np.linspace(-l, l, number_of_points)
     span_y = np.linspace(-l, l, number_of_points)
@@ -390,9 +390,9 @@ def simulation():
     spherest1 = np.array([sphere1])
 
     # parameters of configuration
-    pos1 = np.array([0, 0, 0])
-    pos2 = np.array([0, 0, 5])
-    pos3 = np.array([-0.003, -0.002, 0])
+    pos1 = np.array([0, 0, -3])
+    pos2 = np.array([0, 3, 0])
+    pos3 = np.array([0, 0, 3])
     post3 = np.array([pos1, pos2, pos3])
     post2 = np.array([pos1, pos2])
     post1 = np.array([pos1])
@@ -404,10 +404,10 @@ def simulation():
     k = np.array([k_x, k_y, k_z])
 
     # order of decomposition
-    order = 10
+    order = 8
 
     plane_number = int(number_of_points / 2) + 1
-    yz_plot(span, plane_number, k, ro, post1, spherest1, order)
+    yz_plot(span, plane_number, k, ro, post3, spherest3, order)
 
 
 def timetest(simulation):
