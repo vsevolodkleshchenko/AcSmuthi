@@ -9,11 +9,11 @@ import time
 
 def dec_to_sph(x, y, z):
     # a little slower but true
-    e = 1e-8
+    e = 1e-13
     r = np.sqrt(x * x + y * y + z * z)
     phi = np.zeros(np.size(r))
     theta = np.zeros(np.size(r))
-    theta = np.where(r != 0, np.arccos(z / r), theta)
+    theta = np.where(r >= e, np.arccos(z / r), theta)
     phi = np.where((x > e) & (y > e), np.arctan(y / x), phi)
     phi = np.where((x < -e) & (y > e), np.pi - np.arctan(- y / x), phi)
     phi = np.where((x < -e) & (y < -e), np.pi + np.arctan(y / x), phi)
@@ -70,6 +70,16 @@ def inc_coef(m, n, k):
     return 4 * np.pi * 1j ** n * np.conj(scipy.special.sph_harm(m, n, k_phi, k_theta))
 
 
+def local_inc_coef(m, n, k, sph_pos, order):
+    """ counts local incident coefficients
+    d^m_nj - eq(42) in Multiple scattering and scattering cross sections P. A. Martin"""
+    inccoef = 0
+    for nu in range(order + 1):
+        for mu in range(-nu, nu + 1):
+            inccoef += inc_coef(mu, nu, k) * sepc_matr_coef(mu, m, nu, n, k, sph_pos)
+    return inccoef
+
+
 def regular_wvfs(m, n, x, y, z, k):
     """ regular basis spherical wave functions
     ^psi^m_n - eq(between 4.37 and 4.38) of Encyclopedia
@@ -78,8 +88,7 @@ def regular_wvfs(m, n, x, y, z, k):
     :return: array_like (complex float) """
     k_abs, k_phi, k_theta = dec_to_sph(k[0], k[1], k[2])
     r, phi, theta = dec_to_sph(x, y, z)
-    return scipy.special.spherical_jn(n, k_abs * r) * \
-           scipy.special.sph_harm(m, n, phi, theta)
+    return scipy.special.spherical_jn(n, k_abs * r) * scipy.special.sph_harm(m, n, phi, theta)
 
 
 def outgoing_wvfs(m, n, x, y, z, k):
@@ -91,8 +100,7 @@ def outgoing_wvfs(m, n, x, y, z, k):
     :return: array_like (complex float) """
     k_abs, k_phi, k_theta = dec_to_sph(k[0], k[1], k[2])
     r, phi, theta = dec_to_sph(x, y, z)
-    return sph_hankel1(n, k_abs * r) * \
-           scipy.special.sph_harm(m, n, phi, theta)
+    return sph_hankel1(n, k_abs * r) * scipy.special.sph_harm(m, n, phi, theta)
 
 
 def gaunt_coef(n, m, nu, mu, q):
@@ -101,6 +109,23 @@ def gaunt_coef(n, m, nu, mu, q):
     s = np.sqrt((2 * n + 1) * (2 * nu + 1) * (2 * q + 1) / 4 / np.pi)
     return (-1) ** (m + mu) * s * complex(wigner_3j(n, 0, nu, 0, q, 0)) * \
            complex(wigner_3j(n, m, nu, mu, q, - m - mu))
+
+
+def sepc_matr_coef(m, mu, n, nu, k, dist):
+    """coefficient ^S^mmu_nnu(b) of separation matrix
+    eq(3.92) and eq(3.74) in Encyclopedia"""
+    if abs(n - nu) >= abs(m - mu):
+        q0 = abs(n - nu)
+    if (abs(n - nu) < abs(m - mu)) and ((n + nu + abs(m - mu)) % 2 == 0):
+        q0 = abs(m - mu)
+    if (abs(n - nu) < abs(m - mu)) and ((n + nu + abs(m - mu)) % 2 != 0):
+        q0 = abs(m - mu) + 1
+    q_lim = (n + nu - q0) // 2
+    sum = 0
+    for q in range(0, q_lim + 1, 2):
+        sum += (-1) ** q * regular_wvfs(m - mu, q0 + 2 * q, dist[0], dist[1], dist[2], k) * \
+               gaunt_coef(n, m, nu, -mu, q0 + 2 * q)
+    return 4 * np.pi * (-1) ** (mu + nu + q_lim) * sum
 
 
 def sep_matr_coef(m, mu, n, nu, k, dist):
@@ -142,7 +167,6 @@ def syst_matr_L(k, ro, pos, spheres, order):
             t_matrix[row_idx_2, col_idx_1] = - sph_hankel1_der(n, k_abs * r_sph)
             t_matrix[row_idx_1, col_idx_2] = scipy.special.spherical_jn(n, k_sph * r_sph)
             t_matrix[row_idx_2, col_idx_2] = ro / ro_sph * scipy.special.spherical_jn(n, k_sph * r_sph, derivative=True)
-
             # not diagonal block
             other_sph = np.where(all_spheres != sph)[0]
             for osph in other_sph:
@@ -158,6 +182,23 @@ def syst_matr_L(k, ro, pos, spheres, order):
                                 -scipy.special.spherical_jn(n, k_abs * r_sph, derivative=True) * \
                                 sep_matr_coef(mu, m, nu, n, k, pos[osph] - pos[sph])
     return t_matrix
+
+
+def syst_rhs_L(k, pos, spheres, order):
+    r""" build new right hand side of system """
+    k_abs = dec_to_sph(k[0], k[1], k[2])[0]
+    num_of_sph = len(spheres)
+    num_of_coef = (order + 1) ** 2
+    rhs = np.zeros(num_of_coef * 2 * num_of_sph, dtype=complex)
+    for sph in range(num_of_sph):
+        for n in range(order + 1):
+            for m in range(-n, n + 1):
+                inccoef = local_inc_coef(m, n, k, pos[sph], order)
+                rhs[sph * 2 * num_of_coef + 2 * (n ** 2 + n + m)] = inccoef * \
+                       scipy.special.spherical_jn(n, k_abs * spheres[sph, 1])
+                rhs[sph * 2 * num_of_coef + 2 * (n ** 2 + n + m) + 1] = inccoef * \
+                           scipy.special.spherical_jn(n, k_abs * spheres[sph, 1], derivative=True)
+    return rhs
 
 
 def syst_rhs(k, spheres, order):
@@ -185,26 +226,48 @@ def syst_solve(k, ro, pos, spheres, order):
     of scattered field and field inside the spheres """
     num_of_sph = len(spheres)
     t_matrix = syst_matr_L(k, ro, pos, spheres, order)
-    rhs = syst_rhs(k, spheres, order)
+    rhs = syst_rhs_L(k, pos, spheres, order)
     coef = scipy.linalg.solve(t_matrix, rhs)
-    return np.split(coef, 2 * num_of_sph)
+    return np.array(np.split(coef, 2 * num_of_sph))
 
 
 def total_field(x, y, z, k, ro, pos, spheres, order):
-    """ counts field outside the sphere"""
+    """ counts field outside the spheres"""
     coef = syst_solve(k, ro, pos, spheres, order)
-    tot_field = 0
-    for n in range(order + 1):
-        for m in range(-n, n + 1):
-            for sph in range(len(spheres)):
-                tot_field += coef[2 * sph][n ** 2 + n + m] * \
+    tot_field = np.zeros(len(x), dtype=complex)
+    for sph in range(len(spheres)):
+        for n in range(order + 1):
+            for m in range(-n, n + 1):
+                # inccoef = local_inc_coef(m, n, k, pos[sph], order)
+                # tot_field += inccoef * regular_wvfs(m, n, x - pos[sph][0], y - pos[sph][1], z - pos[sph][2], k)
+                tot_field += coef[2 * sph, n ** 2 + n + m] * \
                              outgoing_wvfs(m, n, x - pos[sph][0], y - pos[sph][1], z - pos[sph][2], k)
-            tot_field += inc_coef(m, n, k) * regular_wvfs(m, n, x, y, z, k)
-    # tot_field += np.exp(1j * (k[0] * x + k[1] * y + k[2] * z))
+                # tot_field += inc_coef(m, n, k) * regular_wvfs(m, n, x, y, z, k)
     return tot_field
 
 
-def total_field_m(x, y, z, k, ro, pos, spheres, order, m=1):
+def cross_section(k, ro, pos, spheres, order):
+    """Counts scattering and extinction cross sections Sigma_sc and Sigma_ex
+    eq(46,47) in Multiple scattering and scattering cross sections P. A. Martin"""
+    coef = syst_solve(k, ro, pos, spheres, order)
+    num_sph = len(pos)
+    sigma_ex, sigma_sc1, sigma_sc2 = 0, 0, 0
+    for j in range(num_sph):
+        for n in range(order + 1):
+            for m in range(-n, n + 1):
+                for l in range(num_sph):
+                    for nu in range(order + 1):
+                        for mu in range(-nu, nu + 1):
+                            sigma_sc2 += np.conj(coef[2 * j, n ** 2 + n + m]) * \
+                                       coef[2 * l, nu ** 2 + nu + mu] * \
+                                       sepc_matr_coef(mu, m, nu, n, k, pos[j] - pos[l])
+                sigma_sc1 += np.abs(coef[2 * j, n ** 2 + n + m])
+                sigma_ex += - np.real(coef[2 * j, n ** 2 + n + m] * np.conj(inc_coef(m, n, k)))
+    sigma_sc = np.real(sigma_sc1 + sigma_sc2)
+    return sigma_sc, sigma_ex
+
+
+def total_field_m(x, y, z, k, ro, pos, spheres, order, m=-1):
     """ counts field outside the spheres for mth harmonic"""
     coef = syst_solve(k, ro, pos, spheres, order)
     tot_field = 0
@@ -212,7 +275,7 @@ def total_field_m(x, y, z, k, ro, pos, spheres, order, m=1):
         for sph in range(len(spheres)):
             tot_field += coef[2 * sph][n ** 2 + n + m] * \
                          outgoing_wvfs(m, n, x - pos[sph][0], y - pos[sph][1], z - pos[sph][2], k)
-        # tot_field += inc_coef(m, n, k) * regular_wvfs(m, n, x, y, z, k)
+        tot_field += inc_coef(m, n, k) * regular_wvfs(m, n, x, y, z, k)
     return tot_field
 
 
@@ -301,11 +364,11 @@ def yz_plot(span, plane_number, k, ro, pos, spheres, order):
     z_p = z[(plane_number - 1) * len(span_y) * len(span_z):
                               (plane_number - 1) * len(span_y) * len(span_z) + len(span_y) * len(span_z)]
 
-    # tot_field = np.real(total_field(x_p, y_p, z_p, k, ro, pos, spheres, order))
-
+    tot_field = np.real(total_field(x_p, y_p, z_p, k, ro, pos, spheres, order))
+    # np.exp(1j * np.pi * 0 / 4)
     # print(span_x, span_y, span_z, x, y, z, x_p, y_p, z_p, tot_field, yz, sep="\n")
 
-    tot_field = np.real(total_field_m(x_p, y_p, z_p, k, ro, pos, spheres, order))
+    # tot_field = np.real(total_field_m(x_p, y_p, z_p, k, ro, pos, spheres, order))
 
     for sph in range(len(spheres)):
         rx, ry, rz = x_p - pos[sph, 0], y_p - pos[sph, 1], z_p - pos[sph, 2]
@@ -362,7 +425,7 @@ def xy_plot(span, plane_number, k, ro, pos, spheres, order):
 
 def simulation():
     # coordinates
-    number_of_points = 300
+    number_of_points = 150
     l = 10
     span_x = np.linspace(-l, l, number_of_points)
     span_y = np.linspace(-l, l, number_of_points)
@@ -385,36 +448,47 @@ def simulation():
     r_sph3 = 1
     ro_sph3 = 1050
     sphere3 = np.array([k_sph3, r_sph3, ro_sph3])
+    spherest6 = np.array([sphere1, sphere2, sphere3, sphere3, sphere3, sphere3])
+    spherest5 = np.array([sphere1, sphere2, sphere3, sphere3, sphere3])
+    spherest4 = np.array([sphere1, sphere2, sphere3, sphere3])
     spherest3 = np.array([sphere1, sphere2, sphere3])
     spherest2 = np.array([sphere1, sphere2])
     spherest1 = np.array([sphere1])
 
     # parameters of configuration
-    pos1 = np.array([0, 0, -3])
-    pos2 = np.array([0, 3, 0])
+    pos1 = np.array([2, 0, 0])
+    pos2 = np.array([0, 0, 3.5])
     pos3 = np.array([0, 0, 3])
+    pos4 = np.array([4, 0, 0])
+    pos5 = np.array([4, 0, 4])
+    pos6 = np.array([4, 4, 4])
+    post5 = np.array([pos1, pos2, pos3, pos4, pos5, pos6])
+    post5 = np.array([pos1, pos2, pos3, pos4, pos5])
+    post4 = np.array([pos1, pos2, pos3, pos4])
     post3 = np.array([pos1, pos2, pos3])
     post2 = np.array([pos1, pos2])
     post1 = np.array([pos1])
 
     # parameters of the field
-    k_x = 0
-    k_y = 1.09
+    k_x = 1.09
+    k_y = 0
     k_z = 1.09
     k = np.array([k_x, k_y, k_z])
 
     # order of decomposition
     order = 8
 
+    print("Scattering and extinction cross section:", *cross_section(k, ro, post2, spherest2, order))
+
     plane_number = int(number_of_points / 2) + 1
-    yz_plot(span, plane_number, k, ro, post3, spherest3, order)
+    xz_plot(span, plane_number, k, ro, post1, spherest1, order)
 
 
 def timetest(simulation):
     start = time.process_time()
     simulation()
     end = time.process_time()
-    print(end-start)
+    print("Time:", end-start)
 
 
 timetest(simulation)
