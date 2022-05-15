@@ -107,8 +107,8 @@ def gaunt_coef(n, m, nu, mu, q):
     r"""Gaunt coefficient: G(n,m;nu,mu;q)
     eq(3.71) in Encyclopedia"""
     s = np.sqrt((2 * n + 1) * (2 * nu + 1) * (2 * q + 1) / 4 / np.pi)
-    return (-1) ** (m + mu) * s * complex(wigner_3j(n, 0, nu, 0, q, 0)) * \
-           complex(wigner_3j(n, m, nu, mu, q, - m - mu))
+    return (-1) ** (m + mu) * s * float(wigner_3j(n, nu, q, 0, 0, 0)) * \
+           float(wigner_3j(n, nu, q, m, mu, - m - mu))
 
 
 def sepc_matr_coef(m, mu, n, nu, k, dist):
@@ -238,8 +238,6 @@ def total_field(x, y, z, k, ro, pos, spheres, order):
     for sph in range(len(spheres)):
         for n in range(order + 1):
             for m in range(-n, n + 1):
-                # inccoef = local_inc_coef(m, n, k, pos[sph], order)
-                # tot_field += inccoef * regular_wvfs(m, n, x - pos[sph][0], y - pos[sph][1], z - pos[sph][2], k)
                 tot_field += coef[2 * sph, n ** 2 + n + m] * \
                              outgoing_wvfs(m, n, x - pos[sph][0], y - pos[sph][1], z - pos[sph][2], k)
                 # tot_field += inc_coef(m, n, k) * regular_wvfs(m, n, x, y, z, k)
@@ -365,7 +363,7 @@ def yz_plot(span, plane_number, k, ro, pos, spheres, order):
                               (plane_number - 1) * len(span_y) * len(span_z) + len(span_y) * len(span_z)]
 
     tot_field = np.real(total_field(x_p, y_p, z_p, k, ro, pos, spheres, order))
-    # np.exp(1j * np.pi * 0 / 4)
+
     # print(span_x, span_y, span_z, x, y, z, x_p, y_p, z_p, tot_field, yz, sep="\n")
 
     # tot_field = np.real(total_field_m(x_p, y_p, z_p, k, ro, pos, spheres, order))
@@ -456,8 +454,8 @@ def simulation():
     spherest1 = np.array([sphere1])
 
     # parameters of configuration
-    pos1 = np.array([2, 0, 0])
-    pos2 = np.array([0, 0, 3.5])
+    pos1 = np.array([0, 0, -3])
+    pos2 = np.array([0, 0, 3])
     pos3 = np.array([0, 0, 3])
     pos4 = np.array([4, 0, 0])
     pos5 = np.array([4, 0, 4])
@@ -478,10 +476,10 @@ def simulation():
     # order of decomposition
     order = 8
 
-    print("Scattering and extinction cross section:", *cross_section(k, ro, post2, spherest2, order))
+    # print("Scattering and extinction cross section:", *cross_section(k, ro, post2, spherest2, order))
 
     plane_number = int(number_of_points / 2) + 1
-    xz_plot(span, plane_number, k, ro, post1, spherest1, order)
+    xz_plot(span, plane_number, k, ro, post2, spherest2, order)
 
 
 def timetest(simulation):
