@@ -1,9 +1,10 @@
 import numpy as np
-import numpy.linalg
 import scipy
 import scipy.special
 from sympy.physics.wigner import wigner_3j
 import matplotlib.pyplot as plt
+# import matplotlib.colors as colors
+from matplotlib import colors
 import time
 
 
@@ -341,7 +342,7 @@ def xz_plot(span, plane_number, k, ro, pos, spheres, order):
     fig, ax = plt.subplots()
     plt.xlabel('z axis')
     plt.ylabel('x axis')
-    im = ax.imshow(xz, cmap='seismic', origin='lower',
+    im = ax.imshow(xz, norm=colors.CenteredNorm(), cmap='seismic', origin='lower',
                    extent=[span_z.min(), span_z.max(), span_x.min(), span_x.max()])
     plt.colorbar(im)
     plt.show()
@@ -378,7 +379,7 @@ def yz_plot(span, plane_number, k, ro, pos, spheres, order):
     fig, ax = plt.subplots()
     plt.xlabel('z axis')
     plt.ylabel('y axis')
-    im = ax.imshow(yz, cmap='seismic', origin='lower',
+    im = ax.imshow(yz, norm=colors.CenteredNorm(), cmap='seismic', origin='lower',
                    extent=[span_z.min(), span_z.max(), span_y.min(), span_y.max()])
     plt.colorbar(im)
     plt.show()
@@ -415,7 +416,7 @@ def xy_plot(span, plane_number, k, ro, pos, spheres, order):
     fig, ax = plt.subplots()
     plt.xlabel('y axis')
     plt.ylabel('x axis')
-    im = ax.imshow(xy, cmap='seismic', origin='lower',
+    im = ax.imshow(xy, norm=colors.CenteredNorm(), cmap='seismic', origin='lower',
                    extent=[span_y.min(), span_y.max(), span_x.min(), span_x.max()])
     plt.colorbar(im)
     plt.show()
@@ -423,7 +424,7 @@ def xy_plot(span, plane_number, k, ro, pos, spheres, order):
 
 def simulation():
     # coordinates
-    number_of_points = 150
+    number_of_points = 200
     l = 10
     span_x = np.linspace(-l, l, number_of_points)
     span_y = np.linspace(-l, l, number_of_points)
@@ -454,8 +455,8 @@ def simulation():
     spherest1 = np.array([sphere1])
 
     # parameters of configuration
-    pos1 = np.array([0, 0, -3])
-    pos2 = np.array([0, 0, 3])
+    pos1 = np.array([0, 0, -2.5])
+    pos2 = np.array([0, 0, 2.5])
     pos3 = np.array([0, 0, 3])
     pos4 = np.array([4, 0, 0])
     pos5 = np.array([4, 0, 4])
@@ -474,7 +475,7 @@ def simulation():
     k = np.array([k_x, k_y, k_z])
 
     # order of decomposition
-    order = 8
+    order = 5
 
     # print("Scattering and extinction cross section:", *cross_section(k, ro, post2, spherest2, order))
 
