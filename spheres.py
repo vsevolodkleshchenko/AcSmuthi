@@ -146,7 +146,7 @@ def sep_matr_coef(m, mu, n, nu, k, dist):
     return 4 * np.pi * (-1) ** (mu + nu + q_lim) * sum
 
 
-def syst_matr_L(k, ro, pos, spheres, order):
+def syst_matr(k, ro, pos, spheres, order):
     k_abs = dec_to_sph(k[0], k[1], k[2])[0]
     num_of_coef = (order + 1) ** 2
     block_width = num_of_coef * 2
@@ -162,7 +162,7 @@ def syst_matr_L(k, ro, pos, spheres, order):
             # diagonal block
             col_idx_1 = np.arange(sph * block_width + n ** 2, sph * block_width + (n + 1) ** 2)
             col_idx_2 = col_idx_1 + num_of_coef
-            row_idx_1 = np.arange(sph * block_height + 2 * n ** 2, sph * block_height + 2 * (n + 1) ** 2 - 1, 2)
+            row_idx_1 = np.arange(sph * block_height + 2 * n ** 2, sph * block_height + 2 * (n + 1) ** 2, 2)
             row_idx_2 = np.arange(sph * block_height + 2 * n ** 2 + 1, sph * block_height + 2 * (n + 1) ** 2, 2)
             t_matrix[row_idx_1, col_idx_1] = - sph_hankel1(n, k_abs * r_sph)
             t_matrix[row_idx_2, col_idx_1] = - sph_hankel1_der(n, k_abs * r_sph)
@@ -185,7 +185,7 @@ def syst_matr_L(k, ro, pos, spheres, order):
     return t_matrix
 
 
-def syst_rhs_L(k, pos, spheres, order):
+def syst_rhs(k, pos, spheres, order):
     r""" build new right hand side of system """
     k_abs = dec_to_sph(k[0], k[1], k[2])[0]
     num_of_sph = len(spheres)
@@ -202,32 +202,12 @@ def syst_rhs_L(k, pos, spheres, order):
     return rhs
 
 
-def syst_rhs(k, spheres, order):
-    r""" build right hand side of system from spheres.pdf"""
-    k_abs = dec_to_sph(k[0], k[1], k[2])[0]
-    num_of_sph = len(spheres)
-    num_of_coef = (order + 1) ** 2
-    rhs = np.zeros(num_of_coef * 2 * num_of_sph, dtype=complex)
-    for n in range(order + 1):
-        idx_1 = np.arange(2 * n ** 2, 2 * (n + 1) ** 2 - 1, 2)
-        idx_2 = np.arange(2 * n ** 2 + 1, 2 * (n + 1) ** 2, 2)
-        m = np.arange(-n, n + 1)
-        for sph in range(num_of_sph):
-            rhs[idx_1] = inc_coef(m, n, k) * \
-                       scipy.special.spherical_jn(n, k_abs * spheres[sph, 1])
-            rhs[idx_2] = inc_coef(m, n, k) * \
-                       scipy.special.spherical_jn(n, k_abs * spheres[sph, 1], derivative=True)
-            idx_1 += num_of_coef * 2
-            idx_2 += num_of_coef * 2
-    return rhs
-
-
 def syst_solve(k, ro, pos, spheres, order):
     r""" solve T matrix system and counts a coefficients in decomposition
     of scattered field and field inside the spheres """
     num_of_sph = len(spheres)
-    t_matrix = syst_matr_L(k, ro, pos, spheres, order)
-    rhs = syst_rhs_L(k, pos, spheres, order)
+    t_matrix = syst_matr(k, ro, pos, spheres, order)
+    rhs = syst_rhs(k, pos, spheres, order)
     coef = scipy.linalg.solve(t_matrix, rhs)
     return np.array(np.split(coef, 2 * num_of_sph))
 
@@ -276,39 +256,6 @@ def total_field_m(x, y, z, k, ro, pos, spheres, order, m=-1):
                          outgoing_wvfs(m, n, x - pos[sph][0], y - pos[sph][1], z - pos[sph][2], k)
         tot_field += inc_coef(m, n, k) * regular_wvfs(m, n, x, y, z, k)
     return tot_field
-
-
-def yz_old(span, plane_number, k, ro, pos, spheres, order):
-    r"""
-    OLD 2D heat-plot in YZ plane for x[plane_number]
-    --->z """
-    span_x, span_y, span_z = span[0], span[1], span[2]
-    grid = np.vstack(np.meshgrid(span_x, span_y, span_z, indexing='ij')).reshape(3, -1).T
-    x, y, z = grid[:, 0], grid[:, 1], grid[:, 2]
-
-    tot_field = np.real(total_field(x, y, z, k, ro, pos, spheres, order))
-
-    for sph in range(len(spheres)):
-        x_min = pos[sph, 0] - spheres[sph, 1]
-        y_min = pos[sph, 1] - spheres[sph, 1]
-        z_min = pos[sph, 2] - spheres[sph, 1]
-        x_max = pos[sph, 0] + spheres[sph, 1]
-        y_max = pos[sph, 1] + spheres[sph, 1]
-        z_max = pos[sph, 2] + spheres[sph, 1]
-        tot_field = np.where((x >= x_min) & (x <= x_max) &
-                             (y >= y_min) & (y <= y_max) &
-                             (z >= z_min) & (z <= z_max), 0, tot_field)
-
-    yz = np.asarray(tot_field[(plane_number - 1) * len(span_y) * len(span_z):
-                              (plane_number - 1) * len(span_y) * len(span_z) +
-                              len(span_y) * len(span_z)]).reshape(len(span_y), len(span_z))
-    fig, ax = plt.subplots()
-    plt.xlabel('z axis')
-    plt.ylabel('y axis')
-    im = ax.imshow(yz, cmap='seismic', origin='lower',
-                   extent=[span_z.min(), span_z.max(), span_y.min(), span_y.max()])
-    plt.colorbar(im)
-    plt.show()
 
 
 def xz_plot(span, plane_number, k, ro, pos, spheres, order):
@@ -457,7 +404,7 @@ def simulation():
     # parameters of configuration
     pos1 = np.array([0, 0, -2.5])
     pos2 = np.array([0, 0, 2.5])
-    pos3 = np.array([0, 0, 3])
+    pos3 = np.array([0, 0, 0])
     pos4 = np.array([4, 0, 0])
     pos5 = np.array([4, 0, 4])
     pos6 = np.array([4, 4, 4])
@@ -466,7 +413,7 @@ def simulation():
     post4 = np.array([pos1, pos2, pos3, pos4])
     post3 = np.array([pos1, pos2, pos3])
     post2 = np.array([pos1, pos2])
-    post1 = np.array([pos1])
+    post1 = np.array([pos3])
 
     # parameters of the field
     k_x = 1.09
@@ -475,7 +422,7 @@ def simulation():
     k = np.array([k_x, k_y, k_z])
 
     # order of decomposition
-    order = 5
+    order = 6
 
     # print("Scattering and extinction cross section:", *cross_section(k, ro, post2, spherest2, order))
 
