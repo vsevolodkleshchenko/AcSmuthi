@@ -9,6 +9,7 @@ import time
 
 
 def dec_to_sph(x, y, z):
+    """ Transition from cartesian cs to spherical cs """
     # a little slower but true
     e = 1e-13
     r = np.sqrt(x * x + y * y + z * z)
@@ -22,58 +23,40 @@ def dec_to_sph(x, y, z):
     phi = np.where((np.abs(x) <= e) & (y > e), np.pi / 2, phi)
     phi = np.where((np.abs(x) <= e) & (y < -e), 3 * np.pi / 2, phi)
     phi = np.where((np.abs(y) <= e) & (x < -e), np.pi, phi)
-    # faster but wrong
-    # r = np.sqrt(x * x + y * y + z * z)
-    # phi = np.arctan(y / x)
-    # theta = np.arccos(z / r)
     return r, phi, theta
 
 
 def sph_neyman(n, z):
-    r""" spherical Neyman function
-    :param n: array_like - order (float)
-    :param z: array_like - argument (float or complex)
-    :return: array_like """
+    r""" spherical Neyman function """
     return (-1) ** (n + 1) * np.sqrt(np.pi / 2 / z) * scipy.special.jv(-n - 0.5, z)
 
 
 def sph_neyman_der(n, z):
-    r""" first derivative of spherical Neyman function
-    :param n: array_like - order (float)
-    :param z: array_like - argument (float or complex)
-    :return: array_like """
+    r""" first derivative of spherical Neyman function """
     return (-1) ** n * np.sqrt(np.pi / (8 * z ** 3)) * scipy.special.jv(-n - 0.5, z) + \
            (-1) ** (n + 1) * np.sqrt(np.pi / 2 / z) * scipy.special.jvp(-n - 0.5, z)
 
 
 def sph_hankel1(n, z):
-    r""" spherical Hankel function of the first kind
-    :param n: array_like - order (float)
-    :param z: array_like - argument (float or complex)
-    :return: array_like """
+    r""" Spherical Hankel function of the first kind """
     return scipy.special.spherical_jn(n, z) + 1j * sph_neyman(n, z)
 
 
 def sph_hankel1_der(n, z):
-    """ first derivative of spherical Hankel function of the first kind
-    :param n: array_like - order (float)
-    :param z: array_like - argument (float or complex)
-    :return: array_like"""
+    r""" First derivative of spherical Hankel function of the first kind """
     return scipy.special.spherical_jn(n, z, derivative=True) + 1j * sph_neyman_der(n, z)
 
 
 def inc_coef(m, n, k):
-    r""" coefficients in decomposition of plane wave
-    d^m_n - eq(4.40) of Encyclopedia
-    :param m, n: array_like - order and degree of the harmonic (int)
-    :return: array_like (complex float) """
+    r""" Coefficients in decomposition of plane wave
+    d^m_n - eq(4.40) of 'Encyclopedia' """
     k_abs, k_phi, k_theta = dec_to_sph(k[0], k[1], k[2])
     return 4 * np.pi * 1j ** n * np.conj(scipy.special.sph_harm(m, n, k_phi, k_theta))
 
 
 def local_inc_coef(m, n, k, sph_pos, order):
-    """ counts local incident coefficients
-    d^m_nj - eq(42) in Multiple scattering and scattering cross sections P. A. Martin"""
+    r""" Counts local incident coefficients
+    d^m_nj - eq(42) in 'Multiple scattering and scattering cross sections P. A. Martin' """
     inccoef = 0
     for nu in range(order + 1):
         for mu in range(-nu, nu + 1):
@@ -82,39 +65,32 @@ def local_inc_coef(m, n, k, sph_pos, order):
 
 
 def regular_wvfs(m, n, x, y, z, k):
-    """ regular basis spherical wave functions
-    ^psi^m_n - eq(between 4.37 and 4.38) of Encyclopedia
-    :param m, n: array_like - order and degree of the wave function(int)
-    :param x, y, z: array_like - coordinates
-    :return: array_like (complex float) """
+    r""" Regular basis spherical wave functions
+    ^psi^m_n - eq(between 4.37 and 4.38) of 'Encyclopedia' """
     k_abs, k_phi, k_theta = dec_to_sph(k[0], k[1], k[2])
     r, phi, theta = dec_to_sph(x, y, z)
     return scipy.special.spherical_jn(n, k_abs * r) * scipy.special.sph_harm(m, n, phi, theta)
 
 
 def outgoing_wvfs(m, n, x, y, z, k):
-    """outgoing basis spherical wave functions
-    psi^m_n - eq(between 4.37 and 4.38) of Encyclopedia
-    :param m, n: array_like - order and degree of the wave function(int)
-    :param x, y, z: array_like - coordinates
-    :param k: array_like - absolute value of incident wave vector
-    :return: array_like (complex float) """
+    r""" Outgoing basis spherical wave functions
+    psi^m_n - eq(between 4.37 and 4.38) in 'Encyclopedia' """
     k_abs, k_phi, k_theta = dec_to_sph(k[0], k[1], k[2])
     r, phi, theta = dec_to_sph(x, y, z)
     return sph_hankel1(n, k_abs * r) * scipy.special.sph_harm(m, n, phi, theta)
 
 
 def gaunt_coef(n, m, nu, mu, q):
-    r"""Gaunt coefficient: G(n,m;nu,mu;q)
-    eq(3.71) in Encyclopedia"""
+    r""" Gaunt coefficient: G(n,m;nu,mu;q)
+    eq(3.71) in 'Encyclopedia' """
     s = np.sqrt((2 * n + 1) * (2 * nu + 1) * (2 * q + 1) / 4 / np.pi)
     return (-1) ** (m + mu) * s * float(wigner_3j(n, nu, q, 0, 0, 0)) * \
            float(wigner_3j(n, nu, q, m, mu, - m - mu))
 
 
 def sepc_matr_coef(m, mu, n, nu, k, dist):
-    """coefficient ^S^mmu_nnu(b) of separation matrix
-    eq(3.92) and eq(3.74) in Encyclopedia"""
+    r""" Coefficient ^S^mmu_nnu(b) of separation matrix
+    eq(3.92) and eq(3.74) in 'Encyclopedia' """
     if abs(n - nu) >= abs(m - mu):
         q0 = abs(n - nu)
     if (abs(n - nu) < abs(m - mu)) and ((n + nu + abs(m - mu)) % 2 == 0):
@@ -130,8 +106,8 @@ def sepc_matr_coef(m, mu, n, nu, k, dist):
 
 
 def sep_matr_coef(m, mu, n, nu, k, dist):
-    """coefficient S^mmu_nnu(b) of separation matrix
-    eq(3.97) and eq(3.74) in Encyclopedia"""
+    r""" Coefficient S^mmu_nnu(b) of separation matrix
+    eq(3.97) and eq(3.74) in 'Encyclopedia' """
     if abs(n - nu) >= abs(m - mu):
         q0 = abs(n - nu)
     if (abs(n - nu) < abs(m - mu)) and ((n + nu + abs(m - mu)) % 2 == 0):
@@ -147,6 +123,7 @@ def sep_matr_coef(m, mu, n, nu, k, dist):
 
 
 def syst_matr(k, ro, pos, spheres, order):
+    r""" Builds T-matrix """
     k_abs = dec_to_sph(k[0], k[1], k[2])[0]
     num_of_coef = (order + 1) ** 2
     block_width = num_of_coef * 2
@@ -186,7 +163,7 @@ def syst_matr(k, ro, pos, spheres, order):
 
 
 def syst_rhs(k, pos, spheres, order):
-    r""" build new right hand side of system """
+    r""" build right hand side of T-matrix system """
     k_abs = dec_to_sph(k[0], k[1], k[2])[0]
     num_of_sph = len(spheres)
     num_of_coef = (order + 1) ** 2
@@ -213,7 +190,7 @@ def syst_solve(k, ro, pos, spheres, order):
 
 
 def total_field(x, y, z, k, ro, pos, spheres, order):
-    """ counts field outside the spheres"""
+    r""" counts field outside the spheres """
     coef = syst_solve(k, ro, pos, spheres, order)
     tot_field = np.zeros(len(x), dtype=complex)
     for sph in range(len(spheres)):
@@ -226,8 +203,8 @@ def total_field(x, y, z, k, ro, pos, spheres, order):
 
 
 def cross_section(k, ro, pos, spheres, order):
-    """Counts scattering and extinction cross sections Sigma_sc and Sigma_ex
-    eq(46,47) in Multiple scattering and scattering cross sections P. A. Martin"""
+    r""" Counts scattering and extinction cross sections Sigma_sc and Sigma_ex
+    eq(46,47) in 'Multiple scattering and scattering cross sections P. A. Martin' """
     coef = syst_solve(k, ro, pos, spheres, order)
     num_sph = len(pos)
     sigma_ex, sigma_sc1, sigma_sc2 = 0, 0, 0
@@ -247,7 +224,7 @@ def cross_section(k, ro, pos, spheres, order):
 
 
 def total_field_m(x, y, z, k, ro, pos, spheres, order, m=-1):
-    """ counts field outside the spheres for mth harmonic"""
+    r""" Counts field outside the spheres for mth harmonic """
     coef = syst_solve(k, ro, pos, spheres, order)
     tot_field = 0
     for n in range(abs(m), order + 1):
@@ -259,8 +236,7 @@ def total_field_m(x, y, z, k, ro, pos, spheres, order, m=-1):
 
 
 def xz_plot(span, plane_number, k, ro, pos, spheres, order):
-    r"""
-    Count field and build a 2D heat-plot in XZ plane for span_y[plane_number]
+    r""" Count field and build a 2D heat-plot in XZ plane for span_y[plane_number]
     --->z """
     span_x, span_y, span_z = span[0], span[1], span[2]
     grid = np.vstack(np.meshgrid(span_y, span_x, span_z, indexing='ij')).reshape(3, -1).T
@@ -296,8 +272,7 @@ def xz_plot(span, plane_number, k, ro, pos, spheres, order):
 
 
 def yz_plot(span, plane_number, k, ro, pos, spheres, order):
-    r"""
-    Count field and build a 2D heat-plot in YZ plane for x[plane_number]
+    r""" Count field and build a 2D heat-plot in YZ plane for x[plane_number]
     --->z """
     span_x, span_y, span_z = span[0], span[1], span[2]
     grid = np.vstack(np.meshgrid(span_x, span_y, span_z, indexing='ij')).reshape(3, -1).T
@@ -333,8 +308,7 @@ def yz_plot(span, plane_number, k, ro, pos, spheres, order):
 
 
 def xy_plot(span, plane_number, k, ro, pos, spheres, order):
-    r"""
-    Count field and build a 2D heat-plot in XY plane for span_z[plane_number]
+    r""" Count field and build a 2D heat-plot in XY plane for span_z[plane_number]
     --->y """
     span_x, span_y, span_z = span[0], span[1], span[2]
     grid = np.vstack(np.meshgrid(span_z, span_x, span_y, indexing='ij')).reshape(3, -1).T
@@ -370,6 +344,7 @@ def xy_plot(span, plane_number, k, ro, pos, spheres, order):
 
 
 def simulation():
+    r""" main simulation function """
     # coordinates
     number_of_points = 200
     l = 10
