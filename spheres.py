@@ -10,7 +10,6 @@ import time
 
 def dec_to_sph(x, y, z):
     """ Transition from cartesian cs to spherical cs """
-    # a little slower but true
     e = 1e-13
     r = np.sqrt(x * x + y * y + z * z)
     phi = np.zeros(np.size(r))
@@ -193,12 +192,13 @@ def total_field(x, y, z, k, ro, pos, spheres, order):
     r""" counts field outside the spheres """
     coef = syst_solve(k, ro, pos, spheres, order)
     tot_field = np.zeros(len(x), dtype=complex)
-    for sph in range(len(spheres)):
-        for n in range(order + 1):
-            for m in range(-n, n + 1):
+    for n in range(order + 1):
+        for m in range(-n, n + 1):
+            for sph in range(len(spheres)):
                 tot_field += coef[2 * sph, n ** 2 + n + m] * \
                              outgoing_wvfs(m, n, x - pos[sph][0], y - pos[sph][1], z - pos[sph][2], k)
-                # tot_field += inc_coef(m, n, k) * regular_wvfs(m, n, x, y, z, k)
+            # tot_field += inc_coef(m, n, k) * regular_wvfs(m, n, x, y, z, k)
+                # tot_field += local_inc_coef(m, n, k) * regular_wvfs(m, n, x, y, z, k)
     return tot_field
 
 
@@ -354,55 +354,36 @@ def simulation():
     span = np.array([span_x, span_y, span_z])
 
     # parameters of fluid
+    freq = 82
     ro = 1.225
+    c_f = 331
+    k_fluid = 2 * np.pi * freq / c_f
 
     # parameters of the spheres
-    k_sph1 = 0.236022
-    r_sph1 = 1
-    ro_sph1 = 1050
-    sphere1 = np.array([k_sph1, r_sph1, ro_sph1])
-    k_sph2 = 0.236022
-    r_sph2 = 1
-    ro_sph2 = 1050
-    sphere2 = np.array([k_sph2, r_sph2, ro_sph2])
-    k_sph3 = 0.236022
-    r_sph3 = 1
-    ro_sph3 = 1050
-    sphere3 = np.array([k_sph3, r_sph3, ro_sph3])
-    spherest6 = np.array([sphere1, sphere2, sphere3, sphere3, sphere3, sphere3])
-    spherest5 = np.array([sphere1, sphere2, sphere3, sphere3, sphere3])
-    spherest4 = np.array([sphere1, sphere2, sphere3, sphere3])
-    spherest3 = np.array([sphere1, sphere2, sphere3])
-    spherest2 = np.array([sphere1, sphere2])
-    spherest1 = np.array([sphere1])
+    c_sph = 1403
+    k_sph = 2 * np.pi * freq / c_sph
+    r_sph = 1
+    ro_sph = 1050
+    sphere = np.array([k_sph, r_sph, ro_sph])
+    spheres = np.array([sphere, sphere])
 
     # parameters of configuration
     pos1 = np.array([0, 0, -2.5])
     pos2 = np.array([0, 0, 2.5])
-    pos3 = np.array([0, 0, 0])
-    pos4 = np.array([4, 0, 0])
-    pos5 = np.array([4, 0, 4])
-    pos6 = np.array([4, 4, 4])
-    post5 = np.array([pos1, pos2, pos3, pos4, pos5, pos6])
-    post5 = np.array([pos1, pos2, pos3, pos4, pos5])
-    post4 = np.array([pos1, pos2, pos3, pos4])
-    post3 = np.array([pos1, pos2, pos3])
-    post2 = np.array([pos1, pos2])
-    post1 = np.array([pos3])
+    poses = np.array([pos1, pos2])
 
     # parameters of the field
-    k_x = 1.09
+    k_x = 0.70711 * k_fluid
     k_y = 0
-    k_z = 1.09
+    k_z = 0.70711 * k_fluid
     k = np.array([k_x, k_y, k_z])
 
     # order of decomposition
-    order = 6
-
+    order = 8
     # print("Scattering and extinction cross section:", *cross_section(k, ro, post2, spherest2, order))
 
     plane_number = int(number_of_points / 2) + 1
-    xz_plot(span, plane_number, k, ro, post2, spherest2, order)
+    xz_plot(span, plane_number, k, ro, poses, spheres, order)
 
 
 def timetest(simulation):
