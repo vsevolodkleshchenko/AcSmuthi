@@ -49,3 +49,26 @@ def syst_rhs_old(k, spheres, order):
             idx_1 += num_of_coef * 2
             idx_2 += num_of_coef * 2
     return rhs
+
+
+def old_total_field(x, y, z, k, ro, pos, spheres, order):
+    r""" counts field outside the spheres """
+    coef = syst_solve(k, ro, pos, spheres, order)
+    tot_field_array = np.zeros((len(spheres), (order + 1) ** 2, len(x)), dtype=complex)
+    tot_field = np.zeros(len(x), dtype=complex)
+    for n in range(order + 1):
+        for m in range(-n, n + 1):
+            for sph in range(len(spheres)):
+                tot_field += coef[2 * sph, n ** 2 + n + m] * \
+                             outgoing_wvfs(m, n, x - pos[sph][0], y - pos[sph][1], z - pos[sph][2], k)
+            # tot_field += inc_coef(m, n, k) * regular_wvfs(m, n, x, y, z, k)
+                # tot_field += local_inc_coef(m, n, k) * regular_wvfs(m, n, x, y, z, k)
+    return tot_field # np.abs(tot_field - tot_field1)
+
+
+def old_gaunt_coef(n, m, nu, mu, q):
+    r""" Gaunt coefficient: G(n,m;nu,mu;q)
+    eq(3.71) in 'Encyclopedia' """
+    s = np.sqrt((2 * n + 1) * (2 * nu + 1) * (2 * q + 1) / 4 / np.pi)
+    return (-1) ** (m + mu) * s * float(wigner_3j(n, nu, q, 0, 0, 0)) * \
+           float(wigner_3j(n, nu, q, m, mu, - m - mu))

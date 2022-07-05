@@ -1,11 +1,26 @@
 import numpy as np
 import scipy
 import scipy.special
-from sympy.physics.wigner import wigner_3j
 import matplotlib.pyplot as plt
-# import matplotlib.colors as colors
 from matplotlib import colors
 import time
+import math
+import pywigxjpf as wig
+# import matplotlib.colors as colors
+# from sympy.physics.wigner import wigner_3j
+
+
+def n_idx(n):
+    r""" build np.array of numbers 0,1,1,1,2,2,2,2,2,...,n,..,n """
+    return np.repeat(np.arange(n+1), np.arange(n+1) * 2 + 1)
+
+
+def m_idx(n):
+    r""" build np.array of numbers 0,-1,0,1,-2,-1,0,1,2,...,-n,..,n """
+    return np.concatenate([np.arange(-i, i + 1) for i in range(n + 1)])
+
+
+# print(np.split(np.repeat(m_idx(3), len(np.array([-3, -2, -1, 0, 1, 2, 3]))), 4 **2 ))
 
 
 def dec_to_sph(x, y, z):
@@ -71,6 +86,15 @@ def regular_wvfs(m, n, x, y, z, k):
     return scipy.special.spherical_jn(n, k_abs * r) * scipy.special.sph_harm(m, n, phi, theta)
 
 
+def regular_wvfs_array(n, x, y, z, k):
+    r""" builds np.array of all regular wave functions with order <= n"""
+    rw_list = []
+    for mi in zip(m_idx(n), n_idx(n)):
+        print(mi[0], mi[1])
+        rw_list.append(regular_wvfs(mi[0], mi[1], x, y, z, k))
+    return np.concatenate(np.array(rw_list))
+
+
 def outgoing_wvfs(m, n, x, y, z, k):
     r""" Outgoing basis spherical wave functions
     psi^m_n - eq(between 4.37 and 4.38) in 'Encyclopedia' """
@@ -79,12 +103,27 @@ def outgoing_wvfs(m, n, x, y, z, k):
     return sph_hankel1(n, k_abs * r) * scipy.special.sph_harm(m, n, phi, theta)
 
 
+def outgoing_wvfs_array(n, x, y, z, k):
+    r""" builds np.array of all outgoing wave functions with order less n"""
+    ow_array = np.zeros(((n+1) ** 2, len(x)), dtype=complex)
+    i = 0
+    for mn in zip(m_idx(n), n_idx(n)):
+        ow_array[i] = outgoing_wvfs(mn[0], mn[1], x, y, z, k)
+        i += 1
+    return ow_array
+
+
+# print(outgoing_wvfs_array(3, np.array([-3, -3, -3]), np.array([-3, -3, -3]), np.array([-3, -3, -3]), np.array([-1, -1, 1])))
+
+
 def gaunt_coef(n, m, nu, mu, q):
     r""" Gaunt coefficient: G(n,m;nu,mu;q)
     eq(3.71) in 'Encyclopedia' """
     s = np.sqrt((2 * n + 1) * (2 * nu + 1) * (2 * q + 1) / 4 / np.pi)
-    return (-1) ** (m + mu) * s * float(wigner_3j(n, nu, q, 0, 0, 0)) * \
-           float(wigner_3j(n, nu, q, m, mu, - m - mu))
+    wig.wig_table_init(40, 3)  # this needs revision
+    wig.wig_temp_init(40)  # this needs revision
+    return (-1) ** (m + mu) * s * wig.wig3jj(2*n, 2*nu, 2*q, 0, 0, 0) * \
+           wig.wig3jj(2*n, 2*nu, 2*q, 2*m, 2*mu, - 2*m - 2*mu)
 
 
 def sepc_matr_coef(m, mu, n, nu, k, dist):
@@ -188,18 +227,26 @@ def syst_solve(k, ro, pos, spheres, order):
     return np.array(np.split(coef, 2 * num_of_sph))
 
 
+def accurate_sph_mp_sum(field_array, length):
+    r""" do accurate sum by spheres and multipoles
+    the shape of field array: 0 axis - spheres, 1 axis - multipoles, 2 axis - coordinates
+    return: np.array with values of field in all coordinates """
+    field = np.zeros(length, dtype=complex)
+    for i in range(length):
+        field[i] = math.fsum(np.concatenate(field_array[:, :, i]))
+    return field
+
+
 def total_field(x, y, z, k, ro, pos, spheres, order):
     r""" counts field outside the spheres """
     coef = syst_solve(k, ro, pos, spheres, order)
-    tot_field = np.zeros(len(x), dtype=complex)
-    for n in range(order + 1):
-        for m in range(-n, n + 1):
-            for sph in range(len(spheres)):
-                tot_field += coef[2 * sph, n ** 2 + n + m] * \
-                             outgoing_wvfs(m, n, x - pos[sph][0], y - pos[sph][1], z - pos[sph][2], k)
-            # tot_field += inc_coef(m, n, k) * regular_wvfs(m, n, x, y, z, k)
-                # tot_field += local_inc_coef(m, n, k) * regular_wvfs(m, n, x, y, z, k)
-    return tot_field
+    tot_field_array = np.zeros((len(spheres), (order + 1) ** 2, len(x)), dtype=complex)
+    for sph in range(len(spheres)):
+        coef_array = np.split(np.repeat(coef[2 * sph], len(x)), (order + 1) ** 2)
+        tot_field_array[sph] = coef_array * outgoing_wvfs_array(order, x-pos[sph][0], y-pos[sph][1], z-pos[sph][2], k)
+    tot_field1 = np.sum(tot_field_array, axis=(0, 1))
+    tot_field = accurate_sph_mp_sum(tot_field_array, len(x))
+    return tot_field1 # np.abs(tot_field - tot_field1)
 
 
 def cross_section(k, ro, pos, spheres, order):
