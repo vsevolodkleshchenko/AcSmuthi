@@ -78,6 +78,15 @@ def local_inc_coef(m, n, k, sph_pos, order):
     return inccoef
 
 
+def coefficient_array(n, k, coef, length):
+    c_array = np.zeros(((n+1) ** 2), dtype=complex)
+    i = 0
+    for mn in zip(m_idx(n), n_idx(n)):
+        c_array[i] = coef(mn[0], mn[1], k)
+        i += 1
+    return np.split(np.repeat(c_array, length), (n + 1) ** 2)
+
+
 def regular_wvfs(m, n, x, y, z, k):
     r""" Regular basis spherical wave functions
     ^psi^m_n - eq(between 4.37 and 4.38) of 'Encyclopedia' """
@@ -88,11 +97,12 @@ def regular_wvfs(m, n, x, y, z, k):
 
 def regular_wvfs_array(n, x, y, z, k):
     r""" builds np.array of all regular wave functions with order <= n"""
-    rw_list = []
-    for mi in zip(m_idx(n), n_idx(n)):
-        print(mi[0], mi[1])
-        rw_list.append(regular_wvfs(mi[0], mi[1], x, y, z, k))
-    return np.concatenate(np.array(rw_list))
+    rw_array = np.zeros(((n+1) ** 2, len(x)), dtype=complex)
+    i = 0
+    for mn in zip(m_idx(n), n_idx(n)):
+        rw_array[i] = regular_wvfs(mn[0], mn[1], x, y, z, k)
+        i += 1
+    return rw_array
 
 
 def outgoing_wvfs(m, n, x, y, z, k):
@@ -233,7 +243,18 @@ def accurate_sph_mp_sum(field_array, length):
     return: np.array with values of field in all coordinates """
     field = np.zeros(length, dtype=complex)
     for i in range(length):
-        field[i] = math.fsum(np.concatenate(field_array[:, :, i]))
+        field[i] = math.fsum(np.real(np.concatenate(field_array[:, :, i]))) + \
+                   1j * math.fsum(np.imag(np.concatenate(field_array[:, :, i])))
+    return field
+
+
+def accurate_mp_sum(field_array, length):
+    r""" do accurate sum by multipoles
+    the shape of field array: 0 axis - multipoles, 1 axis - coordinates
+    return: np.array with values of field in all coordinates """
+    field = np.zeros(length, dtype=complex)
+    for i in range(length):
+        field[i] = math.fsum(np.real(field_array[:, i])) + 1j * math.fsum(np.imag(field_array[:, i]))
     return field
 
 
@@ -244,9 +265,9 @@ def total_field(x, y, z, k, ro, pos, spheres, order):
     for sph in range(len(spheres)):
         coef_array = np.split(np.repeat(coef[2 * sph], len(x)), (order + 1) ** 2)
         tot_field_array[sph] = coef_array * outgoing_wvfs_array(order, x-pos[sph][0], y-pos[sph][1], z-pos[sph][2], k)
-    tot_field1 = np.sum(tot_field_array, axis=(0, 1))
-    tot_field = accurate_sph_mp_sum(tot_field_array, len(x))
-    return tot_field1 # np.abs(tot_field - tot_field1)
+    tot_field = np.sum(tot_field_array, axis=(0, 1))
+    # tot_field = accurate_sph_mp_sum(tot_field_array, len(x))
+    return tot_field
 
 
 def cross_section(k, ro, pos, spheres, order):
@@ -427,7 +448,7 @@ def simulation():
 
     # order of decomposition
     order = 8
-    # print("Scattering and extinction cross section:", *cross_section(k, ro, post2, spherest2, order))
+    # print("Scattering and extinction cross section:", *cross_section(k, ro, poses, spheres, order))
 
     plane_number = int(number_of_points / 2) + 1
     xz_plot(span, plane_number, k, ro, poses, spheres, order)
