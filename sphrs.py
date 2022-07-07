@@ -7,7 +7,7 @@ import time
 import math
 import pywigxjpf as wig
 # import matplotlib.colors as colors
-# from sympy.physics.wigner import wigner_3j
+from sympy.physics.wigner import wigner_3j
 
 
 def n_idx(n):
@@ -71,11 +71,12 @@ def inc_coef(m, n, k):
 def local_inc_coef(m, n, k, sph_pos, order):
     r""" Counts local incident coefficients
     d^m_nj - eq(42) in 'Multiple scattering and scattering cross sections P. A. Martin' """
-    inccoef = 0
-    for nu in range(order + 1):
-        for mu in range(-nu, nu + 1):
-            inccoef += inc_coef(mu, nu, k) * sepc_matr_coef(mu, m, nu, n, k, sph_pos)
-    return inccoef
+    inccoef_array = np.zeros((order+1) ** 2, dtype=complex)
+    i = 0
+    for munu in zip(m_idx(order), n_idx(order)):
+        inccoef_array[i] = inc_coef(munu[0], munu[1], k) * sepc_matr_coef(munu[0], m, munu[1], n, k, sph_pos)
+        i += 1
+    return accurate_csum(inccoef_array)
 
 
 def coefficient_array(n, k, coef, length):
@@ -132,7 +133,7 @@ def gaunt_coef(n, m, nu, mu, q):
     s = np.sqrt((2 * n + 1) * (2 * nu + 1) * (2 * q + 1) / 4 / np.pi)
     wig.wig_table_init(40, 3)  # this needs revision
     wig.wig_temp_init(40)  # this needs revision
-    return (-1) ** (m + mu) * s * wig.wig3jj(2*n, 2*nu, 2*q, 0, 0, 0) * \
+    return (-1.) ** (m + mu) * s * wig.wig3jj(2*n, 2*nu, 2*q, 0, 0, 0) * \
            wig.wig3jj(2*n, 2*nu, 2*q, 2*m, 2*mu, - 2*m - 2*mu)
 
 
@@ -146,11 +147,13 @@ def sepc_matr_coef(m, mu, n, nu, k, dist):
     if (abs(n - nu) < abs(m - mu)) and ((n + nu + abs(m - mu)) % 2 != 0):
         q0 = abs(m - mu) + 1
     q_lim = (n + nu - q0) // 2
-    sum = 0
+    sum_array = np.zeros(q_lim // 2 + 1, dtype=complex)
+    i = 0
     for q in range(0, q_lim + 1, 2):
-        sum += (-1) ** q * regular_wvfs(m - mu, q0 + 2 * q, dist[0], dist[1], dist[2], k) * \
+        sum_array[i] = (-1) ** q * regular_wvfs(m - mu, q0 + 2 * q, dist[0], dist[1], dist[2], k) * \
                gaunt_coef(n, m, nu, -mu, q0 + 2 * q)
-    return 4 * np.pi * (-1) ** (mu + nu + q_lim) * sum
+        i += 1
+    return 4 * np.pi * (-1) ** (mu + nu + q_lim) * accurate_csum(sum_array)
 
 
 def sep_matr_coef(m, mu, n, nu, k, dist):
@@ -163,11 +166,13 @@ def sep_matr_coef(m, mu, n, nu, k, dist):
     if (abs(n - nu) < abs(m - mu)) and ((n + nu + abs(m - mu)) % 2 != 0):
         q0 = abs(m - mu) + 1
     q_lim = (n + nu - q0) // 2
-    sum = 0
+    sum_array = np.zeros(q_lim // 2 + 1, dtype=complex)
+    i = 0
     for q in range(0, q_lim + 1, 2):
-        sum += (-1) ** q * outgoing_wvfs(m - mu, q0 + 2 * q, dist[0], dist[1], dist[2], k) * \
+        sum_array[i] = (-1) ** q * outgoing_wvfs(m - mu, q0 + 2 * q, dist[0], dist[1], dist[2], k) * \
                gaunt_coef(n, m, nu, -mu, q0 + 2 * q)
-    return 4 * np.pi * (-1) ** (mu + nu + q_lim) * sum
+        i += 1
+    return 4 * np.pi * (-1) ** (mu + nu + q_lim) * accurate_csum(sum_array)
 
 
 def syst_matr(k, ro, pos, spheres, order):
@@ -237,14 +242,17 @@ def syst_solve(k, ro, pos, spheres, order):
     return np.array(np.split(coef, 2 * num_of_sph))
 
 
+def accurate_csum(array):
+    return math.fsum(np.real(array)) + 1j * math.fsum(np.imag(array))
+
+
 def accurate_sph_mp_sum(field_array, length):
     r""" do accurate sum by spheres and multipoles
     the shape of field array: 0 axis - spheres, 1 axis - multipoles, 2 axis - coordinates
     return: np.array with values of field in all coordinates """
     field = np.zeros(length, dtype=complex)
     for i in range(length):
-        field[i] = math.fsum(np.real(np.concatenate(field_array[:, :, i]))) + \
-                   1j * math.fsum(np.imag(np.concatenate(field_array[:, :, i])))
+        field[i] = accurate_csum(np.concatenate(field_array[:, :, i]))
     return field
 
 
@@ -254,7 +262,7 @@ def accurate_mp_sum(field_array, length):
     return: np.array with values of field in all coordinates """
     field = np.zeros(length, dtype=complex)
     for i in range(length):
-        field[i] = math.fsum(np.real(field_array[:, i])) + 1j * math.fsum(np.imag(field_array[:, i]))
+        field[i] = accurate_csum(field_array[:, i])
     return field
 
 
@@ -303,9 +311,15 @@ def total_field_m(x, y, z, k, ro, pos, spheres, order, m=-1):
     return tot_field
 
 
-def xz_plot(span, plane_number, k, ro, pos, spheres, order):
-    r""" Count field and build a 2D heat-plot in XZ plane for span_y[plane_number]
-    --->z """
+def draw_spheres(field, pos, spheres, x_p, y_p, z_p):
+    for sph in range(len(spheres)):
+        rx, ry, rz = x_p - pos[sph, 0], y_p - pos[sph, 1], z_p - pos[sph, 2]
+        r = np.sqrt(rx ** 2 + ry ** 2 + rz ** 2)
+        field = np.where(r < spheres[sph, 1], 0, field)
+    return field
+
+
+def build_slice_xz(span, plane_number):
     span_x, span_y, span_z = span[0], span[1], span[2]
     grid = np.vstack(np.meshgrid(span_y, span_x, span_z, indexing='ij')).reshape(3, -1).T
     y, x, z = grid[:, 0], grid[:, 1], grid[:, 2]
@@ -316,20 +330,20 @@ def xz_plot(span, plane_number, k, ro, pos, spheres, order):
             (plane_number - 1) * len(span_x) * len(span_z) + len(span_x) * len(span_z)]
     z_p = z[(plane_number - 1) * len(span_x) * len(span_z):
             (plane_number - 1) * len(span_x) * len(span_z) + len(span_x) * len(span_z)]
+    return x_p, y_p, z_p
 
+
+# print(span_x, span_y, span_z, x, y, z, x_p, y_p, z_p, tot_field, xz, sep="\n")
+
+
+def xz_plot(span, plane_number, k, ro, pos, spheres, order):
+    r""" Count field and build a 2D heat-plot in XZ plane for span_y[plane_number]
+    --->z """
+    span_x, span_y, span_z = span[0], span[1], span[2]
+    x_p, y_p, z_p = build_slice_xz(span, plane_number)
     tot_field = np.real(total_field(x_p, y_p, z_p, k, ro, pos, spheres, order))
-
-    # print(span_x, span_y, span_z, x, y, z, x_p, y_p, z_p, tot_field, xz, sep="\n")
-
-    # tot_field = np.real(total_field_m(x_p, y_p, z_p, k, ro, pos, spheres, order))
-
-    for sph in range(len(spheres)):
-        rx, ry, rz = x_p - pos[sph, 0], y_p - pos[sph, 1], z_p - pos[sph, 2]
-        r = np.sqrt(rx ** 2 + ry ** 2 + rz ** 2)
-        tot_field = np.where(r < spheres[sph, 1], 0, tot_field)
-
+    tot_field = draw_spheres(tot_field, pos, spheres, x_p, y_p, z_p)
     xz = tot_field.reshape(len(span_y), len(span_z))
-
     fig, ax = plt.subplots()
     plt.xlabel('z axis')
     plt.ylabel('x axis')
@@ -339,9 +353,7 @@ def xz_plot(span, plane_number, k, ro, pos, spheres, order):
     plt.show()
 
 
-def yz_plot(span, plane_number, k, ro, pos, spheres, order):
-    r""" Count field and build a 2D heat-plot in YZ plane for x[plane_number]
-    --->z """
+def build_slice_yz(span, plane_number):
     span_x, span_y, span_z = span[0], span[1], span[2]
     grid = np.vstack(np.meshgrid(span_x, span_y, span_z, indexing='ij')).reshape(3, -1).T
     x, y, z = grid[:, 0], grid[:, 1], grid[:, 2]
@@ -352,20 +364,17 @@ def yz_plot(span, plane_number, k, ro, pos, spheres, order):
                               (plane_number - 1) * len(span_y) * len(span_z) + len(span_y) * len(span_z)]
     z_p = z[(plane_number - 1) * len(span_y) * len(span_z):
                               (plane_number - 1) * len(span_y) * len(span_z) + len(span_y) * len(span_z)]
+    return x_p, y_p, z_p
 
+
+def yz_plot(span, plane_number, k, ro, pos, spheres, order):
+    r""" Count field and build a 2D heat-plot in YZ plane for x[plane_number]
+    --->z """
+    span_x, span_y, span_z = span[0], span[1], span[2]
+    x_p, y_p, z_p = build_slice_yz(span, plane_number)
     tot_field = np.real(total_field(x_p, y_p, z_p, k, ro, pos, spheres, order))
-
-    # print(span_x, span_y, span_z, x, y, z, x_p, y_p, z_p, tot_field, yz, sep="\n")
-
-    # tot_field = np.real(total_field_m(x_p, y_p, z_p, k, ro, pos, spheres, order))
-
-    for sph in range(len(spheres)):
-        rx, ry, rz = x_p - pos[sph, 0], y_p - pos[sph, 1], z_p - pos[sph, 2]
-        r = np.sqrt(rx ** 2 + ry ** 2 + rz ** 2)
-        tot_field = np.where(r < spheres[sph, 1], 0, tot_field)
-
+    tot_field = draw_spheres(tot_field, pos, spheres, x_p, y_p, z_p)
     yz = tot_field.reshape(len(span_y), len(span_z))
-
     fig, ax = plt.subplots()
     plt.xlabel('z axis')
     plt.ylabel('y axis')
@@ -375,9 +384,7 @@ def yz_plot(span, plane_number, k, ro, pos, spheres, order):
     plt.show()
 
 
-def xy_plot(span, plane_number, k, ro, pos, spheres, order):
-    r""" Count field and build a 2D heat-plot in XY plane for span_z[plane_number]
-    --->y """
+def build_slice_xy(span, plane_number):
     span_x, span_y, span_z = span[0], span[1], span[2]
     grid = np.vstack(np.meshgrid(span_z, span_x, span_y, indexing='ij')).reshape(3, -1).T
     z, x, y = grid[:, 0], grid[:, 1], grid[:, 2]
@@ -388,20 +395,17 @@ def xy_plot(span, plane_number, k, ro, pos, spheres, order):
             (plane_number - 1) * len(span_y) * len(span_x) + len(span_y) * len(span_x)]
     z_p = z[(plane_number - 1) * len(span_y) * len(span_x):
             (plane_number - 1) * len(span_y) * len(span_x) + len(span_y) * len(span_x)]
+    return x_p, y_p, z_p
 
+
+def xy_plot(span, plane_number, k, ro, pos, spheres, order):
+    r""" Count field and build a 2D heat-plot in XY plane for span_z[plane_number]
+    --->y """
+    span_x, span_y, span_z = span[0], span[1], span[2]
+    x_p, y_p, z_p = build_slice_xy(span, plane_number)
     tot_field = np.real(total_field(x_p, y_p, z_p, k, ro, pos, spheres, order))
-
-    # print(span_x, span_y, span_z, x, y, z, x_p, y_p, z_p, tot_field, xy, sep="\n")
-
-    # tot_field = np.real(total_field_m(x_p, y_p, z_p, k, ro, pos, spheres, order))
-
-    for sph in range(len(spheres)):
-        rx, ry, rz = x_p - pos[sph, 0], y_p - pos[sph, 1], z_p - pos[sph, 2]
-        r = np.sqrt(rx ** 2 + ry ** 2 + rz ** 2)
-        tot_field = np.where(r < spheres[sph, 1], 0, tot_field)
-
+    tot_field = draw_spheres(tot_field, pos, spheres, x_p, y_p, z_p)
     xy = tot_field.reshape(len(span_x), len(span_y))
-
     fig, ax = plt.subplots()
     plt.xlabel('y axis')
     plt.ylabel('x axis')
@@ -447,7 +451,7 @@ def simulation():
     k = np.array([k_x, k_y, k_z])
 
     # order of decomposition
-    order = 8
+    order = 6
     # print("Scattering and extinction cross section:", *cross_section(k, ro, poses, spheres, order))
 
     plane_number = int(number_of_points / 2) + 1

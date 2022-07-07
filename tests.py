@@ -10,7 +10,7 @@ import pywigxjpf as wig
 
 # coordinates
 number_of_points = 200
-l = 4
+l = 10
 span_x = np.linspace(-l, l, number_of_points)
 span_y = np.linspace(-l, l, number_of_points)
 span_z = np.linspace(-l, l, number_of_points)
@@ -42,7 +42,7 @@ k_z = 0.70711 * k_fluid
 k = np.array([k_x, k_y, k_z])
 
 # order of decomposition
-order = 15
+order = 20
 
 # the tests will be in xz plane
 plane_number = int(number_of_points / 2) + 1
@@ -62,7 +62,7 @@ def incident_field_test():
     desired_incident_field = np.exp(1j * (k_x * x_p + k_y * y_p + k_z * z_p))
     actual_incident_field_array = sphrs.coefficient_array(order, k, sphrs.inc_coef, len(x_p)) * \
                             sphrs.regular_wvfs_array(order, x_p, y_p, z_p, k)
-    actual_incident_field = sphrs.accurate_mp_sum(actual_incident_field_array, len(x_p))
+    # actual_incident_field = sphrs.accurate_mp_sum(actual_incident_field_array, len(x_p))
     actual_incident_field = np.sum(actual_incident_field_array, axis=0)
     xz_d = np.real(desired_incident_field).reshape(len(span_y), len(span_z))
     xz_a = np.real(actual_incident_field).reshape(len(span_y), len(span_z))
@@ -75,4 +75,47 @@ def incident_field_test():
     np.testing.assert_allclose(actual_incident_field, desired_incident_field, rtol=1e-2)
 
 
+def j_additional_theorem_test(m, n):
+    dist = np.array([-1, 1, 1])
+    desired_j = sphrs.regular_wvfs(m, n, x_p + dist[0], y_p + dist[1], z_p + dist[2], k)
+    srw_array = np.zeros(((order+1) ** 2, len(x_p)), dtype=complex)
+    i = 0
+    for munu in zip(sphrs.m_idx(order), sphrs.n_idx(order)):
+        srw_array[i] = sphrs.regular_wvfs(munu[0], munu[1], x_p, y_p, z_p, k) * \
+                       sphrs.sepc_matr_coef(m, munu[0], n, munu[1], k, dist)
+        i += 1
+    actual_j = sphrs.accurate_mp_sum(srw_array, len(x_p))
+    xz_d = np.real(desired_j).reshape(len(span_y), len(span_z))
+    xz_a = np.real(actual_j).reshape(len(span_y), len(span_z))
+    fig, ax = plt.subplots(1, 2)
+    im1 = ax[0].imshow(xz_d, norm=colors.CenteredNorm(), cmap='seismic', origin='lower',
+                   extent=[span_z.min(), span_z.max(), span_x.min(), span_x.max()])
+    im2 = ax[1].imshow(xz_a, norm=colors.CenteredNorm(), cmap='seismic', origin='lower',
+                   extent=[span_z.min(), span_z.max(), span_x.min(), span_x.max()])
+    plt.show()
+    np.testing.assert_allclose(actual_j, desired_j, rtol=1e-2)
+
+
+def h_additional_theorem_test(m, n):
+    dist = np.array([-1, 1, 1])
+    desired_j = sphrs.regular_wvfs(m, n, x_p + dist[0], y_p + dist[1], z_p + dist[2], k)
+    srw_array = np.zeros(((order+1) ** 2, len(x_p)), dtype=complex)
+    i = 0
+    for munu in zip(sphrs.m_idx(order), sphrs.n_idx(order)):
+        srw_array[i] = sphrs.regular_wvfs(munu[0], munu[1], x_p, y_p, z_p, k) * \
+                       sphrs.sepc_matr_coef(m, munu[0], n, munu[1], k, dist)
+        i += 1
+    actual_j = sphrs.accurate_mp_sum(srw_array, len(x_p))
+    xz_d = np.real(desired_j).reshape(len(span_y), len(span_z))
+    xz_a = np.real(actual_j).reshape(len(span_y), len(span_z))
+    fig, ax = plt.subplots(1, 2)
+    im1 = ax[0].imshow(xz_d, norm=colors.CenteredNorm(), cmap='seismic', origin='lower',
+                   extent=[span_z.min(), span_z.max(), span_x.min(), span_x.max()])
+    im2 = ax[1].imshow(xz_a, norm=colors.CenteredNorm(), cmap='seismic', origin='lower',
+                   extent=[span_z.min(), span_z.max(), span_x.min(), span_x.max()])
+    plt.show()
+    np.testing.assert_allclose(actual_j, desired_j, rtol=1e-2)
+
+
 # incident_field_test()
+# j_additional_theorem_test(3, 3)

@@ -72,3 +72,30 @@ def old_gaunt_coef(n, m, nu, mu, q):
     s = np.sqrt((2 * n + 1) * (2 * nu + 1) * (2 * q + 1) / 4 / np.pi)
     return (-1) ** (m + mu) * s * float(wigner_3j(n, nu, q, 0, 0, 0)) * \
            float(wigner_3j(n, nu, q, m, mu, - m - mu))
+
+
+def old_local_inc_coef(m, n, k, sph_pos, order):
+    r""" Counts local incident coefficients
+    d^m_nj - eq(42) in 'Multiple scattering and scattering cross sections P. A. Martin' """
+    inccoef = 0
+    for nu in range(order + 1):
+        for mu in range(-nu, nu + 1):
+            inccoef += inc_coef(mu, nu, k) * sepc_matr_coef(mu, m, nu, n, k, sph_pos)
+    return inccoef
+
+
+def old_sepc_matr_coef(m, mu, n, nu, k, dist):
+    r""" Coefficient ^S^mmu_nnu(b) of separation matrix
+    eq(3.92) and eq(3.74) in 'Encyclopedia' """
+    if abs(n - nu) >= abs(m - mu):
+        q0 = abs(n - nu)
+    if (abs(n - nu) < abs(m - mu)) and ((n + nu + abs(m - mu)) % 2 == 0):
+        q0 = abs(m - mu)
+    if (abs(n - nu) < abs(m - mu)) and ((n + nu + abs(m - mu)) % 2 != 0):
+        q0 = abs(m - mu) + 1
+    q_lim = (n + nu - q0) // 2
+    sum = 0
+    for q in range(0, q_lim + 1, 2):
+        sum += (-1) ** q * regular_wvfs(m - mu, q0 + 2 * q, dist[0], dist[1], dist[2], k) * \
+               gaunt_coef(n, m, nu, -mu, q0 + 2 * q)
+    return 4 * np.pi * (-1) ** (mu + nu + q_lim) * sum
