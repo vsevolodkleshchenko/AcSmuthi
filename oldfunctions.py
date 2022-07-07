@@ -99,3 +99,34 @@ def old_sepc_matr_coef(m, mu, n, nu, k, dist):
         sum += (-1) ** q * regular_wvfs(m - mu, q0 + 2 * q, dist[0], dist[1], dist[2], k) * \
                gaunt_coef(n, m, nu, -mu, q0 + 2 * q)
     return 4 * np.pi * (-1) ** (mu + nu + q_lim) * sum
+
+
+def old_build_slice_xz(span, plane_number):
+    span_x, span_y, span_z = span[0], span[1], span[2]
+    grid = np.vstack(np.meshgrid(span_y, span_x, span_z, indexing='ij')).reshape(3, -1).T
+    y, x, z = grid[:, 0], grid[:, 1], grid[:, 2]
+
+    x_p = x[(plane_number - 1) * len(span_x) * len(span_z):
+            (plane_number - 1) * len(span_x) * len(span_z) + len(span_x) * len(span_z)]
+    y_p = y[(plane_number - 1) * len(span_x) * len(span_z):
+            (plane_number - 1) * len(span_x) * len(span_z) + len(span_x) * len(span_z)]
+    z_p = z[(plane_number - 1) * len(span_x) * len(span_z):
+            (plane_number - 1) * len(span_x) * len(span_z) + len(span_x) * len(span_z)]
+    return x_p, y_p, z_p
+
+
+def old_xz_plot(span, plane_number, k, ro, pos, spheres, order):
+    r""" Count field and build a 2D heat-plot in XZ plane for span_y[plane_number]
+    --->z """
+    span_x, span_y, span_z = span[0], span[1], span[2]
+    x_p, y_p, z_p = build_slice_xz(span, plane_number)
+    tot_field = np.real(total_field(x_p, y_p, z_p, k, ro, pos, spheres, order))
+    tot_field = draw_spheres(tot_field, pos, spheres, x_p, y_p, z_p)
+    xz = tot_field.reshape(len(span_x), len(span_z))
+    fig, ax = plt.subplots()
+    plt.xlabel('z axis')
+    plt.ylabel('x axis')
+    im = ax.imshow(xz, norm=colors.CenteredNorm(), cmap='seismic', origin='lower',
+                   extent=[span_z.min(), span_z.max(), span_x.min(), span_x.max()])
+    plt.colorbar(im)
+    plt.show()

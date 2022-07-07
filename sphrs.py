@@ -319,98 +319,46 @@ def draw_spheres(field, pos, spheres, x_p, y_p, z_p):
     return field
 
 
-def build_slice_xz(span, plane_number):
+def build_slice(span, plane_number, plane='xz'):
+    r""" Build np.arrays of points of grid to build a slice plot """
     span_x, span_y, span_z = span[0], span[1], span[2]
-    grid = np.vstack(np.meshgrid(span_y, span_x, span_z, indexing='ij')).reshape(3, -1).T
-    y, x, z = grid[:, 0], grid[:, 1], grid[:, 2]
+    x, y, z, span_v, span_h = None, None, None, None, None
+    if plane == 'xz':
+        grid = np.vstack(np.meshgrid(span_y, span_x, span_z, indexing='ij')).reshape(3, -1).T
+        y, x, z = grid[:, 0], grid[:, 1], grid[:, 2]
+        span_v, span_h = span_x, span_z
+    if plane == 'yz':
+        grid = np.vstack(np.meshgrid(span_x, span_y, span_z, indexing='ij')).reshape(3, -1).T
+        x, y, z = grid[:, 0], grid[:, 1], grid[:, 2]
+        span_v, span_h = span_y, span_z
+    if plane == 'xy':
+        grid = np.vstack(np.meshgrid(span_z, span_x, span_y, indexing='ij')).reshape(3, -1).T
+        z, x, y = grid[:, 0], grid[:, 1], grid[:, 2]
+        span_v, span_h = span_x, span_y
 
-    x_p = x[(plane_number - 1) * len(span_x) * len(span_z):
-            (plane_number - 1) * len(span_x) * len(span_z) + len(span_x) * len(span_z)]
-    y_p = y[(plane_number - 1) * len(span_x) * len(span_z):
-            (plane_number - 1) * len(span_x) * len(span_z) + len(span_x) * len(span_z)]
-    z_p = z[(plane_number - 1) * len(span_x) * len(span_z):
-            (plane_number - 1) * len(span_x) * len(span_z) + len(span_x) * len(span_z)]
-    return x_p, y_p, z_p
+    x_p = x[(plane_number - 1) * len(span_v) * len(span_h):
+            (plane_number - 1) * len(span_v) * len(span_h) + len(span_v) * len(span_h)]
+    y_p = y[(plane_number - 1) * len(span_v) * len(span_h):
+            (plane_number - 1) * len(span_v) * len(span_h) + len(span_v) * len(span_h)]
+    z_p = z[(plane_number - 1) * len(span_v) * len(span_h):
+            (plane_number - 1) * len(span_v) * len(span_h) + len(span_v) * len(span_h)]
+    return x_p, y_p, z_p, span_v, span_h
 
 
-# print(span_x, span_y, span_z, x, y, z, x_p, y_p, z_p, tot_field, xz, sep="\n")
-
-
-def xz_plot(span, plane_number, k, ro, pos, spheres, order):
-    r""" Count field and build a 2D heat-plot in XZ plane for span_y[plane_number]
-    --->z """
-    span_x, span_y, span_z = span[0], span[1], span[2]
-    x_p, y_p, z_p = build_slice_xz(span, plane_number)
+def slice_plot(span, plane_number, k, ro, pos, spheres, order, plane='xz'):
+    r""" Count field and build a 2D heat-plot in:
+     XZ plane for span_y[plane_number] : --->z
+     YZ plane for span_x[plane_number] : --->z
+     XY plane for span_z[plane_number] : --->y """
+    x_p, y_p, z_p, span_v, span_h = build_slice(span, plane_number, plane=plane)
     tot_field = np.real(total_field(x_p, y_p, z_p, k, ro, pos, spheres, order))
     tot_field = draw_spheres(tot_field, pos, spheres, x_p, y_p, z_p)
-    xz = tot_field.reshape(len(span_y), len(span_z))
+    tot_field_reshaped = tot_field.reshape(len(span_v), len(span_h))
     fig, ax = plt.subplots()
-    plt.xlabel('z axis')
-    plt.ylabel('x axis')
-    im = ax.imshow(xz, norm=colors.CenteredNorm(), cmap='seismic', origin='lower',
-                   extent=[span_z.min(), span_z.max(), span_x.min(), span_x.max()])
-    plt.colorbar(im)
-    plt.show()
-
-
-def build_slice_yz(span, plane_number):
-    span_x, span_y, span_z = span[0], span[1], span[2]
-    grid = np.vstack(np.meshgrid(span_x, span_y, span_z, indexing='ij')).reshape(3, -1).T
-    x, y, z = grid[:, 0], grid[:, 1], grid[:, 2]
-
-    x_p = x[(plane_number - 1) * len(span_y) * len(span_z):
-                              (plane_number - 1) * len(span_y) * len(span_z) + len(span_y) * len(span_z)]
-    y_p = y[(plane_number - 1) * len(span_y) * len(span_z):
-                              (plane_number - 1) * len(span_y) * len(span_z) + len(span_y) * len(span_z)]
-    z_p = z[(plane_number - 1) * len(span_y) * len(span_z):
-                              (plane_number - 1) * len(span_y) * len(span_z) + len(span_y) * len(span_z)]
-    return x_p, y_p, z_p
-
-
-def yz_plot(span, plane_number, k, ro, pos, spheres, order):
-    r""" Count field and build a 2D heat-plot in YZ plane for x[plane_number]
-    --->z """
-    span_x, span_y, span_z = span[0], span[1], span[2]
-    x_p, y_p, z_p = build_slice_yz(span, plane_number)
-    tot_field = np.real(total_field(x_p, y_p, z_p, k, ro, pos, spheres, order))
-    tot_field = draw_spheres(tot_field, pos, spheres, x_p, y_p, z_p)
-    yz = tot_field.reshape(len(span_y), len(span_z))
-    fig, ax = plt.subplots()
-    plt.xlabel('z axis')
-    plt.ylabel('y axis')
-    im = ax.imshow(yz, norm=colors.CenteredNorm(), cmap='seismic', origin='lower',
-                   extent=[span_z.min(), span_z.max(), span_y.min(), span_y.max()])
-    plt.colorbar(im)
-    plt.show()
-
-
-def build_slice_xy(span, plane_number):
-    span_x, span_y, span_z = span[0], span[1], span[2]
-    grid = np.vstack(np.meshgrid(span_z, span_x, span_y, indexing='ij')).reshape(3, -1).T
-    z, x, y = grid[:, 0], grid[:, 1], grid[:, 2]
-
-    x_p = x[(plane_number - 1) * len(span_y) * len(span_x):
-            (plane_number - 1) * len(span_y) * len(span_x) + len(span_y) * len(span_x)]
-    y_p = y[(plane_number - 1) * len(span_y) * len(span_x):
-            (plane_number - 1) * len(span_y) * len(span_x) + len(span_y) * len(span_x)]
-    z_p = z[(plane_number - 1) * len(span_y) * len(span_x):
-            (plane_number - 1) * len(span_y) * len(span_x) + len(span_y) * len(span_x)]
-    return x_p, y_p, z_p
-
-
-def xy_plot(span, plane_number, k, ro, pos, spheres, order):
-    r""" Count field and build a 2D heat-plot in XY plane for span_z[plane_number]
-    --->y """
-    span_x, span_y, span_z = span[0], span[1], span[2]
-    x_p, y_p, z_p = build_slice_xy(span, plane_number)
-    tot_field = np.real(total_field(x_p, y_p, z_p, k, ro, pos, spheres, order))
-    tot_field = draw_spheres(tot_field, pos, spheres, x_p, y_p, z_p)
-    xy = tot_field.reshape(len(span_x), len(span_y))
-    fig, ax = plt.subplots()
-    plt.xlabel('y axis')
-    plt.ylabel('x axis')
-    im = ax.imshow(xy, norm=colors.CenteredNorm(), cmap='seismic', origin='lower',
-                   extent=[span_y.min(), span_y.max(), span_x.min(), span_x.max()])
+    plt.xlabel(plane[1]+'axis')
+    plt.ylabel(plane[0]+'axis')
+    im = ax.imshow(tot_field_reshaped, norm=colors.CenteredNorm(), cmap='seismic', origin='lower',
+                   extent=[span_h.min(), span_h.max(), span_v.min(), span_v.max()])
     plt.colorbar(im)
     plt.show()
 
@@ -455,7 +403,7 @@ def simulation():
     # print("Scattering and extinction cross section:", *cross_section(k, ro, poses, spheres, order))
 
     plane_number = int(number_of_points / 2) + 1
-    xz_plot(span, plane_number, k, ro, poses, spheres, order)
+    slice_plot(span, plane_number, k, ro, poses, spheres, order, plane='xy')
 
 
 def timetest(simulation):
@@ -465,4 +413,4 @@ def timetest(simulation):
     print("Time:", end-start)
 
 
-timetest(simulation)
+# timetest(simulation)
