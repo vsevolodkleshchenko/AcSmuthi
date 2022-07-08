@@ -25,7 +25,7 @@ def m_idx(n):
 
 def dec_to_sph(x, y, z):
     """ Transition from cartesian cs to spherical cs """
-    e = 1e-13
+    e = 1e-16
     r = np.sqrt(x * x + y * y + z * z)
     phi = np.zeros(np.size(r))
     theta = np.zeros(np.size(r))
@@ -131,8 +131,8 @@ def gaunt_coef(n, m, nu, mu, q):
     r""" Gaunt coefficient: G(n,m;nu,mu;q)
     eq(3.71) in 'Encyclopedia' """
     s = np.sqrt((2 * n + 1) * (2 * nu + 1) * (2 * q + 1) / 4 / np.pi)
-    wig.wig_table_init(40, 3)  # this needs revision
-    wig.wig_temp_init(40)  # this needs revision
+    wig.wig_table_init(60, 3)  # this needs revision
+    wig.wig_temp_init(60)  # this needs revision
     return (-1.) ** (m + mu) * s * wig.wig3jj(2*n, 2*nu, 2*q, 0, 0, 0) * \
            wig.wig3jj(2*n, 2*nu, 2*q, 2*m, 2*mu, - 2*m - 2*mu)
 
@@ -147,9 +147,9 @@ def sepc_matr_coef(m, mu, n, nu, k, dist):
     if (abs(n - nu) < abs(m - mu)) and ((n + nu + abs(m - mu)) % 2 != 0):
         q0 = abs(m - mu) + 1
     q_lim = (n + nu - q0) // 2
-    sum_array = np.zeros(q_lim // 2 + 1, dtype=complex)
+    sum_array = np.zeros(q_lim + 1, dtype=complex)
     i = 0
-    for q in range(0, q_lim + 1, 2):
+    for q in range(0, q_lim + 1):
         sum_array[i] = (-1) ** q * regular_wvfs(m - mu, q0 + 2 * q, dist[0], dist[1], dist[2], k) * \
                gaunt_coef(n, m, nu, -mu, q0 + 2 * q)
         i += 1
@@ -166,9 +166,9 @@ def sep_matr_coef(m, mu, n, nu, k, dist):
     if (abs(n - nu) < abs(m - mu)) and ((n + nu + abs(m - mu)) % 2 != 0):
         q0 = abs(m - mu) + 1
     q_lim = (n + nu - q0) // 2
-    sum_array = np.zeros(q_lim // 2 + 1, dtype=complex)
+    sum_array = np.zeros(q_lim + 1, dtype=complex)
     i = 0
-    for q in range(0, q_lim + 1, 2):
+    for q in range(0, q_lim + 1):
         sum_array[i] = (-1) ** q * outgoing_wvfs(m - mu, q0 + 2 * q, dist[0], dist[1], dist[2], k) * \
                gaunt_coef(n, m, nu, -mu, q0 + 2 * q)
         i += 1
@@ -399,11 +399,11 @@ def simulation():
     k = np.array([k_x, k_y, k_z])
 
     # order of decomposition
-    order = 6
+    order = 8
     # print("Scattering and extinction cross section:", *cross_section(k, ro, poses, spheres, order))
 
     plane_number = int(number_of_points / 2) + 1
-    slice_plot(span, plane_number, k, ro, poses, spheres, order, plane='xy')
+    slice_plot(span, plane_number, k, ro, poses, spheres, order, plane='xz')
 
 
 def timetest(simulation):
@@ -413,4 +413,4 @@ def timetest(simulation):
     print("Time:", end-start)
 
 
-# timetest(simulation)
+timetest(simulation)
