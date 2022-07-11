@@ -282,20 +282,25 @@ def cross_section(k, ro, pos, spheres, order):
     r""" Counts scattering and extinction cross sections Sigma_sc and Sigma_ex
     eq(46,47) in 'Multiple scattering and scattering cross sections P. A. Martin' """
     coef = syst_solve(k, ro, pos, spheres, order)
-    num_sph = len(pos)
-    sigma_ex, sigma_sc1, sigma_sc2 = 0, 0, 0
+    num_sph = len(spheres)
+    sigma_ex = np.zeros(num_sph * (order + 1) ** 2)
+    sigma_sc1 = np.zeros(num_sph * (order + 1) ** 2)
+    sigma_sc2 = np.zeros((num_sph * (order + 1) ** 2) ** 2, dtype=complex)
+    jmn, jmnlmunu = 0, 0
     for j in range(num_sph):
-        for n in range(order + 1):
-            for m in range(-n, n + 1):
-                for l in range(num_sph):
-                    for nu in range(order + 1):
-                        for mu in range(-nu, nu + 1):
-                            sigma_sc2 += np.conj(coef[2 * j, n ** 2 + n + m]) * \
-                                       coef[2 * l, nu ** 2 + nu + mu] * \
-                                       sepc_matr_coef(mu, m, nu, n, k, pos[j] - pos[l])
-                sigma_sc1 += np.abs(coef[2 * j, n ** 2 + n + m])
-                sigma_ex += - np.real(coef[2 * j, n ** 2 + n + m] * np.conj(inc_coef(m, n, k)))
-    sigma_sc = np.real(sigma_sc1 + sigma_sc2)
+        for mn in zip(m_idx(order), n_idx(order)):
+            for l in range(num_sph):
+                for munu in zip(m_idx(order), n_idx(order)):
+                    sigma_sc2[jmnlmunu] = np.conj(coef[2 * j, mn[1] ** 2 + mn[1] + mn[0]]) * \
+                               coef[2 * l, munu[1] ** 2 + munu[1] + munu[0]] * \
+                               sepc_matr_coef(munu[0], mn[0], munu[1], mn[1], k, pos[j] - pos[l])
+                    jmnlmunu += 1
+            sigma_sc1[jmn] = np.abs(coef[2 * j, mn[1] ** 2 + mn[1] + mn[0]]) ** 2
+            sigma_ex[jmn] = - np.real(coef[2 * j, mn[1] ** 2 + mn[1] + mn[0]] *
+                                      np.conj(local_inc_coef(mn[0], mn[1], k, pos[j], order)))
+            jmn += 1
+    sigma_sc = math.fsum(np.real(sigma_sc1)) + math.fsum(np.real(sigma_sc2))
+    sigma_ex = math.fsum(sigma_ex)
     return sigma_sc, sigma_ex
 
 
@@ -400,7 +405,8 @@ def simulation():
 
     # order of decomposition
     order = 8
-    # print("Scattering and extinction cross section:", *cross_section(k, ro, poses, spheres, order))
+
+    print("Scattering and extinction cross section:", *cross_section(k, ro, poses, spheres, order))
 
     plane_number = int(number_of_points / 2) + 1
     slice_plot(span, plane_number, k, ro, poses, spheres, order, plane='xz')

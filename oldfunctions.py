@@ -130,3 +130,24 @@ def old_xz_plot(span, plane_number, k, ro, pos, spheres, order):
                    extent=[span_z.min(), span_z.max(), span_x.min(), span_x.max()])
     plt.colorbar(im)
     plt.show()
+
+
+def old_cross_section(k, ro, pos, spheres, order):
+    r""" Counts scattering and extinction cross sections Sigma_sc and Sigma_ex
+    eq(46,47) in 'Multiple scattering and scattering cross sections P. A. Martin' """
+    coef = syst_solve(k, ro, pos, spheres, order)
+    num_sph = len(pos)
+    sigma_ex, sigma_sc1, sigma_sc2 = 0, 0, 0
+    for j in range(num_sph):
+        for n in range(order + 1):
+            for m in range(-n, n + 1):
+                for l in range(num_sph):
+                    for nu in range(order + 1):
+                        for mu in range(-nu, nu + 1):
+                            sigma_sc2 += np.conj(coef[2 * j, n ** 2 + n + m]) * \
+                                       coef[2 * l, nu ** 2 + nu + mu] * \
+                                       sepc_matr_coef(mu, m, nu, n, k, pos[j] - pos[l])
+                sigma_sc1 += np.abs(coef[2 * j, n ** 2 + n + m])
+                sigma_ex += - np.real(coef[2 * j, n ** 2 + n + m] * np.conj(inc_coef(m, n, k)))
+    sigma_sc = np.real(sigma_sc1 + sigma_sc2)
+    return sigma_sc, sigma_ex

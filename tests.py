@@ -9,8 +9,8 @@ import math
 import pywigxjpf as wig
 
 # coordinates
-number_of_points = 500
-l = 10
+number_of_points = 200
+l = 4
 span_x = np.linspace(-l, l, number_of_points)
 span_y = np.linspace(-l, l, number_of_points)
 span_z = np.linspace(-l, l, number_of_points)
@@ -87,17 +87,16 @@ def j_additional_theorem_test(m, n):
 
 
 def h_additional_theorem_test(m, n):
-    dist = np.array([-1, 1, 1])
+    dist = np.array([0, 0, -5])
     desired_h = sphrs.outgoing_wvfs(m, n, x_p + dist[0], y_p + dist[1], z_p + dist[2], k)
     sow_array = np.zeros(((order+1) ** 2, len(x_p)), dtype=complex)
     i = 0
     for munu in zip(sphrs.m_idx(order), sphrs.n_idx(order)):
         sow_array[i] = sphrs.outgoing_wvfs(munu[0], munu[1], x_p, y_p, z_p, k) * \
                        sphrs.sepc_matr_coef(m, munu[0], n, munu[1], k, dist)
-        print(sphrs.sepc_matr_coef(m, munu[0], n, munu[1], k, dist))
         i += 1
     actual_h = sphrs.accurate_mp_sum(sow_array, len(x_p))
-    actual_h = sphrs.draw_spheres(actual_h, np.array([np.array([0, 0, 0])]), spheres, x_p, y_p, z_p)
+    # actual_h = sphrs.draw_spheres(actual_h, np.array([np.array([0, 0, 0])]), spheres, x_p, y_p, z_p)
     plots_for_tests(actual_h, desired_h)
     np.testing.assert_allclose(actual_h, desired_h, rtol=1e-2)
 
