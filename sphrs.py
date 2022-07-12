@@ -320,7 +320,7 @@ def draw_spheres(field, pos, spheres, x_p, y_p, z_p):
     for sph in range(len(spheres)):
         rx, ry, rz = x_p - pos[sph, 0], y_p - pos[sph, 1], z_p - pos[sph, 2]
         r = np.sqrt(rx ** 2 + ry ** 2 + rz ** 2)
-        field = np.where(r < spheres[sph, 1], 0, field)
+        field = np.where(r <= spheres[sph, 1], 0, field)
     return field
 
 
@@ -419,4 +419,4 @@ def timetest(simulation):
     print("Time:", end-start)
 
 
-timetest(simulation)
+# timetest(simulation)
