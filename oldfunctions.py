@@ -1,3 +1,6 @@
+from sympy.physics.wigner import wigner_3j
+
+
 def yz_old(span, plane_number, k, ro, pos, spheres, order):
     r"""
     OLD 2D heat-plot in YZ plane for x[plane_number]

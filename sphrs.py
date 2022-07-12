@@ -6,8 +6,6 @@ from matplotlib import colors
 import time
 import math
 import pywigxjpf as wig
-# import matplotlib.colors as colors
-from sympy.physics.wigner import wigner_3j
 
 
 def n_idx(n):
@@ -20,7 +18,8 @@ def m_idx(n):
     return np.concatenate([np.arange(-i, i + 1) for i in range(n + 1)])
 
 
-# print(np.split(np.repeat(m_idx(3), len(np.array([-3, -2, -1, 0, 1, 2, 3]))), 4 **2 ))
+def multipoles(n):
+    return zip(m_idx(n), n_idx(n))
 
 
 def dec_to_sph(x, y, z):
@@ -61,73 +60,71 @@ def sph_hankel1_der(n, z):
     return scipy.special.spherical_jn(n, z, derivative=True) + 1j * sph_neyman_der(n, z)
 
 
-def inc_coef(m, n, k):
+def incident_coefficient(m, n, k):
     r""" Coefficients in decomposition of plane wave
     d^m_n - eq(4.40) of 'Encyclopedia' """
     k_abs, k_phi, k_theta = dec_to_sph(k[0], k[1], k[2])
     return 4 * np.pi * 1j ** n * np.conj(scipy.special.sph_harm(m, n, k_phi, k_theta))
 
 
-def local_inc_coef(m, n, k, sph_pos, order):
+def local_incident_coefficient(m, n, k, sph_pos, order):
     r""" Counts local incident coefficients
     d^m_nj - eq(42) in 'Multiple scattering and scattering cross sections P. A. Martin' """
-    inccoef_array = np.zeros((order+1) ** 2, dtype=complex)
+    incident_coefficient_array = np.zeros((order+1) ** 2, dtype=complex)
     i = 0
-    for munu in zip(m_idx(order), n_idx(order)):
-        inccoef_array[i] = inc_coef(munu[0], munu[1], k) * sepc_matr_coef(munu[0], m, munu[1], n, k, sph_pos)
+    for munu in multipoles(order):
+        incident_coefficient_array[i] = incident_coefficient(munu[0], munu[1], k) * \
+                                        regular_separation_coefficient(munu[0], m, munu[1], n, k, sph_pos)
         i += 1
-    return accurate_csum(inccoef_array)
+    return complex_fsum(incident_coefficient_array)
 
 
 def coefficient_array(n, k, coef, length):
     c_array = np.zeros(((n+1) ** 2), dtype=complex)
     i = 0
-    for mn in zip(m_idx(n), n_idx(n)):
+    for mn in multipoles(n):
         c_array[i] = coef(mn[0], mn[1], k)
         i += 1
     return np.split(np.repeat(c_array, length), (n + 1) ** 2)
 
 
-def regular_wvfs(m, n, x, y, z, k):
-    r""" Regular basis spherical wave functions
+def regular_wave_function(m, n, x, y, z, k):
+    r""" Regular basis spherical wave function
     ^psi^m_n - eq(between 4.37 and 4.38) of 'Encyclopedia' """
     k_abs, k_phi, k_theta = dec_to_sph(k[0], k[1], k[2])
     r, phi, theta = dec_to_sph(x, y, z)
     return scipy.special.spherical_jn(n, k_abs * r) * scipy.special.sph_harm(m, n, phi, theta)
 
 
-def regular_wvfs_array(n, x, y, z, k):
+def regular_wave_functions_array(n, x, y, z, k):
     r""" builds np.array of all regular wave functions with order <= n"""
     rw_array = np.zeros(((n+1) ** 2, len(x)), dtype=complex)
     i = 0
-    for mn in zip(m_idx(n), n_idx(n)):
-        rw_array[i] = regular_wvfs(mn[0], mn[1], x, y, z, k)
+    for mn in multipoles(n):
+        rw_array[i] = regular_wave_function(mn[0], mn[1], x, y, z, k)
         i += 1
     return rw_array
 
 
-def outgoing_wvfs(m, n, x, y, z, k):
-    r""" Outgoing basis spherical wave functions
+def outgoing_wave_function(m, n, x, y, z, k):
+    r""" Outgoing basis spherical wave function
     psi^m_n - eq(between 4.37 and 4.38) in 'Encyclopedia' """
     k_abs, k_phi, k_theta = dec_to_sph(k[0], k[1], k[2])
     r, phi, theta = dec_to_sph(x, y, z)
     return sph_hankel1(n, k_abs * r) * scipy.special.sph_harm(m, n, phi, theta)
 
 
-def outgoing_wvfs_array(n, x, y, z, k):
+def outgoing_wave_functions_array(n, x, y, z, k):
     r""" builds np.array of all outgoing wave functions with order less n"""
     ow_array = np.zeros(((n+1) ** 2, len(x)), dtype=complex)
     i = 0
-    for mn in zip(m_idx(n), n_idx(n)):
-        ow_array[i] = outgoing_wvfs(mn[0], mn[1], x, y, z, k)
+    for mn in multipoles(n):
+        ow_array[i] = outgoing_wave_function(mn[0], mn[1], x, y, z, k)
         i += 1
     return ow_array
 
 
-# print(outgoing_wvfs_array(3, np.array([-3, -3, -3]), np.array([-3, -3, -3]), np.array([-3, -3, -3]), np.array([-1, -1, 1])))
-
-
-def gaunt_coef(n, m, nu, mu, q):
+def gaunt_coefficient(n, m, nu, mu, q):
     r""" Gaunt coefficient: G(n,m;nu,mu;q)
     eq(3.71) in 'Encyclopedia' """
     s = np.sqrt((2 * n + 1) * (2 * nu + 1) * (2 * q + 1) / 4 / np.pi)
@@ -137,7 +134,7 @@ def gaunt_coef(n, m, nu, mu, q):
            wig.wig3jj(2*n, 2*nu, 2*q, 2*m, 2*mu, - 2*m - 2*mu)
 
 
-def sepc_matr_coef(m, mu, n, nu, k, dist):
+def regular_separation_coefficient(m, mu, n, nu, k, dist):
     r""" Coefficient ^S^mmu_nnu(b) of separation matrix
     eq(3.92) and eq(3.74) in 'Encyclopedia' """
     if abs(n - nu) >= abs(m - mu):
@@ -150,13 +147,13 @@ def sepc_matr_coef(m, mu, n, nu, k, dist):
     sum_array = np.zeros(q_lim + 1, dtype=complex)
     i = 0
     for q in range(0, q_lim + 1):
-        sum_array[i] = (-1) ** q * regular_wvfs(m - mu, q0 + 2 * q, dist[0], dist[1], dist[2], k) * \
-               gaunt_coef(n, m, nu, -mu, q0 + 2 * q)
+        sum_array[i] = (-1) ** q * regular_wave_function(m - mu, q0 + 2 * q, dist[0], dist[1], dist[2], k) * \
+                       gaunt_coefficient(n, m, nu, -mu, q0 + 2 * q)
         i += 1
-    return 4 * np.pi * (-1) ** (mu + nu + q_lim) * accurate_csum(sum_array)
+    return 4 * np.pi * (-1) ** (mu + nu + q_lim) * complex_fsum(sum_array)
 
 
-def sep_matr_coef(m, mu, n, nu, k, dist):
+def outgoing_separation_coefficient(m, mu, n, nu, k, dist):
     r""" Coefficient S^mmu_nnu(b) of separation matrix
     eq(3.97) and eq(3.74) in 'Encyclopedia' """
     if abs(n - nu) >= abs(m - mu):
@@ -169,14 +166,14 @@ def sep_matr_coef(m, mu, n, nu, k, dist):
     sum_array = np.zeros(q_lim + 1, dtype=complex)
     i = 0
     for q in range(0, q_lim + 1):
-        sum_array[i] = (-1) ** q * outgoing_wvfs(m - mu, q0 + 2 * q, dist[0], dist[1], dist[2], k) * \
-               gaunt_coef(n, m, nu, -mu, q0 + 2 * q)
+        sum_array[i] = (-1) ** q * outgoing_wave_function(m - mu, q0 + 2 * q, dist[0], dist[1], dist[2], k) * \
+                       gaunt_coefficient(n, m, nu, -mu, q0 + 2 * q)
         i += 1
-    return 4 * np.pi * (-1) ** (mu + nu + q_lim) * accurate_csum(sum_array)
+    return 4 * np.pi * (-1) ** (mu + nu + q_lim) * complex_fsum(sum_array)
 
 
-def syst_matr(k, ro, pos, spheres, order):
-    r""" Builds T-matrix """
+def system_matrix(k, ro, pos, spheres, order):
+    r""" Builds T^{-1} - matrix """
     k_abs = dec_to_sph(k[0], k[1], k[2])[0]
     num_of_coef = (order + 1) ** 2
     block_width = num_of_coef * 2
@@ -202,102 +199,103 @@ def syst_matr(k, ro, pos, spheres, order):
             other_sph = np.where(all_spheres != sph)[0]
             for osph in other_sph:
                 for m in range(-n, n + 1):
-                    for nu in range(order + 1):
-                        for mu in range(-nu, nu + 1):
-                            t_matrix[sph * block_height + 2 * (n ** 2 + n + m),
-                                     osph * block_width + nu ** 2 + nu + mu] = \
-                                -scipy.special.spherical_jn(n, k_abs * r_sph) * \
-                                sep_matr_coef(mu, m, nu, n, k, pos[osph] - pos[sph])
-                            t_matrix[sph * block_height + 2 * (n ** 2 + n + m) + 1,
-                                     osph * block_width + nu ** 2 + nu + mu] = \
-                                -scipy.special.spherical_jn(n, k_abs * r_sph, derivative=True) * \
-                                sep_matr_coef(mu, m, nu, n, k, pos[osph] - pos[sph])
+                    for munu in multipoles(order):
+                        t_matrix[sph * block_height + 2 * (n ** 2 + n + m),
+                                 osph * block_width + munu[1] ** 2 + munu[1] + munu[0]] = \
+                            -scipy.special.spherical_jn(n, k_abs * r_sph) * \
+                            outgoing_separation_coefficient(munu[0], m, munu[1], n, k, pos[osph] - pos[sph])
+                        t_matrix[sph * block_height + 2 * (n ** 2 + n + m) + 1,
+                                 osph * block_width + munu[1] ** 2 + munu[1] + munu[0]] = \
+                            -scipy.special.spherical_jn(n, k_abs * r_sph, derivative=True) * \
+                            outgoing_separation_coefficient(munu[0], m, munu[1], n, k, pos[osph] - pos[sph])
     return t_matrix
 
 
-def syst_rhs(k, pos, spheres, order):
-    r""" build right hand side of T-matrix system """
+def system_rhs(k, pos, spheres, order):
+    r""" build right hand side of system """
     k_abs = dec_to_sph(k[0], k[1], k[2])[0]
     num_of_sph = len(spheres)
     num_of_coef = (order + 1) ** 2
     rhs = np.zeros(num_of_coef * 2 * num_of_sph, dtype=complex)
     for sph in range(num_of_sph):
-        for n in range(order + 1):
-            for m in range(-n, n + 1):
-                inccoef = local_inc_coef(m, n, k, pos[sph], order)
-                rhs[sph * 2 * num_of_coef + 2 * (n ** 2 + n + m)] = inccoef * \
-                       scipy.special.spherical_jn(n, k_abs * spheres[sph, 1])
-                rhs[sph * 2 * num_of_coef + 2 * (n ** 2 + n + m) + 1] = inccoef * \
-                           scipy.special.spherical_jn(n, k_abs * spheres[sph, 1], derivative=True)
+        for mn in multipoles(order):
+            loc_inc_coef = local_incident_coefficient(mn[0], mn[1], k, pos[sph], order)
+            rhs[sph * 2 * num_of_coef + 2 * (mn[1] ** 2 + mn[1] + mn[0])] = loc_inc_coef * \
+                                                                            scipy.special.spherical_jn(mn[1], k_abs * spheres[sph, 1])
+            rhs[sph * 2 * num_of_coef + 2 * (mn[1] ** 2 + mn[1] + mn[0]) + 1] = loc_inc_coef * \
+                                                                                scipy.special.spherical_jn(mn[1], k_abs * spheres[sph, 1], derivative=True)
     return rhs
 
 
-def syst_solve(k, ro, pos, spheres, order):
+def solve_system(k, ro, pos, spheres, order):
     r""" solve T matrix system and counts a coefficients in decomposition
     of scattered field and field inside the spheres """
-    num_of_sph = len(spheres)
-    t_matrix = syst_matr(k, ro, pos, spheres, order)
-    rhs = syst_rhs(k, pos, spheres, order)
-    coef = scipy.linalg.solve(t_matrix, rhs)
-    return np.array(np.split(coef, 2 * num_of_sph))
+    number_of_spheres = len(spheres)
+    t_matrix = system_matrix(k, ro, pos, spheres, order)
+    rhs = system_rhs(k, pos, spheres, order)
+    solution_coefficients = scipy.linalg.solve(t_matrix, rhs)
+    return np.array(np.split(solution_coefficients, 2 * number_of_spheres))
 
 
-def accurate_csum(array):
+def complex_fsum(array):
     return math.fsum(np.real(array)) + 1j * math.fsum(np.imag(array))
 
 
-def accurate_sph_mp_sum(field_array, length):
+def spheres_multipoles_fsum(field_array, length):
     r""" do accurate sum by spheres and multipoles
     the shape of field array: 0 axis - spheres, 1 axis - multipoles, 2 axis - coordinates
     return: np.array with values of field in all coordinates """
     field = np.zeros(length, dtype=complex)
     for i in range(length):
-        field[i] = accurate_csum(np.concatenate(field_array[:, :, i]))
+        field[i] = complex_fsum(np.concatenate(field_array[:, :, i]))
     return field
 
 
-def accurate_mp_sum(field_array, length):
+def multipoles_fsum(field_array, length):
     r""" do accurate sum by multipoles
     the shape of field array: 0 axis - multipoles, 1 axis - coordinates
     return: np.array with values of field in all coordinates """
     field = np.zeros(length, dtype=complex)
     for i in range(length):
-        field[i] = accurate_csum(field_array[:, i])
+        field[i] = complex_fsum(field_array[:, i])
     return field
 
 
 def total_field(x, y, z, k, ro, pos, spheres, order):
     r""" counts field outside the spheres """
-    coef = syst_solve(k, ro, pos, spheres, order)
+    solution_coefficients = solve_system(k, ro, pos, spheres, order)
     tot_field_array = np.zeros((len(spheres), (order + 1) ** 2, len(x)), dtype=complex)
     for sph in range(len(spheres)):
-        coef_array = np.split(np.repeat(coef[2 * sph], len(x)), (order + 1) ** 2)
-        tot_field_array[sph] = coef_array * outgoing_wvfs_array(order, x-pos[sph][0], y-pos[sph][1], z-pos[sph][2], k)
+        sphere_solution_coefficients = np.split(np.repeat(solution_coefficients[2 * sph], len(x)), (order + 1) ** 2)
+        tot_field_array[sph] = sphere_solution_coefficients * outgoing_wave_functions_array(order, x - pos[sph][0],
+                                                                                            y - pos[sph][1],
+                                                                                            z - pos[sph][2], k)
     tot_field = np.sum(tot_field_array, axis=(0, 1))
-    # tot_field = accurate_sph_mp_sum(tot_field_array, len(x))
+    # tot_field = spheres_multipoles_fsum(tot_field_array, len(x))
     return tot_field
 
 
 def cross_section(k, ro, pos, spheres, order):
     r""" Counts scattering and extinction cross sections Sigma_sc and Sigma_ex
     eq(46,47) in 'Multiple scattering and scattering cross sections P. A. Martin' """
-    coef = syst_solve(k, ro, pos, spheres, order)
+    coef = solve_system(k, ro, pos, spheres, order)
     num_sph = len(spheres)
     sigma_ex = np.zeros(num_sph * (order + 1) ** 2)
     sigma_sc1 = np.zeros(num_sph * (order + 1) ** 2)
     sigma_sc2 = np.zeros((num_sph * (order + 1) ** 2) ** 2, dtype=complex)
     jmn, jmnlmunu = 0, 0
     for j in range(num_sph):
-        for mn in zip(m_idx(order), n_idx(order)):
+        for mn in multipoles(order):
             for l in range(num_sph):
-                for munu in zip(m_idx(order), n_idx(order)):
+                for munu in multipoles(order):
                     sigma_sc2[jmnlmunu] = np.conj(coef[2 * j, mn[1] ** 2 + mn[1] + mn[0]]) * \
                                coef[2 * l, munu[1] ** 2 + munu[1] + munu[0]] * \
-                               sepc_matr_coef(munu[0], mn[0], munu[1], mn[1], k, pos[j] - pos[l])
+                                          regular_separation_coefficient(munu[0], mn[0], munu[1], mn[1], k,
+                                                                         pos[j] - pos[l])
                     jmnlmunu += 1
             sigma_sc1[jmn] = np.abs(coef[2 * j, mn[1] ** 2 + mn[1] + mn[0]]) ** 2
             sigma_ex[jmn] = - np.real(coef[2 * j, mn[1] ** 2 + mn[1] + mn[0]] *
-                                      np.conj(local_inc_coef(mn[0], mn[1], k, pos[j], order)))
+                                      np.conj(local_incident_coefficient(mn[0], mn[1], k, pos[j], order)))
             jmn += 1
     sigma_sc = math.fsum(np.real(sigma_sc1)) + math.fsum(np.real(sigma_sc2))
     sigma_ex = math.fsum(sigma_ex)
@@ -306,13 +304,13 @@ def cross_section(k, ro, pos, spheres, order):
 
 def total_field_m(x, y, z, k, ro, pos, spheres, order, m=-1):
     r""" Counts field outside the spheres for mth harmonic """
-    coef = syst_solve(k, ro, pos, spheres, order)
+    coef = solve_system(k, ro, pos, spheres, order)
     tot_field = 0
     for n in range(abs(m), order + 1):
         for sph in range(len(spheres)):
             tot_field += coef[2 * sph][n ** 2 + n + m] * \
-                         outgoing_wvfs(m, n, x - pos[sph][0], y - pos[sph][1], z - pos[sph][2], k)
-        tot_field += inc_coef(m, n, k) * regular_wvfs(m, n, x, y, z, k)
+                         outgoing_wave_function(m, n, x - pos[sph][0], y - pos[sph][1], z - pos[sph][2], k)
+        tot_field += incident_coefficient(m, n, k) * regular_wave_function(m, n, x, y, z, k)
     return tot_field
 
 
@@ -404,7 +402,7 @@ def simulation():
     k = np.array([k_x, k_y, k_z])
 
     # order of decomposition
-    order = 8
+    order = 5
 
     print("Scattering and extinction cross section:", *cross_section(k, ro, poses, spheres, order))
 
