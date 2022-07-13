@@ -3,6 +3,13 @@ import matplotlib.pyplot as plt
 from matplotlib import colors
 
 
+def build_discretized_span(bound, number_of_points):
+    span_x = np.linspace(-bound, bound, number_of_points)
+    span_y = np.linspace(-bound, bound, number_of_points)
+    span_z = np.linspace(-bound, bound, number_of_points)
+    return np.array([span_x, span_y, span_z])
+
+
 def draw_spheres(field, pos, spheres, x_p, y_p, z_p):
     for sph in range(len(spheres)):
         rx, ry, rz = x_p - pos[sph, 0], y_p - pos[sph, 1], z_p - pos[sph, 2]

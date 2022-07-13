@@ -5,40 +5,24 @@ import mathematics as mths
 
 
 # coordinates
-number_of_points = 200
-l = 5
-span_x = np.linspace(-l, l, number_of_points)
-span_y = np.linspace(-l, l, number_of_points)
-span_z = np.linspace(-l, l, number_of_points)
-span = np.array([span_x, span_y, span_z])
+bound, number_of_points = 7, 200
+span = rendering.build_discretized_span(bound, number_of_points)
+
+freq = 82
 
 # parameters of fluid
-freq = 82
-ro = 1.225
-c_f = 331
-k_fluid = 2 * np.pi * freq / c_f
-
-# parameters of the spheres
-c_sph = 1403
-k_sph = 2 * np.pi * freq / c_sph
-r_sph = 2
-ro_sph = 1050
-sphere = np.array([k_sph, r_sph, ro_sph])
-spheres = np.array([sphere])
-
-# parameters of configuration
-pos1 = np.array([0, 0, 0])
-pos2 = np.array([0, 0, 2.5])
-poses = np.array([pos1])
+ro_fluid = 1.225
+c_fluid = 331
+k_fluid = 2 * np.pi * freq / c_fluid
 
 # parameters of the field
-k_x = 0  # 0.70711 * k_fluid
+k_x = 0.70711 * k_fluid
 k_y = 0
-k_z = k_fluid  # 0.70711 * k_fluid
+k_z = 0.70711 * k_fluid
 k = np.array([k_x, k_y, k_z])
 
 # order of decomposition
-order = 5
+order = 13
 
 # plane
 plane = 'xz'

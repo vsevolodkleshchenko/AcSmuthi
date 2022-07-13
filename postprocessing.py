@@ -1,5 +1,6 @@
 import math
 import wavefunctions as wvfs
+import mathematics as mths
 import tsystem
 import numpy as np
 
@@ -11,10 +12,10 @@ def total_field(x, y, z, k, ro, pos, spheres, order):
     for sph in range(len(spheres)):
         sphere_solution_coefficients = np.split(np.repeat(solution_coefficients[2 * sph], len(x)), (order + 1) ** 2)
         tot_field_array[sph] = sphere_solution_coefficients * wvfs.outgoing_wave_functions_array(order, x - pos[sph][0],
-                                                                                            y - pos[sph][1],
-                                                                                            z - pos[sph][2], k)
-    tot_field = np.sum(tot_field_array, axis=(0, 1))
-    # tot_field = spheres_multipoles_fsum(tot_field_array, len(x))
+                                                                                                 y - pos[sph][1],
+                                                                                                 z - pos[sph][2], k)
+    # tot_field = np.sum(tot_field_array, axis=(0, 1))
+    tot_field = mths.spheres_multipoles_fsum(tot_field_array, len(x))
     return tot_field
 
 
@@ -45,6 +46,7 @@ def cross_section(k, ro, pos, spheres, order):
     return sigma_sc, sigma_ex
 
 
+# needs revision
 def total_field_m(x, y, z, k, ro, pos, spheres, order, m=-1):
     r""" Counts field outside the spheres for mth harmonic """
     coef = tsystem.solve_system(k, ro, pos, spheres, order)
