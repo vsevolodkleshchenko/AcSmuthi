@@ -1,7 +1,7 @@
-import sphrs
 import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib import colors
+import wavefunctions as wvfs
+import rendering
+import mathematics as mths
 
 # coordinates
 number_of_points = 200
@@ -43,42 +43,31 @@ order = 5
 plane = 'xz'
 plane_number = int(number_of_points / 2) + 1
 
-x_p, y_p, z_p, span_v, span_h = sphrs.build_slice(span, plane_number, plane=plane)
-
-
-def plots_for_tests(actual_data, desired_data):
-    actual_data = np.real(actual_data).reshape(len(span_v), len(span_h))
-    desired_data = np.real(desired_data).reshape(len(span_v), len(span_h))
-    fig, ax = plt.subplots(1, 2)
-    im1 = ax[0].imshow(actual_data, norm=colors.CenteredNorm(), cmap='seismic', origin='lower',
-                   extent=[span_h.min(), span_h.max(), span_v.min(), span_v.max()])
-    im2 = ax[1].imshow(desired_data, norm=colors.CenteredNorm(), cmap='seismic', origin='lower',
-                   extent=[span_h.min(), span_h.max(), span_v.min(), span_v.max()])
-    plt.show()
+x_p, y_p, z_p, span_v, span_h = rendering.build_slice(span, plane_number, plane=plane)
 
 
 def h_additional_theorem_test(m, n):
     dist = np.array([0, 0, -5])
-    desired_h = sphrs.outgoing_wave_function(m, n, x_p + dist[0], y_p + dist[1], z_p + dist[2], k)
+    desired_h = wvfs.outgoing_wave_function(m, n, x_p + dist[0], y_p + dist[1], z_p + dist[2], k)
     sow_array = np.zeros(((order+1) ** 2, len(x_p)), dtype=complex)
     i = 0
-    for munu in zip(sphrs.m_idx(order), sphrs.n_idx(order)):
-        sow_array[i] = sphrs.outgoing_wave_function(munu[0], munu[1], x_p, y_p, z_p, k) * \
-                       sphrs.regular_separation_coefficient(m, munu[0], n, munu[1], k, dist)
+    for munu in zip(wvfs.m_idx(order), wvfs.n_idx(order)):
+        sow_array[i] = wvfs.outgoing_wave_function(munu[0], munu[1], x_p, y_p, z_p, k) * \
+                       wvfs.regular_separation_coefficient(m, munu[0], n, munu[1], k, dist)
         i += 1
-    actual_h = sphrs.multipoles_fsum(sow_array, len(x_p))
+    actual_h = mths.multipoles_fsum(sow_array, len(x_p))
     # actual_h = sphrs.draw_spheres(actual_h, np.array([np.array([0, 0, 0])]), spheres, x_p, y_p, z_p)
-    plots_for_tests(actual_h, desired_h)
+    rendering.plots_for_tests(actual_h, desired_h, span_v, span_h)
     np.testing.assert_allclose(actual_h, desired_h, rtol=1e-2)
 
 
 def h_test():
     i = 0
-    for munu in zip(sphrs.m_idx(order), sphrs.n_idx(order)):
+    for munu in zip(wvfs.m_idx(order), wvfs.n_idx(order)):
         print(munu)
-        print(sphrs.outgoing_wave_function(munu[0], munu[1], 0.000001, 0.000001, 0.000001, k))
-        h = sphrs.outgoing_wave_function(munu[0], munu[1], x_p, y_p, z_p, k)
-        plots_for_tests(h, h)
+        print(wvfs.outgoing_wave_function(munu[0], munu[1], 0.000001, 0.000001, 0.000001, k))
+        h = wvfs.outgoing_wave_function(munu[0], munu[1], x_p, y_p, z_p, k)
+        rendering.plots_for_tests(h, h)
         i += 1
 
 

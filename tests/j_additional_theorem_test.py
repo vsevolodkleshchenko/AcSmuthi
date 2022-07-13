@@ -1,7 +1,8 @@
-import sphrs
+import wavefunctions as wvfs
 import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib import colors
+import rendering
+import mathematics as mths
+
 
 # coordinates
 number_of_points = 200
@@ -43,32 +44,18 @@ order = 5
 plane = 'xz'
 plane_number = int(number_of_points / 2) + 1
 
-x_p, y_p, z_p, span_v, span_h = sphrs.build_slice(span, plane_number, plane=plane)
+x_p, y_p, z_p, span_v, span_h = rendering.build_slice(span, plane_number, plane=plane)
+m, n = 1, 1
 
 
-def plots_for_tests(actual_data, desired_data):
-    actual_data = np.real(actual_data).reshape(len(span_v), len(span_h))
-    desired_data = np.real(desired_data).reshape(len(span_v), len(span_h))
-    fig, ax = plt.subplots(1, 2)
-    im1 = ax[0].imshow(actual_data, norm=colors.CenteredNorm(), cmap='seismic', origin='lower',
-                   extent=[span_h.min(), span_h.max(), span_v.min(), span_v.max()])
-    im2 = ax[1].imshow(desired_data, norm=colors.CenteredNorm(), cmap='seismic', origin='lower',
-                   extent=[span_h.min(), span_h.max(), span_v.min(), span_v.max()])
-    plt.show()
-
-
-def j_additional_theorem_test(m, n):
-    dist = np.array([-1, 1, 1])
-    desired_j = sphrs.regular_wave_function(m, n, x_p + dist[0], y_p + dist[1], z_p + dist[2], k)
-    srw_array = np.zeros(((order+1) ** 2, len(x_p)), dtype=complex)
-    i = 0
-    for munu in zip(sphrs.m_idx(order), sphrs.n_idx(order)):
-        srw_array[i] = sphrs.regular_wave_function(munu[0], munu[1], x_p, y_p, z_p, k) * \
-                       sphrs.regular_separation_coefficient(m, munu[0], n, munu[1], k, dist)
-        i += 1
-    actual_j = sphrs.multipoles_fsum(srw_array, len(x_p))
-    plots_for_tests(actual_j, desired_j)
-    np.testing.assert_allclose(actual_j, desired_j, rtol=1e-2)
-
-
-j_additional_theorem_test(1, 1)
+dist = np.array([-1, 1, 1])
+desired_j = wvfs.regular_wave_function(m, n, x_p + dist[0], y_p + dist[1], z_p + dist[2], k)
+srw_array = np.zeros(((order+1) ** 2, len(x_p)), dtype=complex)
+i = 0
+for munu in zip(wvfs.m_idx(order), wvfs.n_idx(order)):
+    srw_array[i] = wvfs.regular_wave_function(munu[0], munu[1], x_p, y_p, z_p, k) * \
+                   wvfs.regular_separation_coefficient(m, munu[0], n, munu[1], k, dist)
+    i += 1
+actual_j = mths.multipoles_fsum(srw_array, len(x_p))
+rendering.plots_for_tests(actual_j, desired_j, span_v, span_h)
+np.testing.assert_allclose(actual_j, desired_j, rtol=1e-2)

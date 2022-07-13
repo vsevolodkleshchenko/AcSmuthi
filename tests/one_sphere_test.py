@@ -1,9 +1,10 @@
-import sphrs
+import wavefunctions as wvfs
+import mathematics as mths
 import numpy as np
 import scipy
 import scipy.special
-import matplotlib.pyplot as plt
-from matplotlib import colors
+import rendering
+import postprocessing as pp
 
 # coordinates
 number_of_points = 200
@@ -45,18 +46,7 @@ order = 5
 plane = 'xz'
 plane_number = int(number_of_points / 2) + 1
 
-x_p, y_p, z_p, span_v, span_h = sphrs.build_slice(span, plane_number, plane=plane)
-
-
-def plots_for_tests(actual_data, desired_data):
-    actual_data = np.real(actual_data).reshape(len(span_v), len(span_h))
-    desired_data = np.real(desired_data).reshape(len(span_v), len(span_h))
-    fig, ax = plt.subplots(1, 2)
-    im1 = ax[0].imshow(actual_data, norm=colors.CenteredNorm(), cmap='seismic', origin='lower',
-                   extent=[span_h.min(), span_h.max(), span_v.min(), span_v.max()])
-    im2 = ax[1].imshow(desired_data, norm=colors.CenteredNorm(), cmap='seismic', origin='lower',
-                   extent=[span_h.min(), span_h.max(), span_v.min(), span_v.max()])
-    plt.show()
+x_p, y_p, z_p, span_v, span_h = rendering.build_slice(span, plane_number, plane=plane)
 
 
 def desired_scattered_coefficient_1s(n):
@@ -65,9 +55,9 @@ def desired_scattered_coefficient_1s(n):
     a_n = (gamma * scipy.special.spherical_jn(n, k_sph * r_sph, derivative=True) *
            scipy.special.spherical_jn(n, k_fluid * r_sph) - scipy.special.spherical_jn(n, k_sph * r_sph) *
            scipy.special.spherical_jn(n, k_fluid * r_sph, derivative=True)) / \
-          (scipy.special.spherical_jn(n, k_sph * r_sph) * sphrs.sph_hankel1_der(n, k_fluid * r_sph) -
+          (scipy.special.spherical_jn(n, k_sph * r_sph) * mths.sph_hankel1_der(n, k_fluid * r_sph) -
            gamma * scipy.special.spherical_jn(n, k_sph * r_sph, derivative=True) *
-           sphrs.sph_hankel1(n, k_fluid * r_sph))
+           mths.sph_hankel1(n, k_fluid * r_sph))
     return p_n * a_n
 
 
@@ -75,9 +65,9 @@ def desired_in_coefficient_1s(n):
     gamma = k_sph * ro / k_fluid / ro_sph
     p_n = 1 * 1j ** n * (2 * n + 1)
     c_n = 1j / (k_fluid * r_sph) ** 2 / \
-          (scipy.special.spherical_jn(n, k_sph * r_sph) * sphrs.sph_hankel1_der(n, k_fluid * r_sph) -
+          (scipy.special.spherical_jn(n, k_sph * r_sph) * mths.sph_hankel1_der(n, k_fluid * r_sph) -
            gamma * scipy.special.spherical_jn(n, k_sph * r_sph, derivative=True) *
-           sphrs.sph_hankel1(n, k_fluid * r_sph))
+           mths.sph_hankel1(n, k_fluid * r_sph))
     return p_n * c_n
 
 
@@ -89,8 +79,8 @@ def desired_scattered_coefficients_array_1s():
 
 
 def axisymmetric_regular_wvf(n, x, y, z):
-    r, phi, theta = sphrs.dec_to_sph(x, y, z)
-    return sphrs.sph_hankel1(n, k_fluid * r) * scipy.special.lpmv(0, n, np.cos(theta))
+    r, phi, theta = mths.dec_to_sph(x, y, z)
+    return mths.sph_hankel1(n, k_fluid * r) * scipy.special.lpmv(0, n, np.cos(theta))
 
 
 def axisymmetric_regular_wvf_array(x, y, z):
@@ -107,10 +97,10 @@ def scattered_field_1s():
 
 def one_sphere_test():
     desired_1s_field = scattered_field_1s()
-    actual_1s_field = sphrs.total_field(x_p, y_p, z_p, k, ro, poses, spheres, order)
-    desired_1s_field = sphrs.draw_spheres(desired_1s_field, poses, spheres, x_p, y_p, z_p)
-    actual_1s_field = sphrs.draw_spheres(actual_1s_field, poses, spheres, x_p, y_p, z_p)
-    plots_for_tests(actual_1s_field, desired_1s_field)
+    actual_1s_field = pp.total_field(x_p, y_p, z_p, k, ro, poses, spheres, order)
+    desired_1s_field = rendering.draw_spheres(desired_1s_field, poses, spheres, x_p, y_p, z_p)
+    actual_1s_field = rendering.draw_spheres(actual_1s_field, poses, spheres, x_p, y_p, z_p)
+    rendering.plots_for_tests(actual_1s_field, desired_1s_field, span_v, span_h)
     np.testing.assert_allclose(actual_1s_field, desired_1s_field, rtol=1e-2)
 
 

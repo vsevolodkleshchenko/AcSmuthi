@@ -1,7 +1,6 @@
-import sphrs
 import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib import colors
+import rendering
+import wavefunctions as wvfs
 
 # coordinates
 number_of_points = 200
@@ -43,28 +42,12 @@ order = 5
 plane = 'xz'
 plane_number = int(number_of_points / 2) + 1
 
-x_p, y_p, z_p, span_v, span_h = sphrs.build_slice(span, plane_number, plane=plane)
+x_p, y_p, z_p, span_v, span_h = rendering.build_slice(span, plane_number, plane=plane)
 
-
-def plots_for_tests(actual_data, desired_data):
-    actual_data = np.real(actual_data).reshape(len(span_v), len(span_h))
-    desired_data = np.real(desired_data).reshape(len(span_v), len(span_h))
-    fig, ax = plt.subplots(1, 2)
-    im1 = ax[0].imshow(actual_data, norm=colors.CenteredNorm(), cmap='seismic', origin='lower',
-                   extent=[span_h.min(), span_h.max(), span_v.min(), span_v.max()])
-    im2 = ax[1].imshow(desired_data, norm=colors.CenteredNorm(), cmap='seismic', origin='lower',
-                   extent=[span_h.min(), span_h.max(), span_v.min(), span_v.max()])
-    plt.show()
-
-
-def incident_field_test():
-    desired_incident_field = np.exp(1j * (k_x * x_p + k_y * y_p + k_z * z_p))
-    actual_incident_field_array = sphrs.coefficient_array(order, k, sphrs.incident_coefficient, len(x_p)) * \
-                                  sphrs.regular_wave_functions_array(order, x_p, y_p, z_p, k)
-    # actual_incident_field = sphrs.accurate_mp_sum(actual_incident_field_array, len(x_p))
-    actual_incident_field = np.sum(actual_incident_field_array, axis=0)
-    plots_for_tests(actual_incident_field, desired_incident_field)
-    np.testing.assert_allclose(actual_incident_field, desired_incident_field, rtol=1e-2)
-
-
-incident_field_test()
+desired_incident_field = np.exp(1j * (k_x * x_p + k_y * y_p + k_z * z_p))
+actual_incident_field_array = wvfs.coefficient_array(order, k, wvfs.incident_coefficient, len(x_p)) * \
+                              wvfs.regular_wave_functions_array(order, x_p, y_p, z_p, k)
+# actual_incident_field = wvfs.accurate_mp_sum(actual_incident_field_array, len(x_p))
+actual_incident_field = np.sum(actual_incident_field_array, axis=0)
+rendering.plots_for_tests(actual_incident_field, desired_incident_field, span_v, span_h)
+np.testing.assert_allclose(actual_incident_field, desired_incident_field, rtol=1e-2)
