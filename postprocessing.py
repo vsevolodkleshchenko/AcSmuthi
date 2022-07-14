@@ -30,7 +30,8 @@ def cross_section(k, ro, pos, spheres, order):
     jmn, jmnlmunu = 0, 0
     for j in range(num_sph):
         for mn in wvfs.multipoles(order):
-            for l in range(num_sph):
+            for l in np.where(np.arange(num_sph) != j)[0]:
+            # for l in range(num_sph):
                 for munu in wvfs.multipoles(order):
                     sigma_sc2[jmnlmunu] = np.conj(coef[2 * j, mn[1] ** 2 + mn[1] + mn[0]]) * \
                                coef[2 * l, munu[1] ** 2 + munu[1] + munu[0]] * \

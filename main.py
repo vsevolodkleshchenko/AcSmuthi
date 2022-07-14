@@ -40,12 +40,12 @@ def simulation():
 
     print("Scattering and extinction cross section:", *pp.cross_section(k, ro_fluid, positions, spheres, order))
 
-    plane = 'xz'
-    plane_number = int(number_of_points / 2) + 1
-
-    x_p, y_p, z_p, span_v, span_h = rendering.build_slice(span, plane_number, plane=plane)
-    tot_field = np.real(pp.total_field(x_p, y_p, z_p, k, ro_fluid, positions, spheres, order))
-    rendering.slice_plot(tot_field, x_p, y_p, z_p, span_v, span_h, positions, spheres, plane=plane)
+    # plane = 'xz'
+    # plane_number = int(number_of_points / 2) + 1
+    #
+    # x_p, y_p, z_p, span_v, span_h = rendering.build_slice(span, plane_number, plane=plane)
+    # tot_field = np.real(pp.total_field(x_p, y_p, z_p, k, ro_fluid, positions, spheres, order))
+    # rendering.slice_plot(tot_field, x_p, y_p, z_p, span_v, span_h, positions, spheres, plane=plane)
 
 
 def time_test(sim):

@@ -1,3 +1,5 @@
+import math
+
 import mathematics as mths
 import numpy as np
 import scipy
@@ -11,6 +13,31 @@ def pn_coefficient_1s(n):
     return 1 * 1j ** n * (2 * n + 1)
 
 
+# def pn_coefficient_array_1s(order):
+#     pn_c_ar = np.zeros(order + 1, dtype=complex)
+#     for n in range(order + 1):
+#         pn_c_ar[n] = pn_coefficient_1s(n)
+#     return pn_c_ar
+
+
+def re_pn_coefficient_1s(n):
+    return 2 * n + 1
+
+
+# def re_pn_coefficient_array_1s(order):
+#     re_pn_c_ar = np.zeros(order + 1, dtype=complex)
+#     for n in range(order + 1):
+#         re_pn_c_ar[n] = re_pn_coefficient_1s(n)
+#     return re_pn_c_ar
+
+
+# def dpn_coefficient_array_1s(order):
+#     pn_c_ar = np.zeros(order + 1, dtype=complex)
+#     for n in range(order + 1):
+#         pn_c_ar[n] = 1 * 1j ** n
+#     return pn_c_ar
+
+
 def desired_scattered_coefficient_1s(n, k, ro_fluid, sphere):
     k_abs, k_phi, k_theta = mths.dec_to_sph(k[0], k[1], k[2])
     k_sph, r_sph, ro_sphere = sphere[0], sphere[1], sphere[2]
@@ -21,7 +48,7 @@ def desired_scattered_coefficient_1s(n, k, ro_fluid, sphere):
           (scipy.special.spherical_jn(n, k_sph * r_sph) * mths.sph_hankel1_der(n, k_abs * r_sph) -
            gamma * scipy.special.spherical_jn(n, k_sph * r_sph, derivative=True) *
            mths.sph_hankel1(n, k_abs * r_sph))
-    return pn_coefficient_1s(n) * a_n
+    return a_n
 
 
 def desired_in_coefficient_1s(n, k, ro_fluid, sphere):
@@ -32,18 +59,18 @@ def desired_in_coefficient_1s(n, k, ro_fluid, sphere):
           (scipy.special.spherical_jn(n, k_sph * r_sph) * mths.sph_hankel1_der(n, k_abs * r_sph) -
            gamma * scipy.special.spherical_jn(n, k_sph * r_sph, derivative=True) *
            mths.sph_hankel1(n, k_abs * r_sph))
-    return pn_coefficient_1s(n) * c_n
+    return c_n
 
 
-def desired_scattered_coefficients_array_1s(k, ro_fluid, sphere, length, order):
-    sc_coef = np.zeros(order, dtype=complex)
-    for n in range(order):
-        sc_coef[n] = desired_scattered_coefficient_1s(n, k, ro_fluid, sphere)
-    return np.split(np.repeat(sc_coef, length), order)
+def desired_pscattered_coefficients_array_1s(k, ro_fluid, sphere, length, order):
+    sc_coef = np.zeros(order + 1, dtype=complex)
+    for n in range(order + 1):
+        sc_coef[n] = pn_coefficient_1s(n) * desired_scattered_coefficient_1s(n, k, ro_fluid, sphere)
+    return np.split(np.repeat(sc_coef, length), order + 1)
 
 
 def scattered_field_1s(x, y, z, k, ro_fluid, sphere, order):
-    tot_field_array = desired_scattered_coefficients_array_1s(k, ro_fluid, sphere, len(x), order) * \
+    tot_field_array = desired_pscattered_coefficients_array_1s(k, ro_fluid, sphere, len(x), order) * \
                       wvfs.axisymmetric_outgoing_wvf_array(x, y, z, k, len(x), order)
     return np.sum(tot_field_array, axis=0)
 
@@ -56,6 +83,23 @@ def one_sphere_test(span, plane_number, k, ro_fluid, positions, spheres, order, 
     actual_1s_field = rendering.draw_spheres(actual_1s_field, positions, spheres, x_p, y_p, z_p)
     rendering.plots_for_tests(actual_1s_field, desired_1s_field, span_v, span_h)
     np.testing.assert_allclose(actual_1s_field, desired_1s_field, rtol=2e-2)
+
+
+def cross_sections_1s(k, ro_fluid, sphere, order):
+    k_abs, k_phi, k_theta = mths.dec_to_sph(k[0], k[1], k[2])
+    prefact = 4 * np.pi / k_abs / k_abs
+    # sigma_inc_array = np.zeros(order + 1)
+    sigma_sc_array = np.zeros(order + 1)
+    sigma_ex_array = np.zeros(order + 1)
+    for n in range(order + 1):
+        # sigma_inc_array[n] = re_pn_coefficient_1s(n)
+        sigma_sc_array[n] = re_pn_coefficient_1s(n) * (np.abs(desired_scattered_coefficient_1s(n, k, ro_fluid, sphere))) ** 2
+        sigma_ex_array[n] = re_pn_coefficient_1s(n) * np.real(desired_scattered_coefficient_1s(n, k, ro_fluid, sphere))
+    # sigma_inc = prefact * math.fsum(sigma_inc_array)
+    sigma_sc = prefact * math.fsum(sigma_sc_array)
+    sigma_ex = - prefact * math.fsum(sigma_ex_array)
+    norm = k_abs ** 2
+    return sigma_sc * norm, sigma_ex * norm
 
 
 def one_sphere_simulation():
@@ -91,11 +135,13 @@ def one_sphere_simulation():
     # order of decomposition
     order = 10
 
-    # plane
-    plane = 'xz'
-    plane_number = int(number_of_points / 2) + 1
+    print("Scattering and extinction cross section:", *cross_sections_1s(k, ro_fluid, sphere, order))
 
-    one_sphere_test(span, plane_number, k, ro_fluid, positions, spheres, order, plane=plane)
+    # # plane
+    # plane = 'xz'
+    # plane_number = int(number_of_points / 2) + 1
+    #
+    # one_sphere_test(span, plane_number, k, ro_fluid, positions, spheres, order, plane=plane)
 
 
 one_sphere_simulation()

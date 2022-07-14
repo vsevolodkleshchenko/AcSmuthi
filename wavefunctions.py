@@ -89,8 +89,8 @@ def axisymmetric_outgoing_wvf(n, x, y, z, k):
 
 
 def axisymmetric_outgoing_wvf_array(x, y, z, k, length, order):
-    as_ow_array = np.zeros((order, length), dtype=complex)
-    for n in range(order):
+    as_ow_array = np.zeros((order + 1, length), dtype=complex)
+    for n in range(order + 1):
         as_ow_array[n] = axisymmetric_outgoing_wvf(n, x, y, z, k)
     return as_ow_array
 
