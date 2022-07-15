@@ -3,6 +3,7 @@ import scipy
 import scipy.special
 import wavefunctions as wvfs
 import mathematics as mths
+import classes as cls
 
 
 def system_matrix(k, ro, pos, spheres, order):
@@ -46,25 +47,55 @@ def system_matrix(k, ro, pos, spheres, order):
 
 def system_rhs(k, pos, spheres, order):
     r""" build right hand side of system """
-    k_abs = mths.dec_to_sph(k[0], k[1], k[2])[0]
-    num_of_sph = len(spheres)
+    k_fluid = mths.dec_to_sph(k[0], k[1], k[2])[0]
+    num_sph = len(spheres)
     num_of_coef = (order + 1) ** 2
-    rhs = np.zeros(num_of_coef * 2 * num_of_sph, dtype=complex)
-    for sph in range(num_of_sph):
+    rhs = np.zeros(num_of_coef * 2 * num_sph, dtype=complex)
+    for sph in range(num_sph):
         for mn in wvfs.multipoles(order):
             loc_inc_coef = wvfs.local_incident_coefficient(mn[0], mn[1], k, pos[sph], order)
             rhs[sph * 2 * num_of_coef + 2 * (mn[1] ** 2 + mn[1] + mn[0])] = loc_inc_coef * \
-                                                                            scipy.special.spherical_jn(mn[1], k_abs * spheres[sph, 1])
+                                                                            scipy.special.spherical_jn(mn[1], k_fluid * spheres[sph, 1])
             rhs[sph * 2 * num_of_coef + 2 * (mn[1] ** 2 + mn[1] + mn[0]) + 1] = loc_inc_coef * \
-                                                                                scipy.special.spherical_jn(mn[1], k_abs * spheres[sph, 1], derivative=True)
+                                                                                scipy.special.spherical_jn(mn[1], k_fluid * spheres[sph, 1], derivative=True)
     return rhs
 
 
-def solve_system(k, ro, pos, spheres, order):
+def solve_system(k, ro_fluid, positions, spheres, order):
     r""" solve T matrix system and counts a coefficients in decomposition
     of scattered field and field inside the spheres """
-    number_of_spheres = len(spheres)
-    t_matrix = system_matrix(k, ro, pos, spheres, order)
-    rhs = system_rhs(k, pos, spheres, order)
+    num_sph = len(spheres)
+    t_matrix = system_matrix(k, ro_fluid, positions, spheres, order)
+    rhs = system_rhs(k, positions, spheres, order)
     solution_coefficients = scipy.linalg.solve(t_matrix, rhs)
-    return np.array(np.split(solution_coefficients, 2 * number_of_spheres))
+    return np.array(np.split(solution_coefficients, 2 * num_sph))
+
+
+########################################################################################################################
+
+
+def system_rhs_cls(ps, order):
+    r""" build right hand side of system """
+    freq, k, k_fluid, ro_fluid, positions, spheres, p0, intensity, num_sph = cls.ps_to_param(ps)
+
+    num_of_coef = (order + 1) ** 2
+    rhs = np.zeros(num_of_coef * 2 * num_sph, dtype=complex)
+    for sph in range(num_sph):
+        for mn in wvfs.multipoles(order):
+            loc_inc_coef = wvfs.local_incident_coefficient(mn[0], mn[1], k, positions[sph], order)
+            rhs[sph * 2 * num_of_coef + 2 * (mn[1] ** 2 + mn[1] + mn[0])] = loc_inc_coef * \
+                                                                            scipy.special.spherical_jn(mn[1], k_fluid * spheres[sph, 1])
+            rhs[sph * 2 * num_of_coef + 2 * (mn[1] ** 2 + mn[1] + mn[0]) + 1] = loc_inc_coef * \
+                                                                                scipy.special.spherical_jn(mn[1], k_fluid * spheres[sph, 1], derivative=True)
+    return rhs
+
+
+def solve_system_cls(ps, order):
+    r""" solve T matrix system and counts a coefficients in decomposition
+    of scattered field and field inside the spheres """
+    freq, k, k_fluid, ro_fluid, positions, spheres, p0, intensity, num_sph = cls.ps_to_param(ps)
+
+    t_matrix = system_matrix(k, ro_fluid, positions, spheres, order)
+    rhs = system_rhs_cls(ps, order)
+    solution_coefficients = scipy.linalg.solve(t_matrix, rhs)
+    return np.array(np.split(solution_coefficients, 2 * num_sph))

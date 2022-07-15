@@ -3,6 +3,7 @@ import wavefunctions as wvfs
 import mathematics as mths
 import tsystem
 import numpy as np
+import classes as cls
 
 
 def total_field(x, y, z, k, ro, pos, spheres, order):
@@ -19,10 +20,13 @@ def total_field(x, y, z, k, ro, pos, spheres, order):
     return tot_field
 
 
-def cross_section(k, ro, pos, spheres, order):
+def cross_section(k, ro_fluid, positions, spheres, order, p0, intensity):
     r""" Counts scattering and extinction cross sections Sigma_sc and Sigma_ex
     eq(46,47) in 'Multiple scattering and scattering cross sections P. A. Martin' """
-    coef = tsystem.solve_system(k, ro, pos, spheres, order)
+    freq = 82
+    k_fluid, k_phi, k_theta = mths.dec_to_sph(k[0], k[1], k[2])
+    prefactor = - p0 ** 2 / (2 * 2 * np.pi * freq * ro_fluid * k_fluid)
+    solution_coefficients = tsystem.solve_system(k, ro_fluid, positions, spheres, order)
     num_sph = len(spheres)
     sigma_ex = np.zeros(num_sph * (order + 1) ** 2)
     sigma_sc1 = np.zeros(num_sph * (order + 1) ** 2)
@@ -31,30 +35,66 @@ def cross_section(k, ro, pos, spheres, order):
     for j in range(num_sph):
         for mn in wvfs.multipoles(order):
             for l in np.where(np.arange(num_sph) != j)[0]:
-            # for l in range(num_sph):
                 for munu in wvfs.multipoles(order):
-                    sigma_sc2[jmnlmunu] = np.conj(coef[2 * j, mn[1] ** 2 + mn[1] + mn[0]]) * \
-                               coef[2 * l, munu[1] ** 2 + munu[1] + munu[0]] * \
+                    sigma_sc2[jmnlmunu] = np.conj(solution_coefficients[2 * j, mn[1] ** 2 + mn[1] + mn[0]]) * \
+                                          solution_coefficients[2 * l, munu[1] ** 2 + munu[1] + munu[0]] * \
                                           wvfs.regular_separation_coefficient(munu[0], mn[0], munu[1], mn[1], k,
-                                                                         pos[j] - pos[l])
+                                                                              positions[j] - positions[l])
                     jmnlmunu += 1
-            sigma_sc1[jmn] = np.abs(coef[2 * j, mn[1] ** 2 + mn[1] + mn[0]]) ** 2
-            sigma_ex[jmn] = - np.real(coef[2 * j, mn[1] ** 2 + mn[1] + mn[0]] *
-                                      np.conj(wvfs.local_incident_coefficient(mn[0], mn[1], k, pos[j], order)))
+            sigma_sc1[jmn] = np.abs(solution_coefficients[2 * j, mn[1] ** 2 + mn[1] + mn[0]]) ** 2
+            sigma_ex[jmn] = - np.real(solution_coefficients[2 * j, mn[1] ** 2 + mn[1] + mn[0]] *
+                                      np.conj(wvfs.local_incident_coefficient(mn[0], mn[1], k, positions[j], order)))
             jmn += 1
-    sigma_sc = math.fsum(np.real(sigma_sc1)) + math.fsum(np.real(sigma_sc2))
-    sigma_ex = math.fsum(sigma_ex)
+    W_sc = (math.fsum(np.real(sigma_sc1)) + math.fsum(np.real(sigma_sc2))) * prefactor
+    W_ex = math.fsum(sigma_ex) * prefactor
+    sigma_sc = W_sc / intensity
+    sigma_ex = W_ex / intensity
+    return sigma_sc, sigma_ex
+
+
+########################################################################################################################
+
+
+def cross_section_cls(ps, order):
+    r""" Counts scattering and extinction cross sections Sigma_sc and Sigma_ex
+    eq(46,47) in 'Multiple scattering and scattering cross sections P. A. Martin' """
+    freq, k, k_fluid, ro_fluid, positions, spheres, p0, intensity, num_sph = cls.ps_to_param(ps)
+
+    prefactor = - p0 ** 2 / (2 * 2 * np.pi * freq * ro_fluid * k_fluid)
+
+    solution_coefficients = tsystem.solve_system_cls(ps, order)
+    sigma_ex = np.zeros(num_sph * (order + 1) ** 2)
+    sigma_sc1 = np.zeros(num_sph * (order + 1) ** 2)
+    sigma_sc2 = np.zeros((num_sph * (order + 1) ** 2) ** 2, dtype=complex)
+    jmn, jmnlmunu = 0, 0
+    for j in range(num_sph):
+        for mn in wvfs.multipoles(order):
+            for l in np.where(np.arange(num_sph) != j)[0]:
+                for munu in wvfs.multipoles(order):
+                    sigma_sc2[jmnlmunu] = np.conj(solution_coefficients[2 * j, mn[1] ** 2 + mn[1] + mn[0]]) * \
+                                          solution_coefficients[2 * l, munu[1] ** 2 + munu[1] + munu[0]] * \
+                                          wvfs.regular_separation_coefficient(munu[0], mn[0], munu[1], mn[1], k,
+                                                                         positions[j] - positions[l])
+                    jmnlmunu += 1
+            sigma_sc1[jmn] = np.abs(solution_coefficients[2 * j, mn[1] ** 2 + mn[1] + mn[0]]) ** 2
+            sigma_ex[jmn] = - np.real(solution_coefficients[2 * j, mn[1] ** 2 + mn[1] + mn[0]] *
+                                      np.conj(wvfs.local_incident_coefficient(mn[0], mn[1], k, positions[j], order)))
+            jmn += 1
+    W_sc = (math.fsum(np.real(sigma_sc1)) + math.fsum(np.real(sigma_sc2))) * prefactor
+    W_ex = math.fsum(sigma_ex) * prefactor
+    sigma_sc = W_sc / intensity
+    sigma_ex = W_ex / intensity
     return sigma_sc, sigma_ex
 
 
 # needs revision
-def total_field_m(x, y, z, k, ro, pos, spheres, order, m=-1):
-    r""" Counts field outside the spheres for mth harmonic """
-    coef = tsystem.solve_system(k, ro, pos, spheres, order)
-    tot_field = 0
-    for n in range(abs(m), order + 1):
-        for sph in range(len(spheres)):
-            tot_field += coef[2 * sph][n ** 2 + n + m] * \
-                         wvfs.outgoing_wave_function(m, n, x - pos[sph][0], y - pos[sph][1], z - pos[sph][2], k)
-        tot_field += wvfs.incident_coefficient(m, n, k) * wvfs.regular_wave_function(m, n, x, y, z, k)
-    return tot_field
+# def total_field_m(x, y, z, k, ro, pos, spheres, order, m=-1):
+#     r""" Counts field outside the spheres for mth harmonic """
+#     coef = tsystem.solve_system(k, ro, pos, spheres, order)
+#     tot_field = 0
+#     for n in range(abs(m), order + 1):
+#         for sph in range(len(spheres)):
+#             tot_field += coef[2 * sph][n ** 2 + n + m] * \
+#                          wvfs.outgoing_wave_function(m, n, x - pos[sph][0], y - pos[sph][1], z - pos[sph][2], k)
+#         tot_field += wvfs.incident_coefficient(m, n, k) * wvfs.regular_wave_function(m, n, x, y, z, k)
+#     return tot_field

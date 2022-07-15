@@ -88,18 +88,14 @@ def one_sphere_test(span, plane_number, k, ro_fluid, positions, spheres, order, 
 def cross_sections_1s(k, ro_fluid, sphere, order):
     k_abs, k_phi, k_theta = mths.dec_to_sph(k[0], k[1], k[2])
     prefact = 4 * np.pi / k_abs / k_abs
-    # sigma_inc_array = np.zeros(order + 1)
     sigma_sc_array = np.zeros(order + 1)
     sigma_ex_array = np.zeros(order + 1)
     for n in range(order + 1):
-        # sigma_inc_array[n] = re_pn_coefficient_1s(n)
         sigma_sc_array[n] = re_pn_coefficient_1s(n) * (np.abs(desired_scattered_coefficient_1s(n, k, ro_fluid, sphere))) ** 2
         sigma_ex_array[n] = re_pn_coefficient_1s(n) * np.real(desired_scattered_coefficient_1s(n, k, ro_fluid, sphere))
-    # sigma_inc = prefact * math.fsum(sigma_inc_array)
     sigma_sc = prefact * math.fsum(sigma_sc_array)
     sigma_ex = - prefact * math.fsum(sigma_ex_array)
-    norm = k_abs ** 2
-    return sigma_sc * norm, sigma_ex * norm
+    return sigma_sc, sigma_ex
 
 
 def one_sphere_simulation():
