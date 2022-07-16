@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import colors
+import classes as cls
 
 
 def build_discretized_span(bound, number_of_points):
@@ -10,9 +11,9 @@ def build_discretized_span(bound, number_of_points):
     return np.array([span_x, span_y, span_z])
 
 
-def draw_spheres(field, pos, spheres, x_p, y_p, z_p):
+def draw_spheres(field, positions, spheres, x_p, y_p, z_p):
     for sph in range(len(spheres)):
-        rx, ry, rz = x_p - pos[sph, 0], y_p - pos[sph, 1], z_p - pos[sph, 2]
+        rx, ry, rz = x_p - positions[sph, 0], y_p - positions[sph, 1], z_p - positions[sph, 2]
         r = np.sqrt(rx ** 2 + ry ** 2 + rz ** 2)
         field = np.where(r <= spheres[sph, 1], 0, field)
     return field
@@ -44,12 +45,12 @@ def build_slice(span, plane_number, plane='xz'):
     return x_p, y_p, z_p, span_v, span_h
 
 
-def slice_plot(tot_field, x_p, y_p, z_p, span_v, span_h, pos, spheres, plane='xz'):
+def slice_plot(tot_field, x_p, y_p, z_p, span_v, span_h, positions, spheres, plane='xz'):
     r""" build a 2D heat-plot of tot_field with spheres in:
      XZ plane for span_y[plane_number] : --->z
      YZ plane for span_x[plane_number] : --->z
      XY plane for span_z[plane_number] : --->y """
-    tot_field = draw_spheres(tot_field, pos, spheres, x_p, y_p, z_p)
+    tot_field = draw_spheres(tot_field, positions, spheres, x_p, y_p, z_p)
     tot_field_reshaped = tot_field.reshape(len(span_v), len(span_h))
     fig, ax = plt.subplots()
     plt.xlabel(plane[1]+'axis')
@@ -68,4 +69,34 @@ def plots_for_tests(actual_data, desired_data, span_v, span_h):
                    extent=[span_h.min(), span_h.max(), span_v.min(), span_v.max()])
     im2 = ax[1].imshow(desired_data, norm=colors.CenteredNorm(), cmap='seismic', origin='lower',
                    extent=[span_h.min(), span_h.max(), span_v.min(), span_v.max()])
+    plt.show()
+
+
+########################################################################################################################
+
+
+def draw_spheres_cls(field, ps, x_p, y_p, z_p):
+    freq, k, k_fluid, ro_fluid, positions, spheres, p0, intensity, num_sph = cls.ps_to_param(ps)
+
+    for sph in range(num_sph):
+        rx, ry, rz = x_p - positions[sph, 0], y_p - positions[sph, 1], z_p - positions[sph, 2]
+        r = np.sqrt(rx ** 2 + ry ** 2 + rz ** 2)
+        field = np.where(r <= spheres[sph, 1], 0, field)
+    return field
+
+
+def slice_plot_cls(tot_field, x_p, y_p, z_p, span_v, span_h, ps, plane='xz'):
+    r""" build a 2D heat-plot of tot_field with spheres in:
+     XZ plane for span_y[plane_number] : --->z
+     YZ plane for span_x[plane_number] : --->z
+     XY plane for span_z[plane_number] : --->y """
+
+    tot_field = draw_spheres_cls(tot_field, ps, x_p, y_p, z_p)
+    tot_field_reshaped = tot_field.reshape(len(span_v), len(span_h))
+    fig, ax = plt.subplots()
+    plt.xlabel(plane[1]+'axis')
+    plt.ylabel(plane[0]+'axis')
+    im = ax.imshow(tot_field_reshaped, norm=colors.CenteredNorm(), cmap='seismic', origin='lower',
+                   extent=[span_h.min(), span_h.max(), span_v.min(), span_v.max()])
+    plt.colorbar(im)
     plt.show()

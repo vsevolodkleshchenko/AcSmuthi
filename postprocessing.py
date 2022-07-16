@@ -6,15 +6,15 @@ import numpy as np
 import classes as cls
 
 
-def total_field(x, y, z, k, ro, pos, spheres, order):
+def total_field(x, y, z, k, ro_fluid, positions, spheres, order):
     r""" counts field outside the spheres """
-    solution_coefficients = tsystem.solve_system(k, ro, pos, spheres, order)
+    solution_coefficients = tsystem.solve_system(k, ro_fluid, positions, spheres, order)
     tot_field_array = np.zeros((len(spheres), (order + 1) ** 2, len(x)), dtype=complex)
     for sph in range(len(spheres)):
         sphere_solution_coefficients = np.split(np.repeat(solution_coefficients[2 * sph], len(x)), (order + 1) ** 2)
-        tot_field_array[sph] = sphere_solution_coefficients * wvfs.outgoing_wave_functions_array(order, x - pos[sph][0],
-                                                                                                 y - pos[sph][1],
-                                                                                                 z - pos[sph][2], k)
+        tot_field_array[sph] = sphere_solution_coefficients * wvfs.outgoing_wave_functions_array(order, x - positions[sph][0],
+                                                                                                 y - positions[sph][1],
+                                                                                                 z - positions[sph][2], k)
     # tot_field = np.sum(tot_field_array, axis=(0, 1))
     tot_field = mths.spheres_multipoles_fsum(tot_field_array, len(x))
     return tot_field
@@ -53,6 +53,22 @@ def cross_section(k, ro_fluid, positions, spheres, order, p0, intensity):
 
 
 ########################################################################################################################
+
+
+def total_field_cls(x, y, z, ps, order):
+    r""" counts field outside the spheres """
+    freq, k, k_fluid, ro_fluid, positions, spheres, p0, intensity, num_sph = cls.ps_to_param(ps)
+
+    solution_coefficients = tsystem.solve_system_cls(ps, order)
+    tot_field_array = np.zeros((num_sph, (order + 1) ** 2, len(x)), dtype=complex)
+    for sph in range(num_sph):
+        sphere_solution_coefficients = np.split(np.repeat(solution_coefficients[2 * sph], len(x)), (order + 1) ** 2)
+        tot_field_array[sph] = sphere_solution_coefficients * wvfs.outgoing_wave_functions_array(order, x - positions[sph][0],
+                                                                                                 y - positions[sph][1],
+                                                                                                 z - positions[sph][2], k)
+    # tot_field = np.sum(tot_field_array, axis=(0, 1))
+    tot_field = mths.spheres_multipoles_fsum(tot_field_array, len(x))
+    return tot_field
 
 
 def cross_section_cls(ps, order):
