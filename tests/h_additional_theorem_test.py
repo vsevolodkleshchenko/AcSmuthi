@@ -32,12 +32,12 @@ x_p, y_p, z_p, span_v, span_h = rendering.build_slice(span, plane_number, plane=
 
 def h_additional_theorem_test(m, n):
     dist = np.array([0, 0, -5])
-    desired_h = wvfs.outgoing_wave_function_cls(m, n, x_p + dist[0], y_p + dist[1], z_p + dist[2], k_fluid)
+    desired_h = wvfs.outgoing_wave_function(m, n, x_p + dist[0], y_p + dist[1], z_p + dist[2], k_fluid)
     sow_array = np.zeros(((order+1) ** 2, len(x_p)), dtype=complex)
     i = 0
     for munu in zip(wvfs.m_idx(order), wvfs.n_idx(order)):
-        sow_array[i] = wvfs.outgoing_wave_function_cls(munu[0], munu[1], x_p, y_p, z_p, k_fluid) * \
-                       wvfs.regular_separation_coefficient_cls(m, munu[0], n, munu[1], k_fluid, dist)
+        sow_array[i] = wvfs.outgoing_wave_function(munu[0], munu[1], x_p, y_p, z_p, k_fluid) * \
+                       wvfs.regular_separation_coefficient(m, munu[0], n, munu[1], k_fluid, dist)
         i += 1
     actual_h = mths.multipoles_fsum(sow_array, len(x_p))
     # actual_h = sphrs.draw_spheres(actual_h, np.array([np.array([0, 0, 0])]), spheres, x_p, y_p, z_p)
