@@ -58,9 +58,6 @@ def time_test(sim):
     print("Time:", end-start)
 
 
-time_test(simulation)
-
-
 ########################################################################################################################
 
 
@@ -98,11 +95,14 @@ def simulation_cls():
     ps = build_ps()
 
     order = 10
-    # print("Scattering and extinction cross section:", *pp.cross_section_cls(ps, order))
+    print("Scattering and extinction cross section:", *pp.cross_section_cls(ps, order))
 
-    plane = 'xz'
-    plane_number = int(number_of_points / 2) + 1
+    # plane = 'xz'
+    # plane_number = int(number_of_points / 2) + 1
+    #
+    # x_p, y_p, z_p, span_v, span_h = rendering.build_slice(span, plane_number, plane=plane)
+    # tot_field = np.real(pp.total_field_cls(x_p, y_p, z_p, ps, order))
+    # rendering.slice_plot_cls(tot_field, x_p, y_p, z_p, span_v, span_h, ps, plane=plane)
 
-    x_p, y_p, z_p, span_v, span_h = rendering.build_slice(span, plane_number, plane=plane)
-    tot_field = np.real(pp.total_field_cls(x_p, y_p, z_p, ps, order))
-    rendering.slice_plot_cls(tot_field, x_p, y_p, z_p, span_v, span_h, ps, plane=plane)
+
+time_test(simulation_cls)

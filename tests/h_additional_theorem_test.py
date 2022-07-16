@@ -17,19 +17,6 @@ ro = 1.225
 c_f = 331
 k_fluid = 2 * np.pi * freq / c_f
 
-# parameters of the spheres
-c_sph = 1403
-k_sph = 2 * np.pi * freq / c_sph
-r_sph = 2
-ro_sph = 1050
-sphere = np.array([k_sph, r_sph, ro_sph])
-spheres = np.array([sphere])
-
-# parameters of configuration
-pos1 = np.array([0, 0, 0])
-pos2 = np.array([0, 0, 2.5])
-poses = np.array([pos1])
-
 # parameters of the field
 k_x = 0  # 0.70711 * k_fluid
 k_y = 0

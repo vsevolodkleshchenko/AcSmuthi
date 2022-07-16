@@ -76,12 +76,10 @@ def plots_for_tests(actual_data, desired_data, span_v, span_h):
 
 
 def draw_spheres_cls(field, ps, x_p, y_p, z_p):
-    freq, k, k_fluid, ro_fluid, positions, spheres, p0, intensity, num_sph = cls.ps_to_param(ps)
-
-    for sph in range(num_sph):
-        rx, ry, rz = x_p - positions[sph, 0], y_p - positions[sph, 1], z_p - positions[sph, 2]
+    for sph in range(ps.num_sph):
+        rx, ry, rz = x_p - ps.spheres[sph].pos[0], y_p - ps.spheres[sph].pos[1], z_p - ps.spheres[sph].pos[2]
         r = np.sqrt(rx ** 2 + ry ** 2 + rz ** 2)
-        field = np.where(r <= spheres[sph, 1], 0, field)
+        field = np.where(r <= ps.spheres[sph].r, 0, field)
     return field
 
 
@@ -90,7 +88,6 @@ def slice_plot_cls(tot_field, x_p, y_p, z_p, span_v, span_h, ps, plane='xz'):
      XZ plane for span_y[plane_number] : --->z
      YZ plane for span_x[plane_number] : --->z
      XY plane for span_z[plane_number] : --->y """
-
     tot_field = draw_spheres_cls(tot_field, ps, x_p, y_p, z_p)
     tot_field_reshaped = tot_field.reshape(len(span_v), len(span_h))
     fig, ax = plt.subplots()

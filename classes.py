@@ -33,7 +33,7 @@ class System:
         self.spheres = spheres
 
     @property
-    def num_spheres(self):
+    def num_sph(self):
         return len(self.spheres)
 
     # @property
@@ -50,7 +50,7 @@ class System:
 
     @property
     def k_spheres(self):
-        k_spheres_array = np.array([self.incident_field.omega / self.spheres[i].speed for i in range(self.num_spheres)])
+        k_spheres_array = np.array([self.incident_field.omega / self.spheres[i].speed for i in range(self.num_sph)])
         return k_spheres_array
 
     @property
@@ -67,18 +67,18 @@ def ps_to_param(ps):
 
     ro_fluid = ps.fluid.rho
 
-    positions = np.zeros((ps.num_spheres, 3))
-    for sph in range(ps.num_spheres):
+    positions = np.zeros((ps.num_sph, 3))
+    for sph in range(ps.num_sph):
         positions[sph] = ps.spheres[sph].pos
 
-    spheres = np.zeros((ps.num_spheres, 3))
-    for sph in range(ps.num_spheres):
+    spheres = np.zeros((ps.num_sph, 3))
+    for sph in range(ps.num_sph):
         spheres[sph] = np.array([ps.k_spheres[sph], ps.spheres[sph].r, ps.spheres[sph].rho])
 
     p0 = ps.incident_field.ampl
 
     intensity = ps.intensity_incident_field
 
-    num_sph = ps.num_spheres
+    num_sph = ps.num_sph
 
     return freq, k, k_fluid, ro_fluid, positions, spheres, p0, intensity, num_sph
