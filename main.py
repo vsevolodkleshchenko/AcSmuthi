@@ -23,12 +23,12 @@ def simulation():
     r_sph = 1  # [m]
     ro_sph = 1050  # [kg/m^3]
     sphere = np.array([k_sph, r_sph, ro_sph])
-    spheres = np.array([sphere])
+    spheres = np.array([sphere, sphere])
 
     # parameters of configuration
-    pos1 = np.array([0, 0, 0])
+    pos1 = np.array([0, 0, -2.5])
     pos2 = np.array([0, 0, 2.5])
-    positions = np.array([pos1])
+    positions = np.array([pos1, pos2])
 
     # parameters of the field
     p0 = 1  # [kg/m/s^2] = [Pa]
@@ -39,7 +39,7 @@ def simulation():
     k = np.array([k_x, k_y, k_z])
 
     # order of decomposition
-    order = 10
+    order = 6
     print("Scattering and extinction cross section:", *pp.cross_section(k, ro_fluid, positions, spheres, order, p0,
                                                                         I_inc))
 
@@ -61,48 +61,23 @@ def time_test(sim):
 ########################################################################################################################
 
 
-def build_ps():
-    # parameters of incident field
-    direction = np.array([0.70711, 0, 0.70711])
-    freq = 82  # [Hz]
-    p0 = 1  # [kg/m/s^2] = [Pa]
-    incident_field = cls.PlaneWave(direction, freq, p0)
-
-    # parameters of fluid
-    ro_fluid = 1.225  # [kg/m^3]
-    c_fluid = 331  # [m/s]
-    fluid = cls.Fluid(ro_fluid, c_fluid)
-
-    # parameters of the spheres
-    pos1 = np.array([0, 0, 0])
-    r_sph = 1  # [m]
-    ro_sph = 1050  # [kg/m^3]
-    c_sph = 1403  # [m/s]
-
-    sphere_cls = cls.Sphere(pos1, r_sph, ro_sph, c_sph)
-    spheres_cls = np.array([sphere_cls])
-
-    ps = cls.System(fluid, incident_field, spheres_cls)
-    return ps
-
-
 def simulation_cls():
     r""" main simulation function """
     # coordinates
     bound, number_of_points = 10, 200
     span = rendering.build_discretized_span(bound, number_of_points)
 
-    ps = build_ps()
+    ps = cls.build_ps()
 
-    order = 10
+    order = 6
     print("Scattering and extinction cross section:", *pp.cross_section_cls(ps, order))
 
-    # plane = 'xz'
-    # plane_number = int(number_of_points / 2) + 1
-    #
-    # x_p, y_p, z_p, span_v, span_h = rendering.build_slice(span, plane_number, plane=plane)
-    # tot_field = np.real(pp.total_field_cls(x_p, y_p, z_p, ps, order))
-    # rendering.slice_plot_cls(tot_field, x_p, y_p, z_p, span_v, span_h, ps, plane=plane)
+    plane = 'xz'
+    plane_number = int(number_of_points / 2) + 1
+
+    x_p, y_p, z_p, span_v, span_h = rendering.build_slice(span, plane_number, plane=plane)
+    tot_field = np.real(pp.total_field_cls(x_p, y_p, z_p, ps, order))
+    rendering.slice_plot_cls(tot_field, x_p, y_p, z_p, span_v, span_h, ps, plane=plane)
 
 
 time_test(simulation_cls)

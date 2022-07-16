@@ -58,6 +58,33 @@ class System:
         return self.incident_field.ampl ** 2 / (2 * self.fluid.rho * self.fluid.speed)
 
 
+def build_ps():
+    # parameters of incident field
+    direction = np.array([0.70711, 0, 0.70711])
+    freq = 82  # [Hz]
+    p0 = 1  # [kg/m/s^2] = [Pa]
+    incident_field = PlaneWave(direction, freq, p0)
+
+    # parameters of fluid
+    ro_fluid = 1.225  # [kg/m^3]
+    c_fluid = 331  # [m/s]
+    fluid = Fluid(ro_fluid, c_fluid)
+
+    # parameters of the spheres
+    pos1 = np.array([0, 0, -2.5])
+    pos2 = np.array([0, 0, 2.5])
+    r_sph = 1  # [m]
+    ro_sph = 1050  # [kg/m^3]
+    c_sph = 1403  # [m/s]
+
+    sphere_cls1 = Sphere(pos1, r_sph, ro_sph, c_sph)
+    sphere_cls2 = Sphere(pos2, r_sph, ro_sph, c_sph)
+    spheres_cls = np.array([sphere_cls1, sphere_cls2])
+
+    ps = System(fluid, incident_field, spheres_cls)
+    return ps
+
+
 def ps_to_param(ps):
     freq = ps.incident_field.freq
 

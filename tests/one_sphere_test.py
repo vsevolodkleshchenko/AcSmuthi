@@ -7,95 +7,99 @@ import scipy.special
 import rendering
 import postprocessing as pp
 import wavefunctions as wvfs
+import classes as cls
 
 
 def pn_coefficient_1s(n):
     return 1 * 1j ** n * (2 * n + 1)
 
 
-# def pn_coefficient_array_1s(order):
-#     pn_c_ar = np.zeros(order + 1, dtype=complex)
-#     for n in range(order + 1):
-#         pn_c_ar[n] = pn_coefficient_1s(n)
-#     return pn_c_ar
-
-
 def re_pn_coefficient_1s(n):
     return 2 * n + 1
 
 
-# def re_pn_coefficient_array_1s(order):
-#     re_pn_c_ar = np.zeros(order + 1, dtype=complex)
-#     for n in range(order + 1):
-#         re_pn_c_ar[n] = re_pn_coefficient_1s(n)
-#     return re_pn_c_ar
-
-
-# def dpn_coefficient_array_1s(order):
-#     pn_c_ar = np.zeros(order + 1, dtype=complex)
-#     for n in range(order + 1):
-#         pn_c_ar[n] = 1 * 1j ** n
-#     return pn_c_ar
-
-
-def desired_scattered_coefficient_1s(n, k, ro_fluid, sphere):
-    k_abs, k_phi, k_theta = mths.dec_to_sph(k[0], k[1], k[2])
-    k_sph, r_sph, ro_sphere = sphere[0], sphere[1], sphere[2]
-    gamma = k_sph * ro_fluid / k_abs / ro_sphere
+def desired_scattered_coefficient_1s(n, ps):
+    k_sph, r_sph, ro_sphere = ps.k_spheres[0], ps.spheres[0].r, ps.spheres[0].rho
+    gamma = k_sph * ps.fluid.rho / ps.k_fluid / ro_sphere
     a_n = (gamma * scipy.special.spherical_jn(n, k_sph * r_sph, derivative=True) *
-           scipy.special.spherical_jn(n, k_abs * r_sph) - scipy.special.spherical_jn(n, k_sph * r_sph) *
-           scipy.special.spherical_jn(n, k_abs * r_sph, derivative=True)) / \
-          (scipy.special.spherical_jn(n, k_sph * r_sph) * mths.sph_hankel1_der(n, k_abs * r_sph) -
+           scipy.special.spherical_jn(n, ps.k_fluid * r_sph) - scipy.special.spherical_jn(n, k_sph * r_sph) *
+           scipy.special.spherical_jn(n, ps.k_fluid * r_sph, derivative=True)) / \
+          (scipy.special.spherical_jn(n, k_sph * r_sph) * mths.sph_hankel1_der(n, ps.k_fluid * r_sph) -
            gamma * scipy.special.spherical_jn(n, k_sph * r_sph, derivative=True) *
-           mths.sph_hankel1(n, k_abs * r_sph))
+           mths.sph_hankel1(n, ps.k_fluid * r_sph))
     return a_n
 
 
-def desired_in_coefficient_1s(n, k, ro_fluid, sphere):
-    k_abs, k_phi, k_theta = mths.dec_to_sph(k[0], k[1], k[2])
-    k_sph, r_sph, ro_sphere = sphere[0], sphere[1], sphere[2]
-    gamma = k_sph * ro_fluid / k_abs / ro_sphere
-    c_n = 1j / (k_abs * r_sph) ** 2 / \
-          (scipy.special.spherical_jn(n, k_sph * r_sph) * mths.sph_hankel1_der(n, k_abs * r_sph) -
+def desired_in_coefficient_1s(n, ps):
+    k_sph, r_sph, ro_sphere = ps.k_spheres[0], ps.spheres[0].r, ps.spheres[0].rho
+    gamma = k_sph * ps.fluid.rho / ps.k_fluid / ro_sphere
+    c_n = 1j / (ps.k_fluid * r_sph) ** 2 / \
+          (scipy.special.spherical_jn(n, k_sph * r_sph) * mths.sph_hankel1_der(n, ps.k_fluid * r_sph) -
            gamma * scipy.special.spherical_jn(n, k_sph * r_sph, derivative=True) *
-           mths.sph_hankel1(n, k_abs * r_sph))
+           mths.sph_hankel1(n, ps.k_fluid * r_sph))
     return c_n
 
 
-def desired_pscattered_coefficients_array_1s(k, ro_fluid, sphere, length, order):
+def desired_pscattered_coefficients_array_1s(ps, length, order):
     sc_coef = np.zeros(order + 1, dtype=complex)
     for n in range(order + 1):
-        sc_coef[n] = pn_coefficient_1s(n) * desired_scattered_coefficient_1s(n, k, ro_fluid, sphere)
+        sc_coef[n] = pn_coefficient_1s(n) * desired_scattered_coefficient_1s(n, ps)
     return np.split(np.repeat(sc_coef, length), order + 1)
 
 
-def scattered_field_1s(x, y, z, k, ro_fluid, sphere, order):
-    tot_field_array = desired_pscattered_coefficients_array_1s(k, ro_fluid, sphere, len(x), order) * \
-                      wvfs.axisymmetric_outgoing_wvf_array(x, y, z, k, len(x), order)
+def scattered_field_1s(x, y, z, ps, order):
+    tot_field_array = desired_pscattered_coefficients_array_1s(ps, len(x), order) * \
+                      wvfs.axisymmetric_outgoing_wvf_array_cls(x, y, z, ps.k_fluid, len(x), order)
     return np.sum(tot_field_array, axis=0)
 
 
-def one_sphere_test(span, plane_number, k, ro_fluid, positions, spheres, order, plane='xz'):
+def one_sphere_test(span, plane_number, ps, order, plane='xz'):
     x_p, y_p, z_p, span_v, span_h = rendering.build_slice(span, plane_number, plane=plane)
-    desired_1s_field = scattered_field_1s(x_p, y_p, z_p, k, ro_fluid, spheres[0], order)
-    actual_1s_field = pp.total_field(x_p, y_p, z_p, k, ro_fluid, positions, spheres, order)
-    desired_1s_field = rendering.draw_spheres(desired_1s_field, positions, spheres, x_p, y_p, z_p)
-    actual_1s_field = rendering.draw_spheres(actual_1s_field, positions, spheres, x_p, y_p, z_p)
+    desired_1s_field = scattered_field_1s(x_p, y_p, z_p, ps, order)
+    actual_1s_field = pp.total_field_cls(x_p, y_p, z_p, ps, order)
+    desired_1s_field = rendering.draw_spheres_cls(desired_1s_field, ps, x_p, y_p, z_p)
+    actual_1s_field = rendering.draw_spheres_cls(actual_1s_field, ps, x_p, y_p, z_p)
     rendering.plots_for_tests(actual_1s_field, desired_1s_field, span_v, span_h)
     np.testing.assert_allclose(actual_1s_field, desired_1s_field, rtol=2e-2)
 
 
-def cross_sections_1s(k, ro_fluid, sphere, order):
-    k_abs, k_phi, k_theta = mths.dec_to_sph(k[0], k[1], k[2])
-    prefact = 4 * np.pi / k_abs / k_abs
+def cross_sections_1s(ps, order):
+    prefact = 4 * np.pi / ps.k_fluid / ps.k_fluid
     sigma_sc_array = np.zeros(order + 1)
     sigma_ex_array = np.zeros(order + 1)
     for n in range(order + 1):
-        sigma_sc_array[n] = re_pn_coefficient_1s(n) * (np.abs(desired_scattered_coefficient_1s(n, k, ro_fluid, sphere))) ** 2
-        sigma_ex_array[n] = re_pn_coefficient_1s(n) * np.real(desired_scattered_coefficient_1s(n, k, ro_fluid, sphere))
+        sigma_sc_array[n] = re_pn_coefficient_1s(n) * (np.abs(
+            desired_scattered_coefficient_1s(n, ps))) ** 2
+        sigma_ex_array[n] = re_pn_coefficient_1s(n) * np.real(
+            desired_scattered_coefficient_1s(n, ps))
     sigma_sc = prefact * math.fsum(sigma_sc_array)
     sigma_ex = - prefact * math.fsum(sigma_ex_array)
     return sigma_sc, sigma_ex
+
+
+def build_ps_1s():
+    # parameters of incident field
+    direction = np.array([0, 0, 0])
+    freq = 82  # [Hz]
+    p0 = 1  # [kg/m/s^2] = [Pa]
+    incident_field = cls.PlaneWave(direction, freq, p0)
+
+    # parameters of fluid
+    ro_fluid = 1.225  # [kg/m^3]
+    c_fluid = 331  # [m/s]
+    fluid = cls.Fluid(ro_fluid, c_fluid)
+
+    # parameters of the spheres
+    pos = np.array([0, 0, 0])
+    r_sph = 1  # [m]
+    ro_sph = 1050  # [kg/m^3]
+    c_sph = 1403  # [m/s]
+
+    sphere_cls = cls.Sphere(pos, r_sph, ro_sph, c_sph)
+    spheres_cls = np.array([sphere_cls])
+
+    ps = cls.System(fluid, incident_field, spheres_cls)
+    return ps
 
 
 def one_sphere_simulation():
@@ -103,41 +107,18 @@ def one_sphere_simulation():
     bound, number_of_points = 5, 200
     span = rendering.build_discretized_span(bound, number_of_points)
 
-    freq = 82
-
-    # parameters of fluid
-    ro_fluid = 1.225
-    c_fluid = 331
-    k_fluid = 2 * np.pi * freq / c_fluid
-
-    # parameters of the spheres
-    c_sphere = 1403
-    k_sphere = 2 * np.pi * freq / c_sphere
-    r_sphere = 1
-    ro_sphere = 1050
-    sphere = np.array([k_sphere, r_sphere, ro_sphere])
-    spheres = np.array([sphere])
-
-    # parameters of configuration
-    pos = np.array([0, 0, 0])
-    positions = np.array([pos])
-
-    # parameters of the field
-    k_x = 0
-    k_y = 0
-    k_z = k_fluid
-    k = np.array([k_x, k_y, k_z])
+    ps = build_ps_1s()
 
     # order of decomposition
     order = 10
 
-    print("Scattering and extinction cross section:", *cross_sections_1s(k, ro_fluid, sphere, order))
+    print("Scattering and extinction cross section:", *cross_sections_1s(ps, order))
 
-    # # plane
-    # plane = 'xz'
-    # plane_number = int(number_of_points / 2) + 1
-    #
-    # one_sphere_test(span, plane_number, k, ro_fluid, positions, spheres, order, plane=plane)
+    # plane
+    plane = 'xz'
+    plane_number = int(number_of_points / 2) + 1
+
+    one_sphere_test(span, plane_number, ps, order, plane=plane)
 
 
 one_sphere_simulation()

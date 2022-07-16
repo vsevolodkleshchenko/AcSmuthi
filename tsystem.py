@@ -76,8 +76,6 @@ def solve_system(k, ro_fluid, positions, spheres, order):
 
 def system_matrix_cls(ps, order):
     r""" Builds T^{-1} - matrix """
-    k = ps.k_fluid * ps.incident_field.dir
-
     num_of_coef = (order + 1) ** 2
     block_width = num_of_coef * 2
     block_height = num_of_coef * 2
@@ -105,23 +103,21 @@ def system_matrix_cls(ps, order):
                         t_matrix[sph * block_height + 2 * (n ** 2 + n + m),
                                  osph * block_width + munu[1] ** 2 + munu[1] + munu[0]] = \
                             -scipy.special.spherical_jn(n, ps.k_fluid * r_sph) * \
-                            wvfs.outgoing_separation_coefficient(munu[0], m, munu[1], n, k, ps.spheres[osph].pos - ps.spheres[sph].pos)
+                            wvfs.outgoing_separation_coefficient_cls(munu[0], m, munu[1], n, ps.k_fluid, ps.spheres[osph].pos - ps.spheres[sph].pos)
                         t_matrix[sph * block_height + 2 * (n ** 2 + n + m) + 1,
                                  osph * block_width + munu[1] ** 2 + munu[1] + munu[0]] = \
                             -scipy.special.spherical_jn(n, ps.k_fluid * r_sph, derivative=True) * \
-                            wvfs.outgoing_separation_coefficient(munu[0], m, munu[1], n, k, ps.spheres[osph].pos - ps.spheres[sph].pos)
+                            wvfs.outgoing_separation_coefficient_cls(munu[0], m, munu[1], n, ps.k_fluid, ps.spheres[osph].pos - ps.spheres[sph].pos)
     return t_matrix
 
 
 def system_rhs_cls(ps, order):
     r""" build right hand side of system """
-    k = ps.k_fluid * ps.incident_field.dir
-
     num_of_coef = (order + 1) ** 2
     rhs = np.zeros(num_of_coef * 2 * ps.num_sph, dtype=complex)
     for sph in range(ps.num_sph):
         for mn in wvfs.multipoles(order):
-            loc_inc_coef = wvfs.local_incident_coefficient(mn[0], mn[1], k, ps.spheres[sph].pos, order)
+            loc_inc_coef = wvfs.local_incident_coefficient_cls(mn[0], mn[1], ps.k_fluid, ps.incident_field.dir, ps.spheres[sph].pos, order)
             rhs[sph * 2 * num_of_coef + 2 * (mn[1] ** 2 + mn[1] + mn[0])] = loc_inc_coef * \
                                                                             scipy.special.spherical_jn(mn[1], ps.k_fluid * ps.spheres[sph].r)
             rhs[sph * 2 * num_of_coef + 2 * (mn[1] ** 2 + mn[1] + mn[0]) + 1] = loc_inc_coef * \
