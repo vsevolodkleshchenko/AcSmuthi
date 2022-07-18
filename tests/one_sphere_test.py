@@ -59,8 +59,8 @@ def one_sphere_test(span, plane_number, ps, order, plane='xz'):
     actual_1s_field = pp.total_field(x_p, y_p, z_p, ps, order)
     desired_1s_field = rendering.draw_spheres(desired_1s_field, ps, x_p, y_p, z_p)
     actual_1s_field = rendering.draw_spheres(actual_1s_field, ps, x_p, y_p, z_p)
-    rendering.plots_for_tests(actual_1s_field, desired_1s_field, span_v, span_h)
-    np.testing.assert_allclose(actual_1s_field, desired_1s_field, rtol=2e-2)
+    rendering.plots_for_tests(actual_1s_field, actual_1s_field - desired_1s_field, span_v, span_h)
+    np.testing.assert_allclose(actual_1s_field, desired_1s_field, rtol=1e-5)
 
 
 def cross_sections_1s(ps, order):
