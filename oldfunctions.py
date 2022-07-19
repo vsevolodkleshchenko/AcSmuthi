@@ -154,3 +154,86 @@ def old_cross_section(k, ro, pos, spheres, order):
                 sigma_ex += - np.real(coef[2 * j, n ** 2 + n + m] * np.conj(inc_coef(m, n, k)))
     sigma_sc = np.real(sigma_sc1 + sigma_sc2)
     return sigma_sc, sigma_ex
+
+
+def system_matrix_old(ps, order):
+    r""" Builds T^{-1} - matrix """
+    num_of_coef = (order + 1) ** 2
+    block_width = num_of_coef * 2
+    block_height = num_of_coef * 2
+    t_matrix = np.zeros((block_height * ps.num_sph, block_width * ps.num_sph), dtype=complex)
+    all_spheres = np.arange(ps.num_sph)
+    for sph in all_spheres:
+        k_sph = ps.k_spheres[sph]
+        r_sph = ps.spheres[sph].r
+        ro_sph = ps.spheres[sph].rho
+        for n in range(order + 1):
+            # diagonal block
+            col_idx_1 = np.arange(sph * block_width + n ** 2, sph * block_width + (n + 1) ** 2)
+            col_idx_2 = col_idx_1 + num_of_coef
+            row_idx_1 = np.arange(sph * block_height + 2 * n ** 2, sph * block_height + 2 * (n + 1) ** 2, 2)
+            row_idx_2 = np.arange(sph * block_height + 2 * n ** 2 + 1, sph * block_height + 2 * (n + 1) ** 2, 2)
+            t_matrix[row_idx_1, col_idx_1] = - mths.sph_hankel1(n, ps.k_fluid * r_sph)
+            t_matrix[row_idx_2, col_idx_1] = - mths.sph_hankel1_der(n, ps.k_fluid * r_sph) * ps.k_fluid
+            t_matrix[row_idx_1, col_idx_2] = scipy.special.spherical_jn(n, k_sph * r_sph)
+            t_matrix[row_idx_2, col_idx_2] = ps.fluid.rho / ro_sph * k_sph * scipy.special.spherical_jn(n, k_sph * r_sph, derivative=True)
+            # not diagonal block
+            other_sph = np.where(all_spheres != sph)[0]
+            for osph in other_sph:
+                for m in range(-n, n + 1):
+                    for munu in wvfs.multipoles(order):
+                        t_matrix[sph * block_height + 2 * (n ** 2 + n + m),
+                                 osph * block_width + munu[1] ** 2 + munu[1] + munu[0]] = \
+                            -scipy.special.spherical_jn(n, ps.k_fluid * r_sph) * \
+                            wvfs.outgoing_separation_coefficient(munu[0], m, munu[1], n, ps.k_fluid,
+                                                                 ps.spheres[osph].pos - ps.spheres[sph].pos)
+                        t_matrix[sph * block_height + 2 * (n ** 2 + n + m) + 1,
+                                 osph * block_width + munu[1] ** 2 + munu[1] + munu[0]] = \
+                            -scipy.special.spherical_jn(n, ps.k_fluid * r_sph, derivative=True) * ps.k_fluid * \
+                            wvfs.outgoing_separation_coefficient(munu[0], m, munu[1], n, ps.k_fluid,
+                                                                 ps.spheres[osph].pos - ps.spheres[sph].pos)
+    return t_matrix
+
+
+def system_rhs_old(ps, order):
+    r""" build right hand side of system """
+    num_of_coef = (order + 1) ** 2
+    rhs = np.zeros(num_of_coef * 2 * ps.num_sph, dtype=complex)
+    for sph in range(ps.num_sph):
+        for mn in wvfs.multipoles(order):
+            loc_inc_coef = wvfs.local_incident_coefficient(mn[0], mn[1], ps.k_fluid, ps.incident_field.dir,
+                                                           ps.spheres[sph].pos, order)
+            rhs[sph*2*num_of_coef + 2*(mn[1]**2+mn[1]+mn[0])] = loc_inc_coef * \
+                                                                scipy.special.spherical_jn(mn[1], ps.k_fluid * ps.spheres[sph].r)
+            rhs[sph*2*num_of_coef + 2*(mn[1]**2+mn[1]+mn[0])+1] = loc_inc_coef * ps.k_fluid * \
+                                                                  scipy.special.spherical_jn(mn[1], ps.k_fluid * ps.spheres[sph].r, derivative=True)
+    return rhs
+
+
+def solve_system_old(ps, order):
+    r""" solve T matrix system and counts a coefficients in decomposition
+    of scattered field and field inside the spheres """
+    t_matrix = system_matrix_old(ps, order)
+    rhs = system_rhs_old(ps, order)
+    solution_coefficients = scipy.linalg.solve(t_matrix, rhs)
+    return np.array(np.split(solution_coefficients, 2 * ps.num_sph))
+
+
+def total_field_m_old(x, y, z, k, ro, pos, spheres, order, m=-1):
+    r""" Counts field outside the spheres for mth harmonic """
+    coef = tsystem.solve_system(k, ro, pos, spheres, order)
+    tot_field = 0
+    for n in range(abs(m), order + 1):
+        for sph in range(len(spheres)):
+            tot_field += coef[2 * sph][n ** 2 + n + m] * \
+                         wvfs.outgoing_wave_function(m, n, x - pos[sph][0], y - pos[sph][1], z - pos[sph][2], k)
+        tot_field += wvfs.incident_coefficient(m, n, k) * wvfs.regular_wave_function(m, n, x, y, z, k)
+    return tot_field
+
+
+# a = np.arange(36)
+# b = a.reshape((3, 3, 2, 2))
+# c = a.reshape((4, 9))
+# d = np.concatenate(np.concatenate(b, axis=1), axis=1)
+# e = np.concatenate(c)
+# print(a, b[0, 2, 0, 1], b, c, d, e, sep="\n")

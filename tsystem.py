@@ -5,64 +5,71 @@ import wavefunctions as wvfs
 import mathematics as mths
 
 
+def scaled_coefficient(n, sph, ps):
+    k_q = ps.k_spheres[sph]
+    rho_0 = ps.fluid.rho
+    k = ps.k_fluid
+    rho_q = ps.spheres[sph].rho
+    a_q = ps.spheres[sph].r
+    gamma_q = k_q * rho_0 / k / rho_q
+    s1 = np.zeros((2, 2), dtype=complex)
+    s2 = np.zeros((2, 2), dtype=complex)
+
+    s1[0, 0] = gamma_q * scipy.special.spherical_jn(n, k * a_q)
+    s1[0, 1] = scipy.special.spherical_jn(n, k_q * a_q)
+    s1[1, 0] = scipy.special.spherical_jn(n, k * a_q, derivative=True)
+    s1[1, 1] = scipy.special.spherical_jn(n, k_q * a_q, derivative=True)
+
+    s2[0, 0] = - gamma_q * mths.sph_hankel1(n, k * a_q)
+    s2[0, 1] = scipy.special.spherical_jn(n, k_q * a_q)
+    s2[1, 0] = - mths.sph_hankel1_der(n, k * a_q)
+    s2[1, 1] = scipy.special.spherical_jn(n, k_q * a_q, derivative=True)
+
+    return np.linalg.det(s1) / np.linalg.det(s2)
+
+
 def system_matrix(ps, order):
-    r""" Builds T^{-1} - matrix """
-    num_of_coef = (order + 1) ** 2
-    block_width = num_of_coef * 2
-    block_height = num_of_coef * 2
-    t_matrix = np.zeros((block_height * ps.num_sph, block_width * ps.num_sph), dtype=complex)
+    t_matrix = np.zeros((ps.num_sph, ps.num_sph, (order+1)**2, (order+1)**2), dtype=complex)
     all_spheres = np.arange(ps.num_sph)
     for sph in all_spheres:
-        k_sph = ps.k_spheres[sph]
-        r_sph = ps.spheres[sph].r
-        ro_sph = ps.spheres[sph].rho
-        for n in range(order + 1):
-            # diagonal block
-            col_idx_1 = np.arange(sph * block_width + n ** 2, sph * block_width + (n + 1) ** 2)
-            col_idx_2 = col_idx_1 + num_of_coef
-            row_idx_1 = np.arange(sph * block_height + 2 * n ** 2, sph * block_height + 2 * (n + 1) ** 2, 2)
-            row_idx_2 = np.arange(sph * block_height + 2 * n ** 2 + 1, sph * block_height + 2 * (n + 1) ** 2, 2)
-            t_matrix[row_idx_1, col_idx_1] = - mths.sph_hankel1(n, ps.k_fluid * r_sph)
-            t_matrix[row_idx_2, col_idx_1] = - mths.sph_hankel1_der(n, ps.k_fluid * r_sph) * ps.k_fluid
-            t_matrix[row_idx_1, col_idx_2] = scipy.special.spherical_jn(n, k_sph * r_sph)
-            t_matrix[row_idx_2, col_idx_2] = ps.fluid.rho / ro_sph * k_sph * scipy.special.spherical_jn(n, k_sph * r_sph, derivative=True)
-            # not diagonal block
-            other_sph = np.where(all_spheres != sph)[0]
-            for osph in other_sph:
-                for m in range(-n, n + 1):
-                    for munu in wvfs.multipoles(order):
-                        t_matrix[sph * block_height + 2 * (n ** 2 + n + m),
-                                 osph * block_width + munu[1] ** 2 + munu[1] + munu[0]] = \
-                            -scipy.special.spherical_jn(n, ps.k_fluid * r_sph) * \
-                            wvfs.outgoing_separation_coefficient(munu[0], m, munu[1], n, ps.k_fluid,
-                                                                 ps.spheres[osph].pos - ps.spheres[sph].pos)
-                        t_matrix[sph * block_height + 2 * (n ** 2 + n + m) + 1,
-                                 osph * block_width + munu[1] ** 2 + munu[1] + munu[0]] = \
-                            -scipy.special.spherical_jn(n, ps.k_fluid * r_sph, derivative=True) * ps.k_fluid * \
-                            wvfs.outgoing_separation_coefficient(munu[0], m, munu[1], n, ps.k_fluid,
-                                                                 ps.spheres[osph].pos - ps.spheres[sph].pos)
-    return t_matrix
+        for mn in wvfs.multipoles(order):
+            imn = mn[1]**2+mn[1]+mn[0]
+            t_matrix[sph, sph, imn, imn] = 1 / scaled_coefficient(mn[1], sph, ps)
+            other_spheres = np.where(all_spheres != sph)[0]
+            for osph in other_spheres:
+                for munu in wvfs.multipoles(order):
+                    imunu = munu[1]**2+munu[1]+munu[0]
+                    distance = ps.spheres[osph].pos - ps.spheres[sph].pos
+                    t_matrix[sph, osph, imn, imunu] = wvfs.outgoing_separation_coefficient(munu[0], mn[0], munu[1],
+                                                                                           mn[1], ps.k_fluid, distance)
+    t_matrix2d = np.concatenate(np.concatenate(t_matrix, axis=1), axis=1)
+    return t_matrix2d
 
 
 def system_rhs(ps, order):
-    r""" build right hand side of system """
-    num_of_coef = (order + 1) ** 2
-    rhs = np.zeros(num_of_coef * 2 * ps.num_sph, dtype=complex)
+    rhs = np.zeros((ps.num_sph, (order+1)**2), dtype=complex)
     for sph in range(ps.num_sph):
         for mn in wvfs.multipoles(order):
-            loc_inc_coef = wvfs.local_incident_coefficient(mn[0], mn[1], ps.k_fluid, ps.incident_field.dir,
-                                                           ps.spheres[sph].pos, order)
-            rhs[sph*2*num_of_coef + 2*(mn[1]**2+mn[1]+mn[0])] = loc_inc_coef * \
-                                                                scipy.special.spherical_jn(mn[1], ps.k_fluid * ps.spheres[sph].r)
-            rhs[sph*2*num_of_coef + 2*(mn[1]**2+mn[1]+mn[0])+1] = loc_inc_coef * ps.k_fluid * \
-                                                                  scipy.special.spherical_jn(mn[1], ps.k_fluid * ps.spheres[sph].r, derivative=True)
-    return rhs
+            imn = mn[1]**2+mn[1]+mn[0]
+            rhs[sph, imn] = wvfs.local_incident_coefficient(mn[0], mn[1], ps.k_fluid, ps.incident_field.dir,
+                                                            ps.spheres[sph].pos, order)
+    rhs1d = np.concatenate(rhs)
+    return rhs1d
 
 
 def solve_system(ps, order):
-    r""" solve T matrix system and counts a coefficients in decomposition
-    of scattered field and field inside the spheres """
-    t_matrix = system_matrix(ps, order)
-    rhs = system_rhs(ps, order)
-    solution_coefficients = scipy.linalg.solve(t_matrix, rhs)
-    return np.array(np.split(solution_coefficients, 2 * ps.num_sph))
+    sc_coef1d = scipy.linalg.solve(system_matrix(ps, order), system_rhs(ps, order))
+    sc_coef = sc_coef1d.reshape((ps.num_sph, (order + 1) ** 2))
+    in_coef = np.zeros((ps.num_sph, (order + 1) ** 2), dtype=complex)
+    for sph in range(ps.num_sph):
+        for mn in wvfs.multipoles(order):
+            imn = mn[1]**2+mn[1]+mn[0]
+            in_coef[sph, imn] = (scipy.special.spherical_jn(mn[1], ps.k_fluid * ps.spheres[sph].r) / scaled_coefficient(mn[1], sph, ps) +
+                                 mths.sph_hankel1(mn[1], ps.k_fluid * ps.spheres[sph].r)) * sc_coef[sph, imn] / \
+                                scipy.special.spherical_jn(mn[1], ps.k_spheres[sph] * ps.spheres[sph].r)
+
+    sol_coef = np.zeros((2 * ps.num_sph, (order+1)**2), dtype=complex)
+    for sph in range(ps.num_sph):
+        sol_coef[2 * sph] = sc_coef[sph]
+        sol_coef[2 * sph + 1] = in_coef[sph]
+    return sol_coef
