@@ -56,3 +56,35 @@ def cross_section(ps, order):
     return sigma_sc, sigma_ex
 
 
+def sphere_force(sph, ps, order):
+    ef_inc_coef = tsystem.effective_incident_coefficients(sph, tsystem.solve_system(ps, order)[2 * sph], ps, order)
+    scale = tsystem.scaled_coefficient
+    fxy_array = np.zeros((order + 1) ** 2, dtype=complex)
+    fz_array = np.zeros((order + 1) ** 2, dtype=complex)
+    for mn in wvfs.multipoles(order):
+        imn = mn[1] ** 2 + mn[1] + mn[0]
+        imn1 = (mn[1] + 1) ** 2 + (mn[1] + 1) + (mn[0] + 1)
+        imn2 = mn[1] ** 2 + mn[1] - mn[0]
+        imn3 = (mn[1] + 1) ** 2 + (mn[1] + 1) - (mn[0] + 1)
+        imn4 = (mn[1] + 1) ** 2 + (mn[1] + 1) + mn[0]
+        s_coef = scale(mn[1], sph, ps) + np.conj(scale(mn[1]+1, sph, ps)) + \
+                 2 * scale(mn[1], sph, ps) * np.conj(scale(mn[1]+1, sph, ps))
+        coef1 = np.sqrt((mn[1] + mn[0] + 1) * (mn[1] + mn[0] + 2) / (2 * mn[1] + 1) / (2 * mn[1] + 3))
+        term1 = s_coef * ef_inc_coef[imn] * np.conj(ef_inc_coef[imn1]) + \
+               np.conj(s_coef) * np.conj(ef_inc_coef[imn2]) * ef_inc_coef[imn3]
+        coef2 = np.sqrt((mn[1] - mn[0] + 1) * (mn[1] + mn[0] + 1) / (2 * mn[1] + 1) / (2 * mn[1] + 3))
+        term2 = s_coef * ef_inc_coef[imn] * np.conj(ef_inc_coef[imn4])
+        fxy_array[imn], fz_array[imn] = coef1 * term1, coef2 * term2
+    prefactor1 = 1j * ps.incident_field.ampl ** 2 / (2 * ps.fluid.rho * ps.fluid.speed ** 2) / 2 / ps.k_fluid ** 2
+    prefactor2 = ps.incident_field.ampl ** 2 / (2 * ps.fluid.rho * ps.fluid.speed ** 2) / ps.k_fluid ** 2
+    fxy = prefactor1 * mths.complex_fsum(fxy_array)
+    fx, fy = np.real(fxy), np.imag(fxy)
+    fz = prefactor2 * np.imag(mths.complex_fsum(fz_array))
+    return fx, fy, fz
+
+
+def forces(ps, order):
+    forces_list = []
+    for sph in range(ps.num_sph):
+        forces_list[sph] = sphere_force(sph, ps, order)
+    return forces_list
