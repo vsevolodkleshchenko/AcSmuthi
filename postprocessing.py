@@ -54,3 +54,5 @@ def cross_section(ps, order):
     sigma_sc = W_sc / ps.intensity_incident_field
     sigma_ex = W_ex / ps.intensity_incident_field
     return sigma_sc, sigma_ex
+
+
