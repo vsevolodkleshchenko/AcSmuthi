@@ -56,18 +56,18 @@ def cross_section(ps, order):
     return sigma_sc, sigma_ex
 
 
-def sphere_force(sph, ps, order):
-    ef_inc_coef = tsystem.effective_incident_coefficients(sph, tsystem.solve_system(ps, order)[2 * sph], ps, order)
+def sphere_force(sph, sol_coef, ps, order):
+    ef_inc_coef = tsystem.effective_incident_coefficients(sph, sol_coef, ps, order)
     scale = tsystem.scaled_coefficient
     fxy_array = np.zeros((order + 1) ** 2, dtype=complex)
     fz_array = np.zeros((order + 1) ** 2, dtype=complex)
-    for mn in wvfs.multipoles(order):
+    for mn in wvfs.multipoles(order - 1):
         imn = mn[1] ** 2 + mn[1] + mn[0]
         imn1 = (mn[1] + 1) ** 2 + (mn[1] + 1) + (mn[0] + 1)
         imn2 = mn[1] ** 2 + mn[1] - mn[0]
         imn3 = (mn[1] + 1) ** 2 + (mn[1] + 1) - (mn[0] + 1)
         imn4 = (mn[1] + 1) ** 2 + (mn[1] + 1) + mn[0]
-        s_coef = scale(mn[1], sph, ps) + np.conj(scale(mn[1]+1, sph, ps)) + \
+        s_coef = scale(mn[1], sph, ps) + np.conj(scale(mn[1] + 1, sph, ps)) + \
                  2 * scale(mn[1], sph, ps) * np.conj(scale(mn[1]+1, sph, ps))
         coef1 = np.sqrt((mn[1] + mn[0] + 1) * (mn[1] + mn[0] + 2) / (2 * mn[1] + 1) / (2 * mn[1] + 3))
         term1 = s_coef * ef_inc_coef[imn] * np.conj(ef_inc_coef[imn1]) + \
@@ -80,11 +80,12 @@ def sphere_force(sph, ps, order):
     fxy = prefactor1 * mths.complex_fsum(fxy_array)
     fx, fy = np.real(fxy), np.imag(fxy)
     fz = prefactor2 * np.imag(mths.complex_fsum(fz_array))
-    return fx, fy, fz
+    return np.array([fx, fy, fz])
 
 
 def forces(ps, order):
-    forces_list = []
+    forces_array = np.zeros((ps.num_sph, 3), dtype=float)
+    solution_coefficients = tsystem.solve_system(ps, order)
     for sph in range(ps.num_sph):
-        forces_list[sph] = sphere_force(sph, ps, order)
-    return forces_list
+        forces_array[sph] = sphere_force(sph, solution_coefficients, ps, order)
+    return forces_array

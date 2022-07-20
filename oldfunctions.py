@@ -231,6 +231,23 @@ def total_field_m_old(x, y, z, k, ro, pos, spheres, order, m=-1):
     return tot_field
 
 
+def ps_to_param(ps):
+    freq = ps.incident_field.freq
+    k = ps.k_fluid * ps.incident_field.dir
+    k_fluid = ps.k_fluid
+    ro_fluid = ps.fluid.rho
+    positions = np.zeros((ps.num_sph, 3))
+    for sph in range(ps.num_sph):
+        positions[sph] = ps.spheres[sph].pos
+    spheres = np.zeros((ps.num_sph, 3))
+    for sph in range(ps.num_sph):
+        spheres[sph] = np.array([ps.k_spheres[sph], ps.spheres[sph].r, ps.spheres[sph].rho])
+    p0 = ps.incident_field.ampl
+    intensity = ps.intensity_incident_field
+    num_sph = ps.num_sph
+    return freq, k, k_fluid, ro_fluid, positions, spheres, p0, intensity, num_sph
+
+
 # a = np.arange(36)
 # b = a.reshape((3, 3, 2, 2))
 # c = a.reshape((4, 9))

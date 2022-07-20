@@ -77,11 +77,11 @@ def build_ps():
     ro_sph = 1050  # [kg/m^3]
     c_sph = 1403  # [m/s]
 
-    sphere_cls1 = Sphere(pos1, r_sph, ro_sph, c_sph)
-    sphere_cls2 = Sphere(pos2, r_sph, ro_sph, c_sph)
-    spheres_cls = np.array([sphere_cls1, sphere_cls2])
+    sphere1 = Sphere(pos1, r_sph, ro_sph, c_sph)
+    sphere2 = Sphere(pos2, r_sph, ro_sph, c_sph)
+    spheres = np.array([sphere1, sphere2])
 
-    ps = System(fluid, incident_field, spheres_cls)
+    ps = System(fluid, incident_field, spheres)
     return ps
 
 
@@ -103,34 +103,37 @@ def build_ps_1s():
     ro_sph = 1050  # [kg/m^3]
     c_sph = 1403  # [m/s]
 
-    sphere_cls = Sphere(pos, r_sph, ro_sph, c_sph)
-    spheres_cls = np.array([sphere_cls])
+    sphere = Sphere(pos, r_sph, ro_sph, c_sph)
+    spheres = np.array([sphere])
 
-    ps = System(fluid, incident_field, spheres_cls)
+    ps = System(fluid, incident_field, spheres)
     return ps
 
 
-def ps_to_param(ps):
-    freq = ps.incident_field.freq
+def build_ps_3s():
+    # parameters of incident field
+    direction = np.array([1, 0, 0])
+    freq = 82  # [Hz]
+    p0 = 1  # [kg/m/s^2] = [Pa]
+    incident_field = PlaneWave(direction, freq, p0)
 
-    k = ps.k_fluid * ps.incident_field.dir
+    # parameters of fluid
+    ro_fluid = 1.225  # [kg/m^3]
+    c_fluid = 331  # [m/s]
+    fluid = Fluid(ro_fluid, c_fluid)
 
-    k_fluid = ps.k_fluid
+    # parameters of the spheres
+    pos1 = np.array([0, 0, -2])
+    pos2 = np.array([0, 0, 2])
+    pos3 = np.array([3.4, 0, 0])
+    r_sph = 1  # [m]
+    ro_sph = 1050  # [kg/m^3]
+    c_sph = 1403  # [m/s]
 
-    ro_fluid = ps.fluid.rho
+    sphere1 = Sphere(pos1, r_sph, ro_sph, c_sph)
+    sphere2 = Sphere(pos2, r_sph, ro_sph, c_sph)
+    sphere3 = Sphere(pos3, r_sph, ro_sph, c_sph)
+    spheres = np.array([sphere1, sphere2, sphere3])
 
-    positions = np.zeros((ps.num_sph, 3))
-    for sph in range(ps.num_sph):
-        positions[sph] = ps.spheres[sph].pos
-
-    spheres = np.zeros((ps.num_sph, 3))
-    for sph in range(ps.num_sph):
-        spheres[sph] = np.array([ps.k_spheres[sph], ps.spheres[sph].r, ps.spheres[sph].rho])
-
-    p0 = ps.incident_field.ampl
-
-    intensity = ps.intensity_incident_field
-
-    num_sph = ps.num_sph
-
-    return freq, k, k_fluid, ro_fluid, positions, spheres, p0, intensity, num_sph
+    ps = System(fluid, incident_field, spheres)
+    return ps
