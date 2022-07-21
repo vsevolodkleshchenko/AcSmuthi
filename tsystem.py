@@ -68,16 +68,16 @@ def solve_system(ps, order):
                                  mths.sph_hankel1(mn[1], ps.k_fluid * ps.spheres[sph].r)) * sc_coef[sph, imn] / \
                                 scipy.special.spherical_jn(mn[1], ps.k_spheres[sph] * ps.spheres[sph].r)
 
-    sol_coef = np.zeros((2 * ps.num_sph, (order+1)**2), dtype=complex)
-    for sph in range(ps.num_sph):
-        sol_coef[2 * sph] = sc_coef[sph]
-        sol_coef[2 * sph + 1] = in_coef[sph]
-    return sol_coef
+    # sol_coef = np.zeros((2 * ps.num_sph, (order+1)**2), dtype=complex)
+    # for sph in range(ps.num_sph):
+    #     sol_coef[2 * sph] = sc_coef[sph]
+    #     sol_coef[2 * sph + 1] = in_coef[sph]
+    # return sol_coef
+    return sc_coef, in_coef
 
 
-def effective_incident_coefficients(sph, sol_coef, ps, order):
+def effective_incident_coefficients(sph, sc_coef, ps, order):
     ef_inc_coef = np.zeros((order + 1) ** 2, dtype=complex)
-    sc_coef = sol_coef[2 * sph]
     for mn in wvfs.multipoles(order):
         imn = mn[1]**2+mn[1]+mn[0]
         ef_inc_coef[imn] = sc_coef[imn] / scaled_coefficient(mn[1], sph, ps)

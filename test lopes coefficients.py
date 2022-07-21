@@ -39,30 +39,30 @@ def scaled_coefficients(ps, order):
     return scaled_coef
 
 
-def local_scattered_coefficient(m, n, sph, ps, sol_coef, order):
+def local_scattered_coefficient(m, n, sph, ps, sc_coef, order):
     sc_coefficient_array = np.zeros(ps.num_sph * (order+1) ** 2, dtype=complex)
     i = 0
     for osph in np.where(np.arange(ps.num_sph) != sph)[0]:
         for munu in wvfs.multipoles(order):
             dist = ps.spheres[sph].pos - ps.spheres[osph].pos
-            sc_coefficient_array[i] = sol_coef[2 * osph, munu[1] ** 2 + munu[1] + munu[0]] * \
-                                            wvfs.outgoing_separation_coefficient(munu[0], m, munu[1], n, ps.k_fluid,
+            sc_coefficient_array[i] = sc_coef[osph, munu[1] ** 2 + munu[1] + munu[0]] * \
+                                      wvfs.outgoing_separation_coefficient(munu[0], m, munu[1], n, ps.k_fluid,
                                                                                  dist)
             i += 1
     return mths.complex_fsum(sc_coefficient_array)
 
 
-def effective_coefficient(m, n, sph, ps, sol_coef, order):
+def effective_coefficient(m, n, sph, ps, sc_coef, order):
     return wvfs.local_incident_coefficient(m, n, ps.k_fluid, ps.incident_field.dir, ps.spheres[sph].pos, order) + \
-              local_scattered_coefficient(m, n, sph, ps, sol_coef, order)
+           local_scattered_coefficient(m, n, sph, ps, sc_coef, order)
 
 
-def effective_coefficients(ps, sol_coef, order):
+def effective_coefficients(ps, sc_coef, order):
     ef_coef = np.zeros((ps.num_sph, (order + 1) ** 2), dtype=complex)
     for sph in range(ps.num_sph):
         i = 0
         for mn in wvfs.multipoles(order):
-            ef_coef[sph, i] = effective_coefficient(mn[0], mn[1], sph, ps, sol_coef, order)
+            ef_coef[sph, i] = effective_coefficient(mn[0], mn[1], sph, ps, sc_coef, order)
             i += 1
     return ef_coef
 
@@ -86,8 +86,8 @@ def test_function():
     order = 10
 
     solution_coefficients = tsystem.solve_system(ps, order)
-    scattered_coefficients = solution_coefficients[::2]
-    eff_coefficients = effective_coefficients(ps, solution_coefficients, order)
+    scattered_coefficients = solution_coefficients[0]
+    eff_coefficients = effective_coefficients(ps, scattered_coefficients, order)
     print(scattered_coefficients / eff_coefficients)
 
     scaled_coefficients_lopes = scaled_coefficients(ps, order)

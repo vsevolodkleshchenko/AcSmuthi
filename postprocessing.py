@@ -7,10 +7,10 @@ import numpy as np
 
 def total_field(x, y, z, ps, order):
     r""" counts field outside the spheres """
-    solution_coefficients = tsystem.solve_system(ps, order)
+    scattered_coefficients = tsystem.solve_system(ps, order)[0]
     tot_field_array = np.zeros((ps.num_sph, (order + 1) ** 2, len(x)), dtype=complex)
     for sph in range(ps.num_sph):
-        sphere_solution_coefficients = np.split(np.repeat(solution_coefficients[2 * sph], len(x)), (order + 1) ** 2)
+        sphere_solution_coefficients = np.split(np.repeat(scattered_coefficients[sph], len(x)), (order + 1) ** 2)
         tot_field_array[sph] = sphere_solution_coefficients * wvfs.outgoing_wave_functions_array(order, x -
                                                                                                  ps.spheres[sph].pos[0],
                                                                                                  y -
@@ -28,7 +28,7 @@ def cross_section(ps, order):
     eq(46,47) in 'Multiple scattering and scattering cross sections P. A. Martin' """
     prefactor = - ps.incident_field.ampl ** 2 / (2 * ps.incident_field.omega * ps.fluid.rho * ps.k_fluid)
 
-    solution_coefficients = tsystem.solve_system(ps, order)
+    scattered_coefficients = tsystem.solve_system(ps, order)[0]
     sigma_ex = np.zeros(ps.num_sph * (order + 1) ** 2)
     sigma_sc1 = np.zeros(ps.num_sph * (order + 1) ** 2)
     sigma_sc2 = np.zeros((ps.num_sph * (order + 1) ** 2) ** 2, dtype=complex)
@@ -37,14 +37,14 @@ def cross_section(ps, order):
         for mn in wvfs.multipoles(order):
             for l in np.where(np.arange(ps.num_sph) != j)[0]:
                 for munu in wvfs.multipoles(order):
-                    sigma_sc2[jmnlmunu] = np.conj(solution_coefficients[2 * j, mn[1] ** 2 + mn[1] + mn[0]]) * \
-                                          solution_coefficients[2 * l, munu[1] ** 2 + munu[1] + munu[0]] * \
+                    sigma_sc2[jmnlmunu] = np.conj(scattered_coefficients[j, mn[1] ** 2 + mn[1] + mn[0]]) * \
+                                          scattered_coefficients[l, munu[1] ** 2 + munu[1] + munu[0]] * \
                                           wvfs.regular_separation_coefficient(munu[0], mn[0], munu[1], mn[1],
                                                                               ps.k_fluid,
                                                                               ps.spheres[j].pos - ps.spheres[l].pos)
                     jmnlmunu += 1
-            sigma_sc1[jmn] = np.abs(solution_coefficients[2 * j, mn[1] ** 2 + mn[1] + mn[0]]) ** 2
-            sigma_ex[jmn] = - np.real(solution_coefficients[2 * j, mn[1] ** 2 + mn[1] + mn[0]] *
+            sigma_sc1[jmn] = np.abs(scattered_coefficients[j, mn[1] ** 2 + mn[1] + mn[0]]) ** 2
+            sigma_ex[jmn] = - np.real(scattered_coefficients[j, mn[1] ** 2 + mn[1] + mn[0]] *
                                       np.conj(wvfs.local_incident_coefficient(mn[0], mn[1], ps.k_fluid,
                                                                               ps.incident_field.dir, ps.spheres[j].pos,
                                                                               order)))
@@ -56,8 +56,8 @@ def cross_section(ps, order):
     return sigma_sc, sigma_ex
 
 
-def sphere_force(sph, sol_coef, ps, order):
-    ef_inc_coef = tsystem.effective_incident_coefficients(sph, sol_coef, ps, order)
+def sphere_force(sph, sc_coef, ps, order):
+    ef_inc_coef = tsystem.effective_incident_coefficients(sph, sc_coef, ps, order)
     scale = tsystem.scaled_coefficient
     fxy_array = np.zeros((order + 1) ** 2, dtype=complex)
     fz_array = np.zeros((order + 1) ** 2, dtype=complex)
@@ -87,5 +87,5 @@ def forces(ps, order):
     forces_array = np.zeros((ps.num_sph, 3), dtype=float)
     solution_coefficients = tsystem.solve_system(ps, order)
     for sph in range(ps.num_sph):
-        forces_array[sph] = sphere_force(sph, solution_coefficients, ps, order)
+        forces_array[sph] = sphere_force(sph, solution_coefficients[0][sph], ps, order)
     return forces_array

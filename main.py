@@ -18,12 +18,12 @@ def simulation():
     bound, number_of_points = 10, 200
     span = rendering.build_discretized_span(bound, number_of_points)
 
-    physical_system = cls.build_ps_3s()
+    physical_system = cls.build_ps()
 
     order = 6
     print(pp.forces(physical_system, order))
-    # print("Scattering and extinction cross section:", *pp.cross_section(physical_system, order))
-    #
+    print("Scattering and extinction cross section:", *pp.cross_section(physical_system, order))
+
     plane = 'xz'
     plane_number = int(number_of_points / 2) + 1
 
