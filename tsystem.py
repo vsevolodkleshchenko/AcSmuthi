@@ -39,8 +39,8 @@ def system_matrix(ps, order):
             for osph in other_spheres:
                 for munu in wvfs.multipoles(order):
                     imunu = munu[1]**2+munu[1]+munu[0]
-                    distance = ps.spheres[osph].pos - ps.spheres[sph].pos
-                    t_matrix[sph, osph, imn, imunu] = wvfs.outgoing_separation_coefficient(munu[0], mn[0], munu[1],
+                    distance = - ps.spheres[osph].pos + ps.spheres[sph].pos
+                    t_matrix[sph, osph, imn, imunu] = - wvfs.outgoing_separation_coefficient(munu[0], mn[0], munu[1],
                                                                                            mn[1], ps.k_fluid, distance)
     t_matrix2d = np.concatenate(np.concatenate(t_matrix, axis=1), axis=1)
     return t_matrix2d
@@ -67,12 +67,6 @@ def solve_system(ps, order):
             in_coef[sph, imn] = (scipy.special.spherical_jn(mn[1], ps.k_fluid * ps.spheres[sph].r) / scaled_coefficient(mn[1], sph, ps) +
                                  mths.sph_hankel1(mn[1], ps.k_fluid * ps.spheres[sph].r)) * sc_coef[sph, imn] / \
                                 scipy.special.spherical_jn(mn[1], ps.k_spheres[sph] * ps.spheres[sph].r)
-
-    # sol_coef = np.zeros((2 * ps.num_sph, (order+1)**2), dtype=complex)
-    # for sph in range(ps.num_sph):
-    #     sol_coef[2 * sph] = sc_coef[sph]
-    #     sol_coef[2 * sph + 1] = in_coef[sph]
-    # return sol_coef
     return sc_coef, in_coef
 
 

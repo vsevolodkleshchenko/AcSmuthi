@@ -71,8 +71,8 @@ def build_ps():
     fluid = Fluid(ro_fluid, c_fluid)
 
     # parameters of the spheres
-    pos1 = np.array([0, 0, -2.5])
-    pos2 = np.array([0, 0, 2.5])
+    pos1 = np.array([0, 0, -1.5])
+    pos2 = np.array([0, 0, 1.5])
     r_sph = 1  # [m]
     ro_sph = 1050  # [kg/m^3]
     c_sph = 1403  # [m/s]

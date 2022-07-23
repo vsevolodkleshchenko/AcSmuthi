@@ -26,7 +26,7 @@ def total_field(x, y, z, ps, order):
 def cross_section(ps, order):
     r""" Counts scattering and extinction cross sections Sigma_sc and Sigma_ex
     eq(46,47) in 'Multiple scattering and scattering cross sections P. A. Martin' """
-    prefactor = - ps.incident_field.ampl ** 2 / (2 * ps.incident_field.omega * ps.fluid.rho * ps.k_fluid)
+    prefactor = ps.incident_field.ampl ** 2 / (2 * ps.incident_field.omega * ps.fluid.rho * ps.k_fluid)
 
     scattered_coefficients = tsystem.solve_system(ps, order)[0]
     sigma_ex = np.zeros(ps.num_sph * (order + 1) ** 2)
@@ -49,7 +49,7 @@ def cross_section(ps, order):
                                                                               ps.incident_field.dir, ps.spheres[j].pos,
                                                                               order)))
             jmn += 1
-    W_sc = (math.fsum(np.real(sigma_sc1)) + math.fsum(np.real(sigma_sc2))) * prefactor
+    W_sc = (math.fsum(sigma_sc1) + math.fsum(np.real(sigma_sc2))) * prefactor
     W_ex = math.fsum(sigma_ex) * prefactor
     sigma_sc = W_sc / ps.intensity_incident_field
     sigma_ex = W_ex / ps.intensity_incident_field
