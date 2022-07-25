@@ -1,11 +1,12 @@
 import numpy as np
 import scipy
-import scipy.special
+import scipy.special as ss
 import wavefunctions as wvfs
 import mathematics as mths
 
 
 def scaled_coefficient(n, sph, ps):
+    r""" scaled coefficient - eq(21) in lopes2016 """
     k_q = ps.k_spheres[sph]
     rho_0 = ps.fluid.rho
     k = ps.k_fluid
@@ -16,19 +17,20 @@ def scaled_coefficient(n, sph, ps):
     s2 = np.zeros((2, 2), dtype=complex)
 
     s1[0, 0] = gamma_q * scipy.special.spherical_jn(n, k * a_q)
-    s1[0, 1] = scipy.special.spherical_jn(n, k_q * a_q)
-    s1[1, 0] = scipy.special.spherical_jn(n, k * a_q, derivative=True)
-    s1[1, 1] = scipy.special.spherical_jn(n, k_q * a_q, derivative=True)
+    s1[0, 1] = ss.spherical_jn(n, k_q * a_q)
+    s1[1, 0] = ss.spherical_jn(n, k * a_q, derivative=True)
+    s1[1, 1] = ss.spherical_jn(n, k_q * a_q, derivative=True)
 
     s2[0, 0] = - gamma_q * mths.sph_hankel1(n, k * a_q)
-    s2[0, 1] = scipy.special.spherical_jn(n, k_q * a_q)
+    s2[0, 1] = ss.spherical_jn(n, k_q * a_q)
     s2[1, 0] = - mths.sph_hankel1_der(n, k * a_q)
-    s2[1, 1] = scipy.special.spherical_jn(n, k_q * a_q, derivative=True)
+    s2[1, 1] = ss.spherical_jn(n, k_q * a_q, derivative=True)
 
     return np.linalg.det(s1) / np.linalg.det(s2)
 
 
 def system_matrix(ps, order):
+    r""" build matrix of system like in eq(20) in lopes2016 """
     t_matrix = np.zeros((ps.num_sph, ps.num_sph, (order+1)**2, (order+1)**2), dtype=complex)
     all_spheres = np.arange(ps.num_sph)
     for sph in all_spheres:
@@ -47,6 +49,7 @@ def system_matrix(ps, order):
 
 
 def system_rhs(ps, order):
+    r""" build right hand side of system like in eq(20) in lopes2016 """
     rhs = np.zeros((ps.num_sph, (order+1)**2), dtype=complex)
     for sph in range(ps.num_sph):
         for mn in wvfs.multipoles(order):
@@ -58,19 +61,21 @@ def system_rhs(ps, order):
 
 
 def solve_system(ps, order):
+    r""" solve system like in eq(20) in lopes2016 """
     sc_coef1d = scipy.linalg.solve(system_matrix(ps, order), system_rhs(ps, order))
     sc_coef = sc_coef1d.reshape((ps.num_sph, (order + 1) ** 2))
     in_coef = np.zeros((ps.num_sph, (order + 1) ** 2), dtype=complex)
     for sph in range(ps.num_sph):
         for mn in wvfs.multipoles(order):
             imn = mn[1]**2+mn[1]+mn[0]
-            in_coef[sph, imn] = (scipy.special.spherical_jn(mn[1], ps.k_fluid * ps.spheres[sph].r) / scaled_coefficient(mn[1], sph, ps) +
+            in_coef[sph, imn] = (ss.spherical_jn(mn[1], ps.k_fluid * ps.spheres[sph].r) / scaled_coefficient(mn[1], sph, ps) +
                                  mths.sph_hankel1(mn[1], ps.k_fluid * ps.spheres[sph].r)) * sc_coef[sph, imn] / \
-                                scipy.special.spherical_jn(mn[1], ps.k_spheres[sph] * ps.spheres[sph].r)
+                                ss.spherical_jn(mn[1], ps.k_spheres[sph] * ps.spheres[sph].r)
     return sc_coef, in_coef
 
 
 def effective_incident_coefficients(sph, sc_coef, ps, order):
+    r""" build np.array of effective incident coefficients for all n <= order """
     ef_inc_coef = np.zeros((order + 1) ** 2, dtype=complex)
     for mn in wvfs.multipoles(order):
         imn = mn[1]**2+mn[1]+mn[0]

@@ -226,8 +226,8 @@ def total_field_m_old(x, y, z, k, ro, pos, spheres, order, m=-1):
     for n in range(abs(m), order + 1):
         for sph in range(len(spheres)):
             tot_field += coef[2 * sph][n ** 2 + n + m] * \
-                         wvfs.outgoing_wave_function(m, n, x - pos[sph][0], y - pos[sph][1], z - pos[sph][2], k)
-        tot_field += wvfs.incident_coefficient(m, n, k) * wvfs.regular_wave_function(m, n, x, y, z, k)
+                         wvfs.outgoing_wvf(m, n, x - pos[sph][0], y - pos[sph][1], z - pos[sph][2], k)
+        tot_field += wvfs.incident_coefficient(m, n, k) * wvfs.regular_wvf(m, n, x, y, z, k)
     return tot_field
 
 

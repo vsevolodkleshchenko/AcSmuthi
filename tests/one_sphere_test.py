@@ -47,14 +47,14 @@ def desired_pscattered_coefficients_array_1s(ps, length, order):
 
 def scattered_field_1s(x, y, z, ps, order):
     tot_field_array = desired_pscattered_coefficients_array_1s(ps, len(x), order) * \
-                      wvfs.axisymmetric_outgoing_wvf_array(x, y, z, ps.k_fluid, len(x), order)
+                      wvfs.axisymmetric_outgoing_wvfs_array(x, y, z, ps.k_fluid, len(x), order)
     return np.sum(tot_field_array, axis=0)
 
 
 def one_sphere_test(span, plane_number, ps, order, plane='xz'):
     x_p, y_p, z_p, span_v, span_h = rendering.build_slice(span, plane_number, plane=plane)
     desired_1s_field = scattered_field_1s(x_p, y_p, z_p, ps, order)
-    actual_1s_field = pp.total_field(x_p, y_p, z_p, ps, order)
+    actual_1s_field = pp.total_field(x_p, y_p, z_p, ps, order, )
     desired_1s_field = rendering.draw_spheres(desired_1s_field, ps, x_p, y_p, z_p)
     actual_1s_field = rendering.draw_spheres(actual_1s_field, ps, x_p, y_p, z_p)
     rendering.plots_for_tests(actual_1s_field, actual_1s_field - desired_1s_field, span_v, span_h)

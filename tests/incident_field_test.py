@@ -30,9 +30,8 @@ x_p, y_p, z_p, span_v, span_h = rendering.build_slice(span, plane_number, plane=
 
 desired_incident_field = np.exp(1j * k_fluid * (incident_field.dir[0] * x_p + incident_field.dir[1] * y_p +
                                                 incident_field.dir[2] * z_p))
-actual_incident_field_array = wvfs.coefficient_array_inc(order, incident_field.dir, wvfs.incident_coefficient,
-                                                         len(x_p)) * \
-                              wvfs.regular_wave_functions_array(order, x_p, y_p, z_p, k_fluid)
+actual_incident_field_array = wvfs.incident_coefficients_array(incident_field.dir, len(x_p), order) * \
+                              wvfs.regular_wvfs_array(order, x_p, y_p, z_p, k_fluid)
 # actual_incident_field = mths.multipoles_fsum(actual_incident_field_array, len(x_p))
 actual_incident_field = np.sum(actual_incident_field_array, axis=0)
 rendering.plots_for_tests(actual_incident_field, desired_incident_field, span_v, span_h)

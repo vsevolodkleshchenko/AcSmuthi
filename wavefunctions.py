@@ -1,6 +1,6 @@
 import numpy as np
 import scipy
-import scipy.special
+import scipy.special as ss
 import mathematics as mths
 
 
@@ -15,55 +15,56 @@ def m_idx(order):
 
 
 def multipoles(n):
+    r""" build zip of multipoles indexes """
     return zip(m_idx(n), n_idx(n))
-
-
-def coefficient_array_inc(order, direction, coefficient, length):
-    c_array = np.zeros(((order + 1) ** 2), dtype=complex)
-    i = 0
-    for mn in multipoles(order):
-        c_array[i] = coefficient(mn[0], mn[1], direction)
-        i += 1
-    return np.split(np.repeat(c_array, length), (order + 1) ** 2)
 
 
 def incident_coefficient(m, n, direction):
     r""" Coefficients in decomposition of plane wave
     d^m_n - eq(4.40) of 'Encyclopedia' """
     dir_abs, dir_phi, dir_theta = mths.dec_to_sph(direction[0], direction[1], direction[2])
-    return 4 * np.pi * 1j ** n * np.conj(scipy.special.sph_harm(m, n, dir_phi, dir_theta))
+    return 4 * np.pi * 1j ** n * np.conj(ss.sph_harm(m, n, dir_phi, dir_theta))
 
 
-def regular_wave_function(m, n, x, y, z, k):
+def incident_coefficients_array(direction, length, order):
+    c_array = np.zeros(((order + 1) ** 2), dtype=complex)
+    i = 0
+    for mn in multipoles(order):
+        c_array[i] = incident_coefficient(mn[0], mn[1], direction)
+        i += 1
+    return np.split(np.repeat(c_array, length), (order + 1) ** 2)
+
+
+def regular_wvf(m, n, x, y, z, k):
     r""" Regular basis spherical wave function
     ^psi^m_n - eq(between 4.37 and 4.38) of 'Encyclopedia' """
     r, phi, theta = mths.dec_to_sph(x, y, z)
-    return scipy.special.spherical_jn(n, k * r) * scipy.special.sph_harm(m, n, phi, theta)
+    return ss.spherical_jn(n, k * r) * scipy.special.sph_harm(m, n, phi, theta)
 
 
-def regular_wave_functions_array(order, x, y, z, k):
+def regular_wvfs_array(order, x, y, z, k):
     r""" builds np.array of all regular wave functions with n <= order"""
     rw_array = np.zeros(((order + 1) ** 2, len(x)), dtype=complex)
     i = 0
     for mn in multipoles(order):
-        rw_array[i] = regular_wave_function(mn[0], mn[1], x, y, z, k)
+        rw_array[i] = regular_wvf(mn[0], mn[1], x, y, z, k)
         i += 1
     return rw_array
 
 
-def outgoing_wave_function(m, n, x, y, z, k):
+def outgoing_wvf(m, n, x, y, z, k):
     r""" Outgoing basis spherical wave function
     psi^m_n - eq(between 4.37 and 4.38) in 'Encyclopedia' """
     r, phi, theta = mths.dec_to_sph(x, y, z)
-    return mths.sph_hankel1(n, k * r) * scipy.special.sph_harm(m, n, phi, theta)
+    return mths.sph_hankel1(n, k * r) * ss.sph_harm(m, n, phi, theta)
 
 
-def outgoing_wave_functions_array(order, x, y, z, k):
+def outgoing_wvfs_array(order, x, y, z, k):
     r""" builds np.array of all outgoing wave functions with n <= order"""
     ow_array = np.zeros(((order + 1) ** 2, len(x)), dtype=complex)
     i = 0
     for mn in multipoles(order):
-        ow_array[i] = outgoing_wave_function(mn[0], mn[1], x, y, z, k)
+        ow_array[i] = outgoing_wvf(mn[0], mn[1], x, y, z, k)
         i += 1
     return ow_array
 
@@ -81,11 +82,13 @@ def local_incident_coefficient(m, n, k, direction, position, order):
 
 
 def axisymmetric_outgoing_wvf(n, x, y, z, k):
+    r""" Outgoing axisymmetric basis spherical wave function """
     r, phi, theta = mths.dec_to_sph(x, y, z)
-    return mths.sph_hankel1(n, k * r) * scipy.special.lpmv(0, n, np.cos(theta))
+    return mths.sph_hankel1(n, k * r) * ss.lpmv(0, n, np.cos(theta))
 
 
-def axisymmetric_outgoing_wvf_array(x, y, z, k, length, order):
+def axisymmetric_outgoing_wvfs_array(x, y, z, k, length, order):
+    r""" builds np.array of all axisymmetric outgoing wave functions with n <= order"""
     as_ow_array = np.zeros((order + 1, length), dtype=complex)
     for n in range(order + 1):
         as_ow_array[n] = axisymmetric_outgoing_wvf(n, x, y, z, k)
@@ -105,7 +108,7 @@ def regular_separation_coefficient(m, mu, n, nu, k, dist):
     sum_array = np.zeros(q_lim + 1, dtype=complex)
     i = 0
     for q in range(0, q_lim + 1):
-        sum_array[i] = (-1) ** q * regular_wave_function(m - mu, q0 + 2 * q, dist[0], dist[1], dist[2], k) * \
+        sum_array[i] = (-1) ** q * regular_wvf(m - mu, q0 + 2 * q, dist[0], dist[1], dist[2], k) * \
                        mths.gaunt_coefficient(n, m, nu, -mu, q0 + 2 * q)
         i += 1
     return 4 * np.pi * (-1) ** (mu + nu + q_lim) * mths.complex_fsum(sum_array)
@@ -124,7 +127,7 @@ def outgoing_separation_coefficient(m, mu, n, nu, k, dist):
     sum_array = np.zeros(q_lim + 1, dtype=complex)
     i = 0
     for q in range(0, q_lim + 1):
-        sum_array[i] = (-1) ** q * outgoing_wave_function(m - mu, q0 + 2 * q, dist[0], dist[1], dist[2], k) * \
+        sum_array[i] = (-1) ** q * outgoing_wvf(m - mu, q0 + 2 * q, dist[0], dist[1], dist[2], k) * \
                        mths.gaunt_coefficient(n, m, nu, -mu, q0 + 2 * q)
         i += 1
     return 4 * np.pi * (-1) ** (mu + nu + q_lim) * mths.complex_fsum(sum_array)
