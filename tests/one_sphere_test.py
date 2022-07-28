@@ -4,6 +4,7 @@ import numpy as np
 import scipy.special
 import rendering
 import postprocessing as pp
+import tsystem
 import wavefunctions as wvfs
 import classes as cls
 
@@ -54,10 +55,13 @@ def scattered_field_1s(x, y, z, ps, order):
 def one_sphere_test(span, plane_number, ps, order, plane='xz'):
     x_p, y_p, z_p, span_v, span_h = rendering.build_slice(span, plane_number, plane=plane)
     desired_1s_field = scattered_field_1s(x_p, y_p, z_p, ps, order)
-    actual_1s_field = pp.total_field(x_p, y_p, z_p, ps, order, )
+    actual_1s_field = pp.total_field(x_p, y_p, z_p, tsystem.solve_system(ps, order), ps, order)
     desired_1s_field = rendering.draw_spheres(desired_1s_field, ps, x_p, y_p, z_p)
     actual_1s_field = rendering.draw_spheres(actual_1s_field, ps, x_p, y_p, z_p)
-    rendering.plots_for_tests(actual_1s_field, actual_1s_field - desired_1s_field, span_v, span_h)
+    rel_err = np.abs((actual_1s_field - desired_1s_field) / desired_1s_field)
+    max_rel_err = np.max(np.where(rel_err >= 1e-16, rel_err, 0))
+    print(max_rel_err)
+    rendering.plots_for_tests(actual_1s_field, rel_err, span_v, span_h)
     np.testing.assert_allclose(actual_1s_field, desired_1s_field, rtol=1e-5)
 
 
@@ -83,9 +87,9 @@ def one_sphere_simulation():
     ps = cls.build_ps_1s()
 
     # order of decomposition
-    order = 10
+    order = 2
 
-    print("Scattering and extinction cross section:", *cross_sections_1s(ps, order))
+    # print("Scattering and extinction cross section:", *cross_sections_1s(ps, order))
 
     # plane
     plane = 'xz'

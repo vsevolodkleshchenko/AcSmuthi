@@ -49,11 +49,11 @@ def slice_plot(tot_field, x_p, y_p, z_p, span_v, span_h, ps, plane='xz'):
      XZ plane for span_y[plane_number] : --->z
      YZ plane for span_x[plane_number] : --->z
      XY plane for span_z[plane_number] : --->y """
-    tot_field = draw_spheres(tot_field, ps, x_p, y_p, z_p)
+    # tot_field = draw_spheres(tot_field, ps, x_p, y_p, z_p)
     tot_field_reshaped = tot_field.reshape(len(span_v), len(span_h))
     fig, ax = plt.subplots()
-    plt.xlabel(plane[1]+'axis')
-    plt.ylabel(plane[0]+'axis')
+    plt.xlabel(plane[1])
+    plt.ylabel(plane[0])
     im = ax.imshow(tot_field_reshaped, norm=colors.CenteredNorm(), cmap='seismic', origin='lower',
                    extent=[span_h.min(), span_h.max(), span_v.min(), span_v.max()])
     plt.colorbar(im)

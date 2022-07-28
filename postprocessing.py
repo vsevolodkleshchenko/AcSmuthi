@@ -7,7 +7,7 @@ import numpy as np
 
 def total_field(x, y, z, solution_coefficients, ps, order, incident_field=False):
     r""" counts field outside the spheres """
-    scattered_coefficients = solution_coefficients[0]
+    scattered_coefficients, inner_coefficients = solution_coefficients
     sc_field_array = np.zeros((ps.num_sph, (order + 1) ** 2, len(x)), dtype=complex)
     for sph in range(ps.num_sph):
         sph_sc_coef = np.split(np.repeat(scattered_coefficients[sph], len(x)), (order + 1) ** 2)
@@ -15,11 +15,25 @@ def total_field(x, y, z, solution_coefficients, ps, order, incident_field=False)
                                                         z - ps.spheres[sph].pos[2], ps.k_fluid) * sph_sc_coef
     # tot_field = np.sum(tot_field_array, axis=(0, 1))
     tot_field = mths.spheres_multipoles_fsum(sc_field_array, len(x))
+
     if incident_field:
         inc_field_array = wvfs.incident_coefficients_array(ps.incident_field.dir, len(x), order) * \
                           wvfs.regular_wvfs_array(order, x, y, z, ps.k_fluid)
         inc_field = mths.multipoles_fsum(inc_field_array, len(x))
         tot_field += inc_field
+
+    in_field_array = np.zeros((ps.num_sph, (order + 1) ** 2, len(x)), dtype=complex)
+    in_field = np.zeros((ps.num_sph, len(x)), dtype=complex)
+    for sph in range(ps.num_sph):
+        sph_in_coef = np.split(np.repeat(inner_coefficients[sph], len(x)), (order + 1) ** 2)
+        in_field_array[sph] = wvfs.regular_wvfs_array(order, x - ps.spheres[sph].pos[0], y - ps.spheres[sph].pos[1],
+                                                        z - ps.spheres[sph].pos[2], ps.k_spheres[sph]) * sph_in_coef
+        in_field[sph] = mths.multipoles_fsum(in_field_array[sph], len(x))
+    for sph in range(ps.num_sph):
+        rx, ry, rz = x - ps.spheres[sph].pos[0], y - ps.spheres[sph].pos[1], z - ps.spheres[sph].pos[2]
+        r = np.sqrt(rx ** 2 + ry ** 2 + rz ** 2)
+        tot_field = np.where(r <= ps.spheres[sph].r, in_field[sph], tot_field)
+
     return tot_field
 
 

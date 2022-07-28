@@ -37,16 +37,17 @@ def compute(physical_system, order, cross_sections=False, forces=False, slice_fi
 def simulation():
     r""" main simulation function """
     # coordinates
-    bound, number_of_points = 10, 201
+    bound, number_of_points = 6, 301
 
     physical_system = cls.build_ps()
 
-    order = 7
+    order = 8
 
     plane = 'xz'
     plane_number = int(number_of_points / 2) + 1
 
-    compute(physical_system, order, cross_sections=True, forces=True, slice_field=True,
+    # compute(physical_system, order, forces=True)
+    compute(physical_system, order, slice_field=True,
             bound=bound, number_of_points=number_of_points, plane=plane, plane_number=plane_number)
 
 
