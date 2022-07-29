@@ -61,6 +61,7 @@ def one_sphere_test(span, plane_number, ps, order, plane='xz'):
     rel_err = np.abs((actual_1s_field - desired_1s_field) / desired_1s_field)
     max_rel_err = np.max(np.where(rel_err >= 1e-16, rel_err, 0))
     print(max_rel_err)
+    rendering.slice_plot(rel_err, x_p, y_p, z_p, span_v, span_h, ps)
     rendering.plots_for_tests(actual_1s_field, rel_err, span_v, span_h)
     np.testing.assert_allclose(actual_1s_field, desired_1s_field, rtol=1e-5)
 
@@ -81,13 +82,13 @@ def cross_sections_1s(ps, order):
 
 def one_sphere_simulation():
     # coordinates
-    bound, number_of_points = 5, 200
+    bound, number_of_points = 5, 300
     span = rendering.build_discretized_span(bound, number_of_points)
 
     ps = cls.build_ps_1s()
 
     # order of decomposition
-    order = 2
+    order = 8
 
     # print("Scattering and extinction cross section:", *cross_sections_1s(ps, order))
 
