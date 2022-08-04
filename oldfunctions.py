@@ -248,6 +248,19 @@ def ps_to_param(ps):
     return freq, k, k_fluid, ro_fluid, positions, spheres, p0, intensity, num_sph
 
 
+def spectrum_cs_plot(freqs, scs, ecs):
+    fig1, ax = plt.subplots(1, 2)
+    ax[0].plot(freqs, scs)
+    ax[1].plot(freqs, ecs)
+    ax[0].set(title="scs")
+    ax[1].set(title="ecs")
+    fig2, ax2 = plt.subplots()
+    ax2.plot(freqs, scs)
+    ax2.scatter(freqs, scs)
+    ax2.set(title="Scattering/extinction cross section", xlabel="Frequencies, Hz", ylabel="Cross section, м2")
+    plt.show()
+
+
 # a = np.arange(36)
 # b = a.reshape((3, 3, 2, 2))
 # c = a.reshape((4, 9))
