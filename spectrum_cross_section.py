@@ -2,20 +2,16 @@ import postprocessing as pp
 import numpy as np
 import tsystem
 import classes as cls
-import matplotlib.pyplot as plt
 import csv
-from memory_profiler import profile
 from multiprocessing import Process, Queue
 
 
-@profile
 def freq_proc(ps, order, freq_result):
     solution = tsystem.solve_system(ps, order)
     scs, ecs = pp.cross_section(solution, ps, order)
     freq_result.put((scs, ecs))
 
 
-@profile
 def spectrum_freq_proc(freqs, ps, order, spec_result):
     scs = np.zeros(len(freqs), dtype=float)
     ecs = np.zeros(len(freqs), dtype=float)
@@ -29,7 +25,6 @@ def spectrum_freq_proc(freqs, ps, order, spec_result):
     spec_result.put(scs)
 
 
-@profile
 def spectrum_dist_freq(poses, freqs, ps, order):
     table = np.zeros((len(freqs), len(poses)))
     for j, pos2 in zip(range(len(poses)), poses):
