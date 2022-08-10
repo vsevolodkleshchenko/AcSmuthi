@@ -26,11 +26,30 @@ class Fluid:
         self.speed = speed_of_sound
 
 
+class Interface:
+    def __init__(self, density, speed_of_sound, a, b, c, d):
+        self.rho = density
+        self.speed = speed_of_sound
+        self.a = a
+        self.b = b
+        self.c = c
+        self.d = d
+
+    def int_dist(self, position):
+        return np.abs(self.a * position[0] + self.b * position[1] + self.c * position[2] + self.d) / \
+               np.sqrt(self.a ** 2 + self.b ** 2 + self.c ** 2)
+
+    @property
+    def normal(self):
+        return np.array([self.a, self.b, self.c] / np.sqrt(self.a ** 2 + self.b ** 2 + self.c ** 2))
+
+
 class System:
-    def __init__(self, fluid, incident_field, spheres):
+    def __init__(self, fluid, incident_field, spheres, interface=None):
         self.fluid = fluid
         self.incident_field = incident_field
         self.spheres = spheres
+        self.interface = interface
 
     @property
     def num_sph(self):

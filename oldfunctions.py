@@ -267,3 +267,92 @@ def spectrum_cs_plot(freqs, scs, ecs):
 # d = np.concatenate(np.concatenate(b, axis=1), axis=1)
 # e = np.concatenate(c)
 # print(a, b[0, 2, 0, 1], b, c, d, e, sep="\n")
+
+
+def reflection_coefficient(angle_inc, c_inc, c_t, rho_inc, rho_t):
+    if c_inc < c_t:
+        critical_angle = np.arcsin(c_inc / c_t)
+        if angle_inc >= critical_angle:
+            return 1
+    sin_angle_t = c_t / c_inc * np.sin(angle_inc)
+    cos_angle_t = c_t / c_inc * np.sqrt(1 - sin_angle_t ** 2)
+    return (rho_t * c_t * np.cos(angle_inc) - rho_inc * c_inc * cos_angle_t) / \
+           (rho_t * c_t * np.cos(angle_inc) + rho_inc * c_inc * cos_angle_t)
+
+
+def plot_reflect_coef():
+    angle_sample = np.linspace(0, np.pi / 2, 100)
+    r = np.zeros_like(angle_sample)
+    for i in range(len(angle_sample)):
+        r[i] = reflection_coefficient(angle_sample[i], 344, 548, 1.3, 0.06)
+    plt.plot(angle_sample * 180 / np.pi, r)
+    plt.show()
+
+
+# plot_reflect_coef()
+
+
+def reflection_coef_approx(freq, c_inc, c_t, rho_inc, rho_t, order_approx):
+    angle_sample = np.linspace(0, np.pi / 2.2, 2 * order_approx)
+
+    r_sample = np.zeros_like(angle_sample)
+    for i in range(len(angle_sample)):
+        r_sample[i] = reflection_coefficient(angle_sample[i], c_inc, c_t, rho_inc, rho_t)
+
+    matrix1 = np.zeros((order_approx, order_approx))
+    for j in range(order_approx):
+        matrix1[j] = r_sample[j:order_approx+j]
+    rhs1 = - r_sample[order_approx:]
+    c_coefficients = np.linalg.solve(matrix1, rhs1)
+    print(c_coefficients)
+
+    zeta_coefficients = np.flip(np.append(c_coefficients, 1.))
+    print(zeta_coefficients)
+    zeta = np.roots(zeta_coefficients)
+    print(zeta)
+
+    matrix2 = np.zeros((order_approx, order_approx))
+    for j in range(order_approx):
+        matrix2[j] = zeta ** j
+    rhs2 = r_sample[:order_approx]
+    new_a_coefficients = np.linalg.solve(matrix2, rhs2)
+
+    delta = freq / c_inc * (np.cos(angle_sample[1]) - np.cos(angle_sample[0]))
+    alpha_coefficients = np.emath.log(zeta) / delta
+    a_coefficients = new_a_coefficients / np.emath.power(zeta, freq / c_inc * np.cos(angle_sample[0]))
+    return a_coefficients, alpha_coefficients
+
+
+# print(reflection_coef_approx(80, 1500, 1700, 1000, 1500, 7))
+
+
+def reflection_test(freq, c_inc, c_t, rho_inc, rho_t, order_approx):
+    angle_sample = np.linspace(0, np.pi / 2, 100)
+    gamma_sample = freq / c_inc * np.cos(angle_sample)
+
+    r = np.zeros_like(angle_sample)
+    for i in range(len(angle_sample)):
+        r[i] = reflection_coefficient(angle_sample[i], c_inc, c_t, rho_inc, rho_t)
+
+    a, alpha = reflection_coef_approx(freq, c_inc, c_t, rho_inc, rho_t, order_approx)
+    r_approx = np.zeros_like(angle_sample)
+    for i in range(len(angle_sample)):
+        r_approx[i] = np.sum(a * np.exp(alpha * gamma_sample[i]))
+
+    fig, ax = plt.subplots()
+    ax.plot(angle_sample * 180 / np.pi, r)
+    ax.plot(angle_sample * 180 / np.pi, r_approx)
+    plt.show()
+
+
+# reflection_test(80, 344, 548, 1.3, 0.06, 7)
+# 330, 1403, 1.2, 998
+# 344, 548, 1.3, 0.06
+# 1500, 1700, 1000, 1500
+
+# n = 4
+# b = np.random.sample(n ** 2)
+# a = np.zeros((n, n))
+# for j in range(n):
+#     a[j] = b[j:j+n]
+# print(b, a, np.linalg.det(a), sep='\n')

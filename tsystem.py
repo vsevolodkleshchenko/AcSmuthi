@@ -34,17 +34,18 @@ def system_matrix(ps, order):
     t_matrix = np.zeros((ps.num_sph, ps.num_sph, (order+1)**2, (order+1)**2), dtype=complex)
     all_spheres = np.arange(ps.num_sph)
     for sph in all_spheres:
-        for mn in wvfs.multipoles(order):
-            imn = mn[1]**2+mn[1]+mn[0]
-            t_matrix[sph, sph, imn, imn] = 1 / scaled_coefficient(mn[1], sph, ps)
+        for m, n in wvfs.multipoles(order):
+            imn = n ** 2 + n + m
+            t_matrix[sph, sph, imn, imn] = 1 / scaled_coefficient(n, sph, ps)
             other_spheres = np.where(all_spheres != sph)[0]
             for osph in other_spheres:
-                for munu in wvfs.multipoles(order):
-                    imunu = munu[1]**2+munu[1]+munu[0]
+                for mu, nu in wvfs.multipoles(order):
+                    imunu = nu ** 2 + nu + mu
                     distance = - ps.spheres[osph].pos + ps.spheres[sph].pos
-                    t_matrix[sph, osph, imn, imunu] = - wvfs.outgoing_separation_coefficient(munu[0], mn[0], munu[1],
-                                                                                           mn[1], ps.k_fluid, distance)
+                    t_matrix[sph, osph, imn, imunu] = - wvfs.outgoing_separation_coefficient(mu, m, nu, n, ps.k_fluid,
+                                                                                             distance)
     t_matrix2d = np.concatenate(np.concatenate(t_matrix, axis=1), axis=1)
+    print(np.linalg.det(t_matrix2d))
     return t_matrix2d
 
 
@@ -52,9 +53,9 @@ def system_rhs(ps, order):
     r""" build right hand side of system like in eq(20) in lopes2016 """
     rhs = np.zeros((ps.num_sph, (order+1)**2), dtype=complex)
     for sph in range(ps.num_sph):
-        for mn in wvfs.multipoles(order):
-            imn = mn[1]**2+mn[1]+mn[0]
-            rhs[sph, imn] = wvfs.local_incident_coefficient(mn[0], mn[1], ps.k_fluid, ps.incident_field.dir,
+        for m, n in wvfs.multipoles(order):
+            imn = n ** 2 + n + m
+            rhs[sph, imn] = wvfs.local_incident_coefficient(m, n, ps.k_fluid, ps.incident_field.dir,
                                                             ps.spheres[sph].pos, order)
     rhs1d = np.concatenate(rhs)
     return rhs1d
@@ -66,18 +67,36 @@ def solve_system(ps, order):
     sc_coef = sc_coef1d.reshape((ps.num_sph, (order + 1) ** 2))
     in_coef = np.zeros((ps.num_sph, (order + 1) ** 2), dtype=complex)
     for sph in range(ps.num_sph):
-        for mn in wvfs.multipoles(order):
-            imn = mn[1]**2+mn[1]+mn[0]
-            in_coef[sph, imn] = (ss.spherical_jn(mn[1], ps.k_fluid * ps.spheres[sph].r) / scaled_coefficient(mn[1], sph, ps) +
-                                 mths.sph_hankel1(mn[1], ps.k_fluid * ps.spheres[sph].r)) * sc_coef[sph, imn] / \
-                                ss.spherical_jn(mn[1], ps.k_spheres[sph] * ps.spheres[sph].r)
+        for m, n in wvfs.multipoles(order):
+            imn = n ** 2 + n + m
+            in_coef[sph, imn] = (ss.spherical_jn(n, ps.k_fluid * ps.spheres[sph].r) / scaled_coefficient(n, sph, ps) +
+                                 mths.sph_hankel1(n, ps.k_fluid * ps.spheres[sph].r)) * sc_coef[sph, imn] / \
+                                ss.spherical_jn(n, ps.k_spheres[sph] * ps.spheres[sph].r)
     return sc_coef, in_coef
 
 
 def effective_incident_coefficients(sph, sc_coef, ps, order):
     r""" build np.array of effective incident coefficients for all n <= order """
     ef_inc_coef = np.zeros((order + 1) ** 2, dtype=complex)
-    for mn in wvfs.multipoles(order):
-        imn = mn[1]**2+mn[1]+mn[0]
-        ef_inc_coef[imn] = sc_coef[imn] / scaled_coefficient(mn[1], sph, ps)
+    for m, n in wvfs.multipoles(order):
+        imn = n ** 2 + n + m
+        ef_inc_coef[imn] = sc_coef[imn] / scaled_coefficient(n, sph, ps)
     return ef_inc_coef
+
+
+def d_matrix(ps, order):
+    """ build D matrix from report - matrix of S coefficients """
+    d = np.zeros((ps.num_sph, (order + 1) ** 2, (order + 1) ** 2), dtype=complex)
+    for sph in range(ps.num_sph):
+        for m, n in wvfs.multipoles(order):
+            imn = n ** 2 + n + m
+            for mu, nu, in wvfs.multipoles(order):
+                imunu = nu ** 2 + nu + mu
+                d[sph, imn, imunu] = wvfs.regular_separation_coefficient(mu, m, nu, n, ps.k_fluid, ps.spheres[sph].pos)
+    d_2d = d.reshape((ps.num_sph * (order + 1) ** 2, (order + 1) ** 2))
+    return d_2d
+
+
+def r_matrix(ps, order):
+    d = np.zeros((ps.num_sph, (order + 1) ** 2, (order + 1) ** 2), dtype=complex)
+

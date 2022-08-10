@@ -39,16 +39,16 @@ def simulation():
     # coordinates
     bound, number_of_points = 6, 301
 
-    physical_system = cls.build_ps_1s()
+    physical_system = cls.build_ps()
 
-    order = 2
+    order = 6
 
     plane = 'xz'
     plane_number = int(number_of_points / 2) + 1
 
-    compute(physical_system, order, cross_sections=True, forces=True)
-    # compute(physical_system, order, slice_field=True,
-    #         bound=bound, number_of_points=number_of_points, plane=plane, plane_number=plane_number)
+    # compute(physical_system, order, cross_sections=True, forces=True)
+    compute(physical_system, order, cross_sections=True, forces=True, slice_field=True,
+            bound=bound, number_of_points=number_of_points, plane=plane, plane_number=plane_number)
 
 
 simulation()

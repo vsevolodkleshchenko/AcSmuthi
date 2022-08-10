@@ -47,19 +47,19 @@ def cross_section(solution_coefficients, ps, order):
     sigma_sc2 = np.zeros((ps.num_sph * (order + 1) ** 2) ** 2, dtype=complex)
     idx1, idx2 = 0, 0
     for sph in range(ps.num_sph):
-        for mn in wvfs.multipoles(order):
+        for m, n in wvfs.multipoles(order):
+            imn = n ** 2 + n + m
             for osph in np.where(np.arange(ps.num_sph) != sph)[0]:
-                for munu in wvfs.multipoles(order):
-                    sigma_sc2[idx2] = np.conj(scattered_coefficients[sph, mn[1] ** 2 + mn[1] + mn[0]]) * \
-                                      scattered_coefficients[osph, munu[1] ** 2 + munu[1] + munu[0]] * \
-                                      wvfs.regular_separation_coefficient(munu[0], mn[0], munu[1], mn[1], ps.k_fluid,
+                for mu, nu in wvfs.multipoles(order):
+                    imunu = nu ** 2 + nu + mu
+                    sigma_sc2[idx2] = np.conj(scattered_coefficients[sph, imn]) * scattered_coefficients[osph, imunu] *\
+                                      wvfs.regular_separation_coefficient(mu, m, nu, n, ps.k_fluid,
                                                                           ps.spheres[sph].pos - ps.spheres[osph].pos)
                     idx2 += 1
-            sigma_sc1[idx1] = np.abs(scattered_coefficients[sph, mn[1] ** 2 + mn[1] + mn[0]]) ** 2
-            sigma_ex[idx1] = - np.real(scattered_coefficients[sph, mn[1] ** 2 + mn[1] + mn[0]] *
-                                       np.conj(wvfs.local_incident_coefficient(mn[0], mn[1], ps.k_fluid,
-                                                                              ps.incident_field.dir, ps.spheres[sph].pos,
-                                                                              order)))
+            sigma_sc1[idx1] = np.abs(scattered_coefficients[sph, imn]) ** 2
+            sigma_ex[idx1] = - np.real(scattered_coefficients[sph, imn] *
+                                       np.conj(wvfs.local_incident_coefficient(m, n, ps.k_fluid, ps.incident_field.dir,
+                                                                               ps.spheres[sph].pos, order)))
             idx1 += 1
     W_sc = (math.fsum(sigma_sc1) + math.fsum(np.real(sigma_sc2))) * prefactor
     W_ex = math.fsum(sigma_ex) * prefactor
@@ -74,18 +74,18 @@ def force_on_sphere(sph, sc_coef, ps, order):
     scale = tsystem.scaled_coefficient
     fxy_array = np.zeros((order + 1) ** 2, dtype=complex)
     fz_array = np.zeros((order + 1) ** 2, dtype=complex)
-    for mn in wvfs.multipoles(order - 1):
-        imn = mn[1] ** 2 + mn[1] + mn[0]
-        imn1 = (mn[1] + 1) ** 2 + (mn[1] + 1) + (mn[0] + 1)
-        imn2 = mn[1] ** 2 + mn[1] - mn[0]
-        imn3 = (mn[1] + 1) ** 2 + (mn[1] + 1) - (mn[0] + 1)
-        imn4 = (mn[1] + 1) ** 2 + (mn[1] + 1) + mn[0]
-        s_coef = scale(mn[1], sph, ps) + np.conj(scale(mn[1] + 1, sph, ps)) + \
-                 2 * scale(mn[1], sph, ps) * np.conj(scale(mn[1]+1, sph, ps))
-        coef1 = np.sqrt((mn[1] + mn[0] + 1) * (mn[1] + mn[0] + 2) / (2 * mn[1] + 1) / (2 * mn[1] + 3))
+    for m, n in wvfs.multipoles(order - 1):
+        imn = n ** 2 + n + m
+        imn1 = (n + 1) ** 2 + (n + 1) + (m + 1)
+        imn2 = n ** 2 + n - m
+        imn3 = (n + 1) ** 2 + (n + 1) - (m + 1)
+        imn4 = (n + 1) ** 2 + (n + 1) + m
+        s_coef = scale(n, sph, ps) + np.conj(scale(n + 1, sph, ps)) + \
+                 2 * scale(n, sph, ps) * np.conj(scale(n+1, sph, ps))
+        coef1 = np.sqrt((n + m + 1) * (n + m + 2) / (2 * n + 1) / (2 * n + 3))
         term1 = s_coef * ef_inc_coef[imn] * np.conj(ef_inc_coef[imn1]) + \
                np.conj(s_coef) * np.conj(ef_inc_coef[imn2]) * ef_inc_coef[imn3]
-        coef2 = np.sqrt((mn[1] - mn[0] + 1) * (mn[1] + mn[0] + 1) / (2 * mn[1] + 1) / (2 * mn[1] + 3))
+        coef2 = np.sqrt((n - m + 1) * (n + m + 1) / (2 * n + 1) / (2 * n + 3))
         term2 = s_coef * ef_inc_coef[imn] * np.conj(ef_inc_coef[imn4])
         fxy_array[imn], fz_array[imn] = coef1 * term1, coef2 * term2
     prefactor1 = 1j * ps.incident_field.ampl ** 2 / (2 * ps.fluid.rho * ps.fluid.speed ** 2) / 2 / ps.k_fluid ** 2
