@@ -26,6 +26,11 @@ def sph_hankel1_der(n, z):
     return scipy.special.spherical_jn(n, z, derivative=True) + 1j * sph_neyman_der(n, z)
 
 
+def csph_harm(m, n, phi, theta):
+    coefficient = np.sqrt((2 * n + 1) / 4 / np.pi * scipy.special.factorial(n - m) / scipy.special.factorial(n + m))
+    return coefficient * np.exp(1j * m * phi) * scipy.special.clpmn(m, n, np.cos(theta), type=2)[0][-1][-1]
+
+
 def dec_to_sph(x, y, z):
     """ Transition from cartesian cs to spherical cs """
     e = 1e-16
@@ -40,6 +45,8 @@ def dec_to_sph(x, y, z):
     phi = np.where((np.abs(x) <= e) & (y > e), np.pi / 2, phi)
     phi = np.where((np.abs(x) <= e) & (y < -e), 3 * np.pi / 2, phi)
     phi = np.where((np.abs(y) <= e) & (x < -e), np.pi, phi)
+    if len(phi) == len(theta) == 1:
+        phi, theta = phi[0], theta[0]
     return r, phi, theta
 
 

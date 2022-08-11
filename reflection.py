@@ -1,5 +1,27 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import wavefunctions as wvfs
+import mathematics as mths
+
+
+def reflection_dir(incident_dir, normal):
+    return incident_dir - 2 * normal * incident_dir.dot(normal)
+
+
+def image_poses(sphere, interface, alpha):
+    image_positions = np.zeros((len(alpha), 3), dtype=complex)
+
+    for q in range(len(alpha)):
+        distance = interface.int_dist(sphere.pos)
+        image_positions[q] = sphere.pos - (2 * distance + 1j * alpha[q]) * interface.normal
+    return image_positions
+
+
+def image_contribution(m, n, mu, nu, k_fluid, image_positions, a):
+    image_contrib = np.zeros(len(a), dtype=complex)
+    for q in range(len(a)):
+        image_contrib[q] = a[q] * wvfs.regular_separation_coefficient(mu, m, nu, n, k_fluid, - image_positions[q])
+    return mths.complex_fsum(image_contrib)
 
 
 def ref_coef(alpha_inc, freq, c_inc, c_t, rho_inc, rho_t):
@@ -75,6 +97,6 @@ def ref_test(w, c_inc, c_t, rho_inc, rho_t, order_approx, t_0):
     plt.show()
 
 
-ref_test(2 * np.pi * 80, 344, 548.7 - 492.321 * 1j, 1.293, 0.063 + 1j * 4.688, 11, 20)
-ref_test(2 * np.pi * 80, 344, 1400, 1.293, 1000, 10, 1)
+# ref_test(2 * np.pi * 80, 344, 548.7 - 492.321 * 1j, 1.293, 0.063 + 1j * 4.688, 11, 20)
+# ref_test(2 * np.pi * 80, 344, 1400, 1.293, 1000, 10, 1)
 

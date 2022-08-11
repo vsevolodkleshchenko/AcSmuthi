@@ -46,7 +46,7 @@ def write_csv(data, fieldnames, filename):
 
 
 if __name__ == '__main__':
-    physical_system = cls.build_ps()
+    physical_system = cls.build_ps_2s()
     frequencies = np.linspace(6, 160, 78, dtype=float)
     coord_z = np.linspace(1, 3.5, 11)
     positions = np.zeros((len(coord_z), 2, 3))

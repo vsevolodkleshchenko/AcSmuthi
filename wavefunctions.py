@@ -42,6 +42,13 @@ def regular_wvf(m, n, x, y, z, k):
     return ss.spherical_jn(n, k * r) * scipy.special.sph_harm(m, n, phi, theta)
 
 
+def cregular_wvf(m, n, x, y, z, k):
+    r""" Regular basis spherical wave function of complex argument
+    ^psi^m_n - eq(between 4.37 and 4.38) of 'Encyclopedia' """
+    r, phi, theta = mths.dec_to_sph(x, y, z)
+    return ss.spherical_jn(n, k * r) * mths.csph_harm(m, n, phi, theta)
+
+
 def regular_wvfs_array(order, x, y, z, k):
     r""" builds np.array of all regular wave functions with n <= order"""
     rw_array = np.zeros(((order + 1) ** 2, len(x)), dtype=complex)
@@ -107,8 +114,12 @@ def regular_separation_coefficient(m, mu, n, nu, k, dist):
     q_lim = (n + nu - q0) // 2
     sum_array = np.zeros(q_lim + 1, dtype=complex)
     i = 0
+    if dist.dtype == complex:
+        reg_wvf = cregular_wvf
+    else:
+        reg_wvf = regular_wvf
     for q in range(0, q_lim + 1):
-        sum_array[i] = (-1) ** q * regular_wvf(m - mu, q0 + 2 * q, dist[0], dist[1], dist[2], k) * \
+        sum_array[i] = (-1) ** q * reg_wvf(m - mu, q0 + 2 * q, dist[0], dist[1], dist[2], k) * \
                        mths.gaunt_coefficient(n, m, nu, -mu, q0 + 2 * q)
         i += 1
     return 4 * np.pi * (-1) ** (mu + nu + q_lim) * mths.complex_fsum(sum_array)

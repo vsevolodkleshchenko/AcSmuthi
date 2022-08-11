@@ -41,7 +41,7 @@ class Interface:
 
     @property
     def normal(self):
-        return np.array([self.a, self.b, self.c] / np.sqrt(self.a ** 2 + self.b ** 2 + self.c ** 2))
+        return np.array(np.array([self.a, self.b, self.c]) / np.sqrt(self.a ** 2 + self.b ** 2 + self.c ** 2))
 
 
 class System:
@@ -55,13 +55,13 @@ class System:
     def num_sph(self):
         return len(self.spheres)
 
-    # @property
-    # def omega(self):
-    #     return self.incident_field.omega
-    #
-    # @property
-    # def freq(self):
-    #     return self.incident_field.freq
+    @property
+    def omega(self):
+        return self.incident_field.omega
+
+    @property
+    def freq(self):
+        return self.incident_field.freq
 
     @property
     def k_fluid(self):
@@ -77,7 +77,7 @@ class System:
         return self.incident_field.ampl ** 2 / (2 * self.fluid.rho * self.fluid.speed)
 
 
-def build_ps():
+def build_ps_2s():
     # parameters of incident field
     direction = np.array([0.70711, 0, 0.70711])
     freq = 82  # [Hz]
@@ -155,4 +155,37 @@ def build_ps_3s():
     spheres = np.array([sphere1, sphere2, sphere3])
 
     ps = System(fluid, incident_field, spheres)
+    return ps
+
+
+def build_ps_2s_l():
+    # parameters of incident field
+    direction = np.array([0.70711, 0, 0.70711])
+    freq = 82  # [Hz]
+    p0 = 1  # [kg/m/s^2] = [Pa]
+    incident_field = PlaneWave(direction, freq, p0)
+
+    # parameters of fluid
+    ro_fluid = 1.225  # [kg/m^3]
+    c_fluid = 331  # [m/s]
+    fluid = Fluid(ro_fluid, c_fluid)
+
+    # parameters of the spheres
+    pos1 = np.array([0, 0, -2.5])
+    pos2 = np.array([0, 0, 2.5])
+    r_sph = 1  # [m]
+    ro_sph = 1050  # [kg/m^3]
+    c_sph = 1403  # [m/s]
+
+    sphere1 = Sphere(pos1, r_sph, ro_sph, c_sph)
+    sphere2 = Sphere(pos2, r_sph, ro_sph, c_sph)
+    spheres = np.array([sphere1, sphere2])
+
+    # parameters of interface (substrate)
+    a, b, c, d = 1, 0, 0, -2
+    ro_interface = ro_sph
+    c_interface = c_sph
+    interface = Interface(ro_interface, c_interface, a, b, c, d)
+
+    ps = System(fluid, incident_field, spheres, interface)
     return ps
