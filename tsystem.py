@@ -120,11 +120,13 @@ def solve_layer_system(ps, order):
     inc_coef_origin = np.zeros((order + 1) ** 2, dtype=complex)
     for m, n in wvfs.multipoles(order):
         ref_dir = reflection.reflection_dir(ps.incident_field.dir, ps.interface.normal)
+        image_o = - 2 * ps.interface.normal * ps.interface.int_dist0
         inc_coef_origin[n ** 2 + n + m] = wvfs.incident_coefficient(m, n, ps.incident_field.dir) + \
-                                          wvfs.incident_coefficient(m, n, ref_dir)
+                                          wvfs.local_incident_coefficient(m, n, ps.k_fluid, ref_dir, -image_o, order)
 
-    m1, m2 = t @ d, r @ t @ d
-    m3 = np.linalg.inv(np.eye(m2.shape[0]) - r @ t @ d)
+    m1 = t @ d
+    m2 = r @ m1
+    m3 = np.linalg.inv(np.eye(m2.shape[0]) - m2)
     sc_coef1d = np.dot(m1 @ m3, inc_coef_origin)
     sc_coef = sc_coef1d.reshape((ps.num_sph, (order + 1) ** 2))
     ref_coef = np.dot(m3, inc_coef_origin) - inc_coef_origin

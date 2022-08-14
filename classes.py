@@ -40,8 +40,16 @@ class Interface:
                np.sqrt(self.a ** 2 + self.b ** 2 + self.c ** 2)
 
     @property
+    def int_dist0(self):
+        return self.int_dist(np.array([0., 0., 0.]))
+
+    @property
     def normal(self):
-        return np.array(np.array([self.a, self.b, self.c]) / np.sqrt(self.a ** 2 + self.b ** 2 + self.c ** 2))
+        n = np.array(np.array([self.a, self.b, self.c]) / np.sqrt(self.a ** 2 + self.b ** 2 + self.c ** 2))
+        n_dist = n * self.int_dist0
+        if n_dist[0] * self.a + n_dist[1] * self.b + n_dist[2] * self.c == -self.d:
+            n *= -1
+        return n
 
 
 class System:
@@ -160,7 +168,7 @@ def build_ps_3s():
 
 def build_ps_2s_l():
     # parameters of incident field
-    direction = np.array([0.70711, 0, 0.70711])
+    direction = np.array([1, 0, 0])
     freq = 82  # [Hz]
     p0 = 1  # [kg/m/s^2] = [Pa]
     incident_field = PlaneWave(direction, freq, p0)

@@ -27,7 +27,7 @@ def compute(physical_system, order, cross_sections=False, forces=False, slice_fi
         t_sf_start = time.process_time()
         span = rendering.build_discretized_span(bound, number_of_points)
         x_p, y_p, z_p, span_v, span_h = rendering.build_slice(span, plane_number, plane=plane)
-        tot_field = np.real(pp.total_field(x_p, y_p, z_p, solution_coefficients, physical_system, order,))
+        tot_field = np.real(pp.total_field(x_p, y_p, z_p, solution_coefficients, physical_system, order, incident_field=True))
         rendering.slice_plot(tot_field, x_p, y_p, z_p, span_v, span_h, physical_system, plane=plane)
         t_sf_finish = time.process_time()
     print("Solving the system:", t_solution - t_start, "s")
@@ -45,7 +45,7 @@ def simulation():
     # physical_system = cls.build_ps_2s()
     physical_system = cls.build_ps_2s_l()
 
-    order = 6
+    order = 8
 
     plane = 'xz'
     plane_number = int(number_of_points / 2) + 1
