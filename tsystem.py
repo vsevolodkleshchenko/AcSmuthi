@@ -4,6 +4,7 @@ import scipy.special as ss
 import wavefunctions as wvfs
 import mathematics as mths
 import reflection
+import time
 
 
 def scaled_coefficient(n, sph, ps):
@@ -51,19 +52,14 @@ def system_matrix(ps, order):
 
 def system_rhs(ps, order):
     r""" build right hand side of system like in eq(20) in lopes2016 """
-    rhs = np.zeros((ps.num_sph, (order+1)**2), dtype=complex)
-    for sph in range(ps.num_sph):
-        for m, n in wvfs.multipoles(order):
-            imn = n ** 2 + n + m
-            rhs[sph, imn] = wvfs.local_incident_coefficient(m, n, ps.k_fluid, ps.incident_field.dir,
-                                                            ps.spheres[sph].pos, order)
-    rhs1d = np.concatenate(rhs)
-    return rhs1d
+    return np.dot(d_matrix(ps, order), wvfs.incident_coefficients(ps.incident_field.dir, order))
 
 
 def solve_system(ps, order):
     r""" solve system like in eq(20) in lopes2016 """
-    sc_coef1d = scipy.linalg.solve(system_matrix(ps, order), system_rhs(ps, order))
+    inc_coef = system_rhs(ps, order)
+    t_ = system_matrix(ps, order)
+    sc_coef1d = scipy.linalg.solve(t_, inc_coef)
     sc_coef = sc_coef1d.reshape((ps.num_sph, (order + 1) ** 2))
     in_coef = np.zeros((ps.num_sph, (order + 1) ** 2), dtype=complex)
     for sph in range(ps.num_sph):
@@ -72,7 +68,7 @@ def solve_system(ps, order):
             in_coef[sph, imn] = (ss.spherical_jn(n, ps.k_fluid * ps.spheres[sph].r) / scaled_coefficient(n, sph, ps) +
                                  mths.sph_hankel1(n, ps.k_fluid * ps.spheres[sph].r)) * sc_coef[sph, imn] / \
                                 ss.spherical_jn(n, ps.k_spheres[sph] * ps.spheres[sph].r)
-    return sc_coef, in_coef
+    return inc_coef, sc_coef, in_coef
 
 
 def effective_incident_coefficients(sph, sc_coef, ps, order):
@@ -97,15 +93,15 @@ def d_matrix(ps, order):
     return d_2d
 
 
-def r_matrix(ps, order, order_approx=10):
+def r_matrix(ps, order, order_approx=1):
     r = np.zeros((ps.num_sph, (order + 1) ** 2, (order + 1) ** 2), dtype=complex)
-    for sph in range(ps.num_sph):
-        for m, n in wvfs.multipoles(order):
-            imn = n ** 2 + n + m
-            for mu, nu, in wvfs.multipoles(order):
-                imunu = nu ** 2 + nu + mu
-                a, alpha = reflection.ref_coef_approx(ps.omega, ps.fluid.speed, ps.interface.speed, ps.fluid.rho,
-                                                      ps.interface.rho, order_approx, 1)
+    a, alpha = reflection.ref_coef_approx(ps.omega, ps.fluid.speed, ps.interface.speed, ps.fluid.rho,
+                                          ps.interface.rho, order_approx, -3)
+    for m, n in wvfs.multipoles(order):
+        imn = n ** 2 + n + m
+        for mu, nu, in wvfs.multipoles(order):
+            imunu = nu ** 2 + nu + mu
+            for sph in range(ps.num_sph):
                 image_poses = reflection.image_poses(ps.spheres[sph], ps.interface, alpha)
                 image_contribution = reflection.image_contribution(m, n, mu, nu, ps.k_fluid, image_poses, a)
                 r[sph, imn, imunu] = (-1) ** (nu + mu) * image_contribution
@@ -113,24 +109,7 @@ def r_matrix(ps, order, order_approx=10):
     return r_2d
 
 
-def solve_layer_system(ps, order):
-    t = np.linalg.inv(system_matrix(ps, order))
-    d = d_matrix(ps, order)
-    r = r_matrix(ps, order)
-    inc_coef_origin = np.zeros((order + 1) ** 2, dtype=complex)
-    for m, n in wvfs.multipoles(order):
-        ref_dir = reflection.reflection_dir(ps.incident_field.dir, ps.interface.normal)
-        image_o = - 2 * ps.interface.normal * ps.interface.int_dist0
-        inc_coef_origin[n ** 2 + n + m] = wvfs.incident_coefficient(m, n, ps.incident_field.dir) + \
-                                          wvfs.local_incident_coefficient(m, n, ps.k_fluid, ref_dir, -image_o, order)
-
-    m1 = t @ d
-    m2 = r @ m1
-    m3 = np.linalg.inv(np.eye(m2.shape[0]) - m2)
-    sc_coef1d = np.dot(m1 @ m3, inc_coef_origin)
-    sc_coef = sc_coef1d.reshape((ps.num_sph, (order + 1) ** 2))
-    ref_coef = np.dot(m3, inc_coef_origin) - inc_coef_origin
-
+def inner_coefficients(sc_coef, ps, order):
     in_coef = np.zeros((ps.num_sph, (order + 1) ** 2), dtype=complex)
     for sph in range(ps.num_sph):
         for m, n in wvfs.multipoles(order):
@@ -138,11 +117,36 @@ def solve_layer_system(ps, order):
             in_coef[sph, imn] = (ss.spherical_jn(n, ps.k_fluid * ps.spheres[sph].r) / scaled_coefficient(n, sph, ps) +
                                  mths.sph_hankel1(n, ps.k_fluid * ps.spheres[sph].r)) * sc_coef[sph, imn] / \
                                 ss.spherical_jn(n, ps.k_spheres[sph] * ps.spheres[sph].r)
-    return sc_coef, in_coef, ref_coef
+    return in_coef
 
 
-# a = np.arange(12)
-# b = a.reshape((3, 2, 2))
-# b[1, 0, 1] = 100
-# c = np.concatenate(b, axis=1)
-# print(a, b, c, sep="\n")
+def layer_inc_coef_origin(ps, order):
+    inc_coef_origin = np.zeros((order + 1) ** 2, dtype=complex)
+    for m, n in wvfs.multipoles(order):
+        ref_dir = reflection.reflection_dir(ps.incident_field.dir, ps.interface.normal)
+        image_o = - 2 * ps.interface.normal * ps.interface.int_dist0
+        inc_coef_origin[n ** 2 + n + m] = wvfs.incident_coefficient(m, n, ps.incident_field.dir) + \
+                                          wvfs.local_incident_coefficient(m, n, ps.k_fluid, ref_dir, -image_o, order)
+    return inc_coef_origin
+
+
+def solve_layer_system(ps, order):
+    t = np.linalg.inv(system_matrix(ps, order))
+    d = d_matrix(ps, order)
+    r = r_matrix(ps, order)
+
+    inc_coef_origin = layer_inc_coef_origin(ps, order)
+    local_inc_coefs = np.dot(d, inc_coef_origin)
+
+    m1 = t @ d
+    m2 = r @ m1
+    m3 = np.linalg.inv(np.eye(m2.shape[0]) - m2)
+
+    sc_coef1d = np.dot(m1 @ m3, inc_coef_origin)
+    sc_coef = sc_coef1d.reshape((ps.num_sph, (order + 1) ** 2))
+
+    ref_coef = np.dot(m3, inc_coef_origin) - inc_coef_origin
+    local_ref_coefs = np.dot(d, ref_coef)
+
+    in_coef = inner_coefficients(sc_coef, ps, order)
+    return local_inc_coefs, sc_coef, in_coef, ref_coef, local_ref_coefs

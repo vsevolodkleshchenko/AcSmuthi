@@ -98,5 +98,5 @@ def ref_test(w, c_inc, c_t, rho_inc, rho_t, order_approx, t_0):
 
 
 # ref_test(2 * np.pi * 80, 344, 548.7 - 492.321 * 1j, 1.293, 0.063 + 1j * 4.688, 11, 20)
-# ref_test(2 * np.pi * 80, 344, 1400, 1.293, 1000, 10, 1)
+# ref_test(2 * np.pi * 80, 344, 1400, 1.293, 1000, 1, -3)
 

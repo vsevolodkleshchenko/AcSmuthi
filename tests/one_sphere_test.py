@@ -3,7 +3,7 @@ import mathematics as mths
 import numpy as np
 import scipy.special
 import rendering
-import postprocessing as pp
+import cross_sections as pp
 import tsystem
 import wavefunctions as wvfs
 import classes as cls

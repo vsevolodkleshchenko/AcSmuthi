@@ -20,10 +20,19 @@ def multipoles(n):
 
 
 def incident_coefficient(m, n, direction):
-    r""" Coefficients in decomposition of plane wave
+    r""" Coefficient in decomposition of plane wave
     d^m_n - eq(4.40) of 'Encyclopedia' """
     dir_abs, dir_phi, dir_theta = mths.dec_to_sph(direction[0], direction[1], direction[2])
     return 4 * np.pi * 1j ** n * np.conj(ss.sph_harm(m, n, dir_phi, dir_theta))
+
+
+def incident_coefficients(direction, order):
+    r""" Coefficients in decomposition of plane wave
+    d^m_n - eq(4.40) of 'Encyclopedia' """
+    inc_coef = np.zeros((order + 1) ** 2, dtype=complex)
+    for m, n in multipoles(order):
+        inc_coef[n ** 2 + n + m] = incident_coefficient(m, n, direction)
+    return inc_coef
 
 
 def incident_coefficients_array(direction, length, order):
