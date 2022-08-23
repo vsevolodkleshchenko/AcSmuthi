@@ -1,18 +1,20 @@
 import cross_sections as pp
 import numpy as np
 import tsystem
-import classes as cls
+import physical_systems as phs
 import csv
 from multiprocessing import Process, Queue
 
 
 def freq_proc(ps, order, freq_result):
+    r"""Counts scattering and extinction cross section for physical system with given frequency"""
     solution = tsystem.solve_system(ps, order)
     scs, ecs = pp.cross_section(solution, ps, order)
     freq_result.put((scs, ecs))
 
 
 def spectrum_freq_proc(freqs, ps, order, spec_result):
+    r"""Counts scattering cross sections for all frequencies"""
     scs = np.zeros(len(freqs), dtype=float)
     ecs = np.zeros(len(freqs), dtype=float)
     for i, freq in zip(range(len(freqs)), freqs):
@@ -26,6 +28,7 @@ def spectrum_freq_proc(freqs, ps, order, spec_result):
 
 
 def spectrum_dist_freq(poses, freqs, ps, order):
+    r"""Counts scattering cross sections for all distances between spheres"""
     table = np.zeros((len(freqs), len(poses)))
     for j, pos2 in zip(range(len(poses)), poses):
         ps.spheres[0].pos = pos2[0]
@@ -46,7 +49,7 @@ def write_csv(data, fieldnames, filename):
 
 
 if __name__ == '__main__':
-    physical_system = cls.build_ps_2s()
+    physical_system = phs.build_ps_2s()
     frequencies = np.linspace(6, 160, 78, dtype=float)
     coord_z = np.linspace(1, 3.5, 11)
     positions = np.zeros((len(coord_z), 2, 3))

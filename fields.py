@@ -5,6 +5,7 @@ import numpy as np
 
 
 def reflected_field(x, y, z, reflected_coefficients, ps, order):
+    r"""Counts reflected scattered field on mesh x, y, z"""
     ref_field_array = np.split(np.repeat(reflected_coefficients, len(x)), (order + 1) ** 2) * \
                       wvfs.regular_wvfs_array(order, x, y, z, ps.k_fluid)
     ref_field = mths.multipoles_fsum(ref_field_array, len(x))
@@ -12,6 +13,7 @@ def reflected_field(x, y, z, reflected_coefficients, ps, order):
 
 
 def scattered_field(x, y, z, scattered_coefficients, ps, order):
+    r"""Counts scattered field on mesh x, y, z"""
     sc_field_array = np.zeros((ps.num_sph, (order + 1) ** 2, len(x)), dtype=complex)
     for sph in range(ps.num_sph):
         sph_sc_coef = np.split(np.repeat(scattered_coefficients[sph], len(x)), (order + 1) ** 2)
@@ -22,6 +24,7 @@ def scattered_field(x, y, z, scattered_coefficients, ps, order):
 
 
 def incident_field(x, y, z, ps, order):
+    r"""Counts effective incident field on mesh x, y, z"""
     # inc_field_array = wvfs.incident_coefficients_array(ps.incident_field.dir, len(x), order) * \
     #                   wvfs.regular_wvfs_array(order, x, y, z, ps.k_fluid)
     # inc_field = mths.multipoles_fsum(inc_field_array, len(x))
@@ -40,6 +43,7 @@ def incident_field(x, y, z, ps, order):
 
 
 def inner_field(x, y, z, inner_coefficients, tot_field, ps, order):
+    r"""Counts fields inside spheres and add it to total field on mesh x, y, z"""
     in_field_array = np.zeros((ps.num_sph, (order + 1) ** 2, len(x)), dtype=complex)
     in_field = np.zeros((ps.num_sph, len(x)), dtype=complex)
     for sph in range(ps.num_sph):
@@ -55,20 +59,20 @@ def inner_field(x, y, z, inner_coefficients, tot_field, ps, order):
 
 
 def total_field(x, y, z, solution_coefficients, ps, order, incident_field_on=False):
-    r""" counts field outside the spheres """
+    r"""Counts total field on mesh x, y, z"""
     tot_field = np.zeros(len(x), dtype=complex)
 
     if ps.interface:
-        incident_coefs, scattered_coefficients, inner_coefficients, reflected_coefficients, lrc = solution_coefficients
-        tot_field += reflected_field(x, y, z, reflected_coefficients, ps, order)
+        incident_coefs, scattered_coefs, inner_coefs, reflected_coefs, local_reflected_coefs = solution_coefficients
+        tot_field += reflected_field(x, y, z, reflected_coefs, ps, order)
     else:
-        incident_coefs, scattered_coefficients, inner_coefficients = solution_coefficients
+        incident_coefs, scattered_coefs, inner_coefs = solution_coefficients
 
-    tot_field += scattered_field(x, y, z, scattered_coefficients, ps, order)
+    tot_field += scattered_field(x, y, z, scattered_coefs, ps, order)
 
     if incident_field_on:
         tot_field += incident_field(x, y, z, ps, order)
 
-    tot_field = inner_field(x, y, z, inner_coefficients, tot_field, ps, order)
+    tot_field = inner_field(x, y, z, inner_coefs, tot_field, ps, order)
 
     return tot_field

@@ -1,27 +1,17 @@
 import numpy as np
+import physical_systems as phs
 import wavefunctions as wvfs
 import rendering
 import mathematics as mths
-import classes as cls
+
+ps = phs.build_ps_2s()
 
 # coordinates
-bound, number_of_points = 5, 200
+bound, number_of_points = 5, 201
 span = rendering.build_discretized_span(bound, number_of_points)
 
-direction = np.array([0.70711, 0, 0.70711])
-freq = 82  # [Hz]
-p0 = 1  # [kg/m/s^2] = [Pa]
-incident_field = cls.PlaneWave(direction, freq, p0)
-
-# parameters of fluid
-ro_fluid = 1.225  # [kg/m^3]
-c_fluid = 331  # [m/s]
-fluid = cls.Fluid(ro_fluid, c_fluid)
-
-k_fluid = 2 * np.pi * freq / c_fluid
-
 # order of decomposition
-order = 5
+order = 20
 
 # plane
 plane = 'xz'
@@ -31,17 +21,24 @@ x_p, y_p, z_p, span_v, span_h = rendering.build_slice(span, plane_number, plane=
 
 
 def h_additional_theorem_test(m, n):
-    dist = np.array([0, 0, -5])
-    desired_h = wvfs.outgoing_wvf(m, n, x_p + dist[0], y_p + dist[1], z_p + dist[2], k_fluid)
+    pos0, pos1 = ps.spheres[0].pos, ps.spheres[1].pos
+    dist = pos0 - pos1
+    desired_h = wvfs.outgoing_wvf(m, n, x_p - pos1[0], y_p - pos1[1], z_p - pos1[2], ps.k_fluid)
     sow_array = np.zeros(((order+1) ** 2, len(x_p)), dtype=complex)
     i = 0
-    for munu in zip(wvfs.m_idx(order), wvfs.n_idx(order)):
-        sow_array[i] = wvfs.outgoing_wvf(munu[0], munu[1], x_p, y_p, z_p, k_fluid) * \
-                       wvfs.regular_separation_coefficient(m, munu[0], n, munu[1], k_fluid, dist)
+    for mu, nu in wvfs.multipoles(order):
+        sow_array[i] = wvfs.regular_wvf(mu, nu, x_p - pos0[0], y_p - pos0[1], z_p - pos0[2], ps.k_fluid) * \
+                       wvfs.outgoing_separation_coefficient(m, mu, n, nu, ps.k_fluid, dist)
         i += 1
     actual_h = mths.multipoles_fsum(sow_array, len(x_p))
-    # actual_h = sphrs.draw_spheres(actual_h, np.array([np.array([0, 0, 0])]), spheres, x_p, y_p, z_p)
+    actual_h = rendering.draw_spheres(actual_h, ps, x_p, y_p, z_p)
+    desired_h = rendering.draw_spheres(desired_h, ps, x_p, y_p, z_p)
+    rx, ry, rz = x_p - pos0[0], y_p - pos0[1], z_p - pos0[2]
+    r = np.sqrt(rx ** 2 + ry ** 2 + rz ** 2)
+    actual_h = np.where(r >= 0.6 * np.sqrt(dist[0]**2 + dist[1]**2 + dist[2]**2), 0, actual_h)
+    desired_h = np.where(r >= 0.6 * np.sqrt(dist[0] ** 2 + dist[1] ** 2 + dist[2] ** 2), 0, desired_h)
     rendering.plots_for_tests(actual_h, desired_h, span_v, span_h)
+    rendering.slice_plot(np.abs(actual_h - desired_h), x_p, y_p, z_p, span_v, span_h, ps)
     np.testing.assert_allclose(actual_h, desired_h, rtol=1e-2)
 
 

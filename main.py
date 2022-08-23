@@ -5,11 +5,12 @@ import tsystem
 import cross_sections as cs
 import fields
 import forces
-import classes as cls
+import physical_systems as phs
 
 
 def compute(physical_system, order, cross_sections_on=False, forces_on=False, slice_field_on=False,
             bound=None, number_of_points=None, plane=None, plane_number=None):
+    """Function that present the results and timing"""
     t_start = time.process_time()
     t_cs_start = t_cs_finish = t_f_start = t_f_finish = t_sf_start = t_sf_finish = 0
     if physical_system.interface:
@@ -36,25 +37,24 @@ def compute(physical_system, order, cross_sections_on=False, forces_on=False, sl
     print("Solving the system:", t_solution - t_start, "s")
     print("Counting cross sections:", t_cs_finish - t_cs_start, "s")
     print("Counting forces:", t_f_finish - t_f_start, "s")
-    print("Drawing the slice plot:", t_sf_finish - t_sf_start, "s")
+    print("Counting fields and drawing the slice plot:", t_sf_finish - t_sf_start, "s")
     print("All process:", time.process_time() - t_start, "s")
 
 
 def simulation():
-    r""" main simulation function """
-    # coordinates
-    bound, number_of_points = 6, 201
+    r"""Main simulation function that start computations"""
+    bound, number_of_points = 6, 301
 
-    # physical_system = cls.build_ps_2s()
-    physical_system = cls.build_ps_2s_l()
+    physical_system = phs.build_ps_2s()
+    # physical_system = phs.build_ps_2s_i()
 
-    order = 8
+    order = 5
 
     plane = 'xz'
     plane_number = int(number_of_points / 2) + 1
 
-    # compute(physical_system, order, cross_sections=True, forces=True)
-    compute(physical_system, order, cross_sections_on=True, forces_on=True, slice_field_on=True, bound=bound,
+    # compute(physical_system, order, cross_sections_on=True, forces_on=True)
+    compute(physical_system, order, slice_field_on=True, bound=bound,
             number_of_points=number_of_points, plane=plane, plane_number=plane_number)
 
 

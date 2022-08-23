@@ -6,33 +6,34 @@ import scipy.special
 
 
 def sph_neyman(n, z):
-    r""" spherical Neyman function """
+    r"""Spherical Neyman function"""
     return (-1) ** (n + 1) * np.sqrt(np.pi / 2 / z) * scipy.special.jv(-n - 0.5, z)
 
 
 def sph_neyman_der(n, z):
-    r""" first derivative of spherical Neyman function """
+    r"""First derivative of spherical Neyman function"""
     return (-1) ** n * np.sqrt(np.pi / (8 * z ** 3)) * scipy.special.jv(-n - 0.5, z) + \
            (-1) ** (n + 1) * np.sqrt(np.pi / 2 / z) * scipy.special.jvp(-n - 0.5, z)
 
 
 def sph_hankel1(n, z):
-    r""" Spherical Hankel function of the first kind """
+    r"""Spherical Hankel function of the first kind"""
     return scipy.special.spherical_jn(n, z) + 1j * sph_neyman(n, z)
 
 
 def sph_hankel1_der(n, z):
-    r""" First derivative of spherical Hankel function of the first kind """
+    r"""First derivative of spherical Hankel function of the first kind"""
     return scipy.special.spherical_jn(n, z, derivative=True) + 1j * sph_neyman_der(n, z)
 
 
 def csph_harm(m, n, phi, theta):
+    r"""Spherical harmonic of complex argument"""
     coefficient = np.sqrt((2 * n + 1) / 4 / np.pi * scipy.special.factorial(n - m) / scipy.special.factorial(n + m))
     return coefficient * np.exp(1j * m * phi) * scipy.special.clpmn(m, n, np.cos(theta), type=2)[0][-1][-1]
 
 
 def dec_to_sph(x, y, z):
-    """ Transition from cartesian cs to spherical cs """
+    """Transition from cartesian coordinates to spherical coordinates"""
     e = 1e-16
     r = np.sqrt(x * x + y * y + z * z)
     phi = np.zeros(np.size(r))
@@ -51,8 +52,7 @@ def dec_to_sph(x, y, z):
 
 
 def gaunt_coefficient(n, m, nu, mu, q):
-    r""" Gaunt coefficient: G(n,m;nu,mu;q)
-    eq(3.71) in 'Encyclopedia' """
+    r"""Gaunt coefficient: G(n,m;nu,mu;q)"""
     s = np.sqrt((2 * n + 1) * (2 * nu + 1) * (2 * q + 1) / 4 / np.pi)
     wig.wig_table_init(60, 3)  # this needs revision
     wig.wig_temp_init(60)  # this needs revision
@@ -61,13 +61,14 @@ def gaunt_coefficient(n, m, nu, mu, q):
 
 
 def complex_fsum(array):
+    r"""Accurate sum of numpy.array with complex values"""
     return math.fsum(np.real(array)) + 1j * math.fsum(np.imag(array))
 
 
 def spheres_multipoles_fsum(field_array, length):
-    r""" do accurate sum by spheres and multipoles
+    r"""Accurate sum by spheres and multipoles;
     the shape of field array: 0 axis - spheres, 1 axis - multipoles, 2 axis - coordinates
-    return: np.array with values of field in all coordinates """
+    return: numpy.array with values of field in all coordinates """
     field = np.zeros(length, dtype=complex)
     for i in range(length):
         field[i] = complex_fsum(np.concatenate(field_array[:, :, i]))
@@ -75,8 +76,7 @@ def spheres_multipoles_fsum(field_array, length):
 
 
 def multipoles_fsum(field_array, length):
-    r""" do accurate sum by multipoles
-    the shape of field array: 0 axis - multipoles, 1 axis - coordinates
+    r"""Accurate sum by multipoles; the shape of field array: 0 axis - multipoles, 1 axis - coordinates
     return: np.array with values of field in all coordinates """
     field = np.zeros(length, dtype=complex)
     for i in range(length):

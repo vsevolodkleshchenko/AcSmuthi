@@ -5,7 +5,7 @@ import numpy as np
 
 
 def force_on_sphere(sph, sc_coef, ps, order):
-    r""" return cartesian components of force on sphere[sph] - eq(34, 35) - lopes2016 """
+    r"""Cartesian components of force on sphere[sph]"""
     ef_inc_coef = tsystem.effective_incident_coefficients(sph, sc_coef, ps, order)
     scale = tsystem.scaled_coefficient
     fxy_array = np.zeros((order + 1) ** 2, dtype=complex)
@@ -30,7 +30,7 @@ def force_on_sphere(sph, sc_coef, ps, order):
 
 
 def all_forces(solution_coefficients, ps, order):
-    r""" return np.array of cartesian components of force for all spheres """
+    r"""Cartesian components of force for all spheres"""
     forces_array = np.zeros((ps.num_sph, 3), dtype=float)
     for sph in range(ps.num_sph):
         forces_array[sph] = force_on_sphere(sph, solution_coefficients[1][sph], ps, order)

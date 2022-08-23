@@ -1,6 +1,6 @@
 import numpy as np
 import scipy.special
-import classes as cls
+import physical_systems as phs
 import tsystem
 import mathematics as mths
 import wavefunctions as wvfs
@@ -80,13 +80,13 @@ def local_incident_coefficients(ps, order):
 
 def test_function():
     # physical system
-    ps = cls.build_ps_1s()
+    ps = phs.build_ps_1s()
 
     # order of decomposition
     order = 10
 
     solution_coefficients = tsystem.solve_system(ps, order)
-    scattered_coefficients = solution_coefficients[0]
+    scattered_coefficients = solution_coefficients[1]
     eff_coefficients = effective_coefficients(ps, scattered_coefficients, order)
     print(scattered_coefficients / eff_coefficients)
 

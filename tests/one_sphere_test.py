@@ -3,10 +3,10 @@ import mathematics as mths
 import numpy as np
 import scipy.special
 import rendering
-import cross_sections as pp
 import tsystem
 import wavefunctions as wvfs
-import classes as cls
+import physical_systems as phs
+import fields
 
 
 def pn_coefficient_1s(n):
@@ -55,14 +55,14 @@ def scattered_field_1s(x, y, z, ps, order):
 def one_sphere_test(span, plane_number, ps, order, plane='xz'):
     x_p, y_p, z_p, span_v, span_h = rendering.build_slice(span, plane_number, plane=plane)
     desired_1s_field = scattered_field_1s(x_p, y_p, z_p, ps, order)
-    actual_1s_field = pp.total_field(x_p, y_p, z_p, tsystem.solve_system(ps, order), ps, order)
+    actual_1s_field = fields.total_field(x_p, y_p, z_p, tsystem.solve_system(ps, order), ps, order)
     desired_1s_field = rendering.draw_spheres(desired_1s_field, ps, x_p, y_p, z_p)
     actual_1s_field = rendering.draw_spheres(actual_1s_field, ps, x_p, y_p, z_p)
     rel_err = np.abs((actual_1s_field - desired_1s_field) / desired_1s_field)
     max_rel_err = np.max(np.where(rel_err >= 1e-16, rel_err, 0))
     print(max_rel_err)
     rendering.slice_plot(rel_err, x_p, y_p, z_p, span_v, span_h, ps)
-    rendering.plots_for_tests(actual_1s_field, rel_err, span_v, span_h)
+    rendering.plots_for_tests(actual_1s_field, desired_1s_field, span_v, span_h)
     np.testing.assert_allclose(actual_1s_field, desired_1s_field, rtol=1e-5)
 
 
@@ -82,10 +82,10 @@ def cross_sections_1s(ps, order):
 
 def one_sphere_simulation():
     # coordinates
-    bound, number_of_points = 5, 300
+    bound, number_of_points = 5, 301
     span = rendering.build_discretized_span(bound, number_of_points)
 
-    ps = cls.build_ps_1s()
+    ps = phs.build_ps_1s()
 
     # order of decomposition
     order = 8

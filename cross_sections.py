@@ -4,8 +4,7 @@ import numpy as np
 
 
 def scattering_cs(solution_coefficients, ps, order):
-    r""" Counts scattering cross sections Sigma_sc
-    eq(46,47) in 'Multiple scattering and scattering cross sections P. A. Martin' """
+    r"""Counts scattering cross section"""
     prefactor = ps.incident_field.ampl ** 2 / (2 * ps.incident_field.omega * ps.fluid.rho * ps.k_fluid)
     scattered_coefficients = solution_coefficients[1]
     sigma_sc2 = np.zeros((ps.num_sph * (order + 1) ** 2) ** 2, dtype=complex)
@@ -26,9 +25,8 @@ def scattering_cs(solution_coefficients, ps, order):
     return sigma_sc
 
 
-def extinction_cs(solution_coefficients, ps, order):
-    r""" Counts scattering and extinction cross sections Sigma_sc and Sigma_ex
-    eq(46,47) in 'Multiple scattering and scattering cross sections P. A. Martin' """
+def extinction_cs(solution_coefficients, ps):
+    r"""Counts extinction cross section"""
     prefactor = ps.incident_field.ampl ** 2 / (2 * ps.incident_field.omega * ps.fluid.rho * ps.k_fluid)
     local_inc_coefs, scattered_coefficients = solution_coefficients[0], solution_coefficients[1]
     if ps.interface:
@@ -40,8 +38,7 @@ def extinction_cs(solution_coefficients, ps, order):
 
 
 def cross_section(solution_coefficients, ps, order):
-    r""" Counts scattering and extinction cross sections Sigma_sc and Sigma_ex
-    eq(46,47) in 'Multiple scattering and scattering cross sections P. A. Martin' """
+    r"""Counts scattering and extinction cross sections"""
     sigma_sc = scattering_cs(solution_coefficients, ps, order)
-    sigma_ex = extinction_cs(solution_coefficients, ps, order)
+    sigma_ex = extinction_cs(solution_coefficients, ps)
     return sigma_sc, sigma_ex

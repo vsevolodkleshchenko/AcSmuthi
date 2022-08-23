@@ -8,7 +8,7 @@ import time
 
 
 def scaled_coefficient(n, sph, ps):
-    r""" scaled coefficient - eq(21) in lopes2016 """
+    r"""Scaled coefficient for spheres[sph]"""
     k_q = ps.k_spheres[sph]
     rho_0 = ps.fluid.rho
     k = ps.k_fluid
@@ -32,7 +32,7 @@ def scaled_coefficient(n, sph, ps):
 
 
 def system_matrix(ps, order):
-    r""" build matrix of system like in eq(20) in lopes2016 """
+    r"""Build system matrix (T^(-1))"""
     t_matrix = np.zeros((ps.num_sph, ps.num_sph, (order+1)**2, (order+1)**2), dtype=complex)
     all_spheres = np.arange(ps.num_sph)
     for sph in all_spheres:
@@ -51,12 +51,12 @@ def system_matrix(ps, order):
 
 
 def system_rhs(ps, order):
-    r""" build right hand side of system like in eq(20) in lopes2016 """
+    r"""Build right hand side of system"""
     return np.dot(d_matrix(ps, order), wvfs.incident_coefficients(ps.incident_field.dir, order))
 
 
 def solve_system(ps, order):
-    r""" solve system like in eq(20) in lopes2016 """
+    r"""Solve linear system for scattering on spheres"""
     inc_coef = system_rhs(ps, order)
     t_ = system_matrix(ps, order)
     sc_coef1d = scipy.linalg.solve(t_, inc_coef)
@@ -72,7 +72,7 @@ def solve_system(ps, order):
 
 
 def effective_incident_coefficients(sph, sc_coef, ps, order):
-    r""" build np.array of effective incident coefficients for all n <= order """
+    r"""Build np.array of effective incident coefficients for all n <= order """
     ef_inc_coef = np.zeros((order + 1) ** 2, dtype=complex)
     for m, n in wvfs.multipoles(order):
         imn = n ** 2 + n + m
@@ -81,7 +81,7 @@ def effective_incident_coefficients(sph, sc_coef, ps, order):
 
 
 def d_matrix(ps, order):
-    """ build D matrix from report - matrix of S coefficients """
+    r"""Build D matrix - matrix of S coefficients that translate origin incident coefficients to local"""
     d = np.zeros((ps.num_sph, (order + 1) ** 2, (order + 1) ** 2), dtype=complex)
     for sph in range(ps.num_sph):
         for m, n in wvfs.multipoles(order):
@@ -94,6 +94,7 @@ def d_matrix(ps, order):
 
 
 def r_matrix(ps, order, order_approx=1):
+    r"""Build R matrix - reflection matrix"""
     r = np.zeros((ps.num_sph, (order + 1) ** 2, (order + 1) ** 2), dtype=complex)
     a, alpha = reflection.ref_coef_approx(ps.omega, ps.fluid.speed, ps.interface.speed, ps.fluid.rho,
                                           ps.interface.rho, order_approx, -3)
@@ -110,6 +111,7 @@ def r_matrix(ps, order, order_approx=1):
 
 
 def inner_coefficients(sc_coef, ps, order):
+    r"""Counts coefficients of decompositions fields inside spheres"""
     in_coef = np.zeros((ps.num_sph, (order + 1) ** 2), dtype=complex)
     for sph in range(ps.num_sph):
         for m, n in wvfs.multipoles(order):
@@ -121,6 +123,7 @@ def inner_coefficients(sc_coef, ps, order):
 
 
 def layer_inc_coef_origin(ps, order):
+    r"""Effective incident coefficients - coefficients of decomposition incident field and it's reflection"""
     inc_coef_origin = np.zeros((order + 1) ** 2, dtype=complex)
     for m, n in wvfs.multipoles(order):
         ref_dir = reflection.reflection_dir(ps.incident_field.dir, ps.interface.normal)
@@ -131,6 +134,7 @@ def layer_inc_coef_origin(ps, order):
 
 
 def solve_layer_system(ps, order):
+    r"""Find solution coefficients of scattering on spheres with interface(layer)"""
     t = np.linalg.inv(system_matrix(ps, order))
     d = d_matrix(ps, order)
     r = r_matrix(ps, order)

@@ -5,26 +5,12 @@ import mathematics as mths
 
 
 def reflection_dir(incident_dir, normal):
+    r"""Direction of reflected from plane (normal) wave vector"""
     return incident_dir - 2 * normal * incident_dir.dot(normal)
 
 
-def image_poses(sphere, interface, alpha):
-    image_positions = np.zeros((len(alpha), 3), dtype=complex)
-
-    for q in range(len(alpha)):
-        distance = interface.int_dist(sphere.pos)
-        image_positions[q] = sphere.pos - (2 * distance + 1j * alpha[q]) * interface.normal
-    return image_positions
-
-
-def image_contribution(m, n, mu, nu, k_fluid, image_positions, a):
-    image_contrib = np.zeros(len(a), dtype=complex)
-    for q in range(len(a)):
-        image_contrib[q] = a[q] * wvfs.regular_separation_coefficient(mu, m, nu, n, k_fluid, - image_positions[q])
-    return mths.complex_fsum(image_contrib)
-
-
 def ref_coef(alpha_inc, freq, c_inc, c_t, rho_inc, rho_t):
+    r"""Reflection coefficient between two gases/fluids depending on incident angle"""
     w = 2 * np.pi * freq
     h = np.sin(alpha_inc)
     kv_inc = np.emath.sqrt(w ** 2 / c_inc ** 2 - h ** 2)
@@ -33,6 +19,7 @@ def ref_coef(alpha_inc, freq, c_inc, c_t, rho_inc, rho_t):
 
 
 def prony(sample, order_approx):
+    r"""Prony (exponential) approximation of sample"""
     matrix1 = np.zeros((order_approx, order_approx), dtype=complex)
     for j in range(order_approx):
         matrix1[j] = sample[j:j+order_approx]
@@ -53,12 +40,14 @@ def prony(sample, order_approx):
 
 
 def ref_coef_h(h, w, c_inc, c_t, rho_inc, rho_t):
+    r"""Reflection coefficient depending on wave vector's horizontal component"""
     v_inc = np.emath.sqrt(w ** 2 / c_inc ** 2 - h ** 2)
     v_t = np.emath.sqrt(w ** 2 / c_t ** 2 - h ** 2)
     return (rho_t * v_inc - rho_inc * v_t) / (rho_t * v_inc + rho_inc * v_t)
 
 
 def ref_coef_approx(w, c_inc, c_t, rho_inc, rho_t, order_approx, t_0):
+    r"""Approximation of reflection coefficient with Prony method"""
     t = np.linspace(0, t_0, 2 * order_approx)
     v = w / c_inc * (1j * t + (1 - t / t_0))
     # h = np.linspace(0, w / c * np.sqrt(1 + t_0 ** 2), 2 * order_approx)
@@ -75,6 +64,7 @@ def ref_coef_approx(w, c_inc, c_t, rho_inc, rho_t, order_approx, t_0):
 
 
 def ref_test(w, c_inc, c_t, rho_inc, rho_t, order_approx, t_0):
+    r"""Test for correct approximation reflection coefficient"""
     angles = np.linspace(0, np.pi / 2, 100)
     h = w / c_inc * np.sin(angles)
     v = w / c_inc * np.cos(angles)
@@ -97,6 +87,23 @@ def ref_test(w, c_inc, c_t, rho_inc, rho_t, order_approx, t_0):
     plt.show()
 
 
-# ref_test(2 * np.pi * 80, 344, 548.7 - 492.321 * 1j, 1.293, 0.063 + 1j * 4.688, 11, 20)
-# ref_test(2 * np.pi * 80, 344, 1400, 1.293, 1000, 1, -3)
+def image_poses(sphere, interface, alpha):
+    r"""Sphere's images positions"""
+    image_positions = np.zeros((len(alpha), 3), dtype=complex)
 
+    for q in range(len(alpha)):
+        distance = interface.int_dist(sphere.pos)
+        image_positions[q] = sphere.pos - (2 * distance - 1j * alpha[q]) * interface.normal
+    return image_positions
+
+
+def image_contribution(m, n, mu, nu, k_fluid, image_positions, a):
+    r"""Contribution of images to reflected field"""
+    image_contrib = np.zeros(len(a), dtype=complex)
+    for q in range(len(a)):
+        image_contrib[q] = a[q] * wvfs.regular_separation_coefficient(mu, m, nu, n, k_fluid, - image_positions[q])
+    return mths.complex_fsum(image_contrib)
+
+
+# ref_test(2 * np.pi * 80, 344, 548.7 - 492.321 * 1j, 1.293, 0.063 + 1j * 4.688, 11, 19)
+# ref_test(2 * np.pi * 80, 344, 1400, 1.293, 1000, 1, -3)
