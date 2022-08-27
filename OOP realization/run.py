@@ -3,6 +3,7 @@ import classes as cls
 import time
 import rendering
 import cross_sections as cs
+import oop_cross_sections as oop_cs
 import fields
 import oop_fields
 import forces
@@ -31,7 +32,7 @@ def build_new_ps_2s():
     ro_sph = 1050  # [kg/m^3]
     c_sph = 1403  # [m/s]
 
-    order = 8
+    order = 6
 
     sphere1 = Particle(pos1, r_sph, ro_sph, c_sph, order)
     sphere2 = Particle(pos2, r_sph, ro_sph, c_sph, order)
@@ -88,7 +89,7 @@ def new_compute(physical_system, order, cross_sections_on=False, forces_on=False
     t_solution = time.process_time()
     if cross_sections_on:
         t_cs_start = time.process_time()
-        print("Scattering and extinction cs:", *cs.cross_section(solution_coefficients, physical_system, order))
+        print("Scattering and extinction cs:", *oop_cs.cross_section(physical_system, order))
         t_cs_finish = time.process_time()
     if forces_on:
         t_f_start = time.process_time()
@@ -116,7 +117,7 @@ def simulation():
 
     physical_system = build_new_ps_2s()
 
-    order = 8
+    order = 6
 
     plane = 'xz'
     plane_number = int(number_of_points / 2) + 1

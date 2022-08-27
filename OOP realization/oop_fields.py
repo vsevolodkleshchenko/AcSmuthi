@@ -26,7 +26,8 @@ class SphericalWaveExpansion:
 def compute_reflected_field(layer, x, y, z):
     r"""Counts reflected scattered field on mesh x, y, z"""
     layer.reflected_field.compute_pressure_field(x, y, z)
-    return layer.reflected_field.field
+    reflected_field = layer.reflected_field.field
+    return reflected_field
 
 
 def compute_scattered_field(particles_array, x, y, z):
@@ -36,10 +37,6 @@ def compute_scattered_field(particles_array, x, y, z):
         particle.scattered_field.compute_pressure_field(x - particle.pos[0], y - particle.pos[1], z - particle.pos[2])
         scattered_field_array[s] = particle.scattered_field.field
     scattered_field = mths.spheres_fsum(scattered_field_array, len(x))
-    for s, particle in enumerate(particles_array):
-        rx, ry, rz = x - particle.pos[0], y - particle.pos[1], z - particle.pos[2]
-        r = np.sqrt(rx ** 2 + ry ** 2 + rz ** 2)
-        scattered_field = np.where(r > particle.r, scattered_field, 0)
     return scattered_field
 
 
@@ -67,20 +64,20 @@ def compute_incident_field(ps, x, y, z):
         image_o = - 2 * ps.interface.normal * ps.interface.int_dist0
         inc_field += ref_coef * np.exp(1j * ps.k_fluid * ((x - image_o[0]) * ref_direct[0] + (y - image_o[1]) *
                                                           ref_direct[1] + (z - image_o[2]) * ref_direct[2]))
-    for s, particle in enumerate(ps.spheres):
-        rx, ry, rz = x - particle.pos[0], y - particle.pos[1], z - particle.pos[2]
-        r = np.sqrt(rx ** 2 + ry ** 2 + rz ** 2)
-        inc_field = np.where(r > particle.r, inc_field, 0)
     return inc_field
 
 
 def compute_total_field(ps, x, y, z):
     incident_field = compute_incident_field(ps, x, y, z)
     scattered_field = compute_scattered_field(ps.spheres, x, y, z)
-    inner_field = compute_inner_field(ps.spheres, x, y, z)
-    total_field = scattered_field + inner_field + incident_field
-    # total_field = scattered_field
+    outside_field = scattered_field + incident_field
     if ps.interface:
         reflected_field = compute_reflected_field(ps.interface, x, y, z)
-        total_field += reflected_field
+        outside_field += reflected_field
+    for s, particle in enumerate(ps.spheres):
+        rx, ry, rz = x - particle.pos[0], y - particle.pos[1], z - particle.pos[2]
+        r = np.sqrt(rx ** 2 + ry ** 2 + rz ** 2)
+        outside_field = np.where(r > particle.r, outside_field, 0)
+    inner_field = compute_inner_field(ps.spheres, x, y, z)
+    total_field = outside_field + inner_field
     return total_field

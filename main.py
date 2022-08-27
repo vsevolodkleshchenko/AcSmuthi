@@ -46,9 +46,8 @@ def simulation():
     bound, number_of_points = 6, 201
 
     physical_system = phs.build_ps_2s()
-    # physical_system = phs.build_ps_2s_i()
 
-    order = 8
+    order = 6
 
     plane = 'xz'
     plane_number = int(number_of_points / 2) + 1

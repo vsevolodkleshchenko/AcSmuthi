@@ -49,13 +49,14 @@ class LinearSystem:
 
             reflected_coefs = np.dot(m3, inc_coef_origin) - inc_coef_origin
             local_reflected_coefs = np.dot(self.d_matrix, reflected_coefs)
-
             inner_coefs = tsystem.inner_coefficients(scattered_coefs, self.ps, self.order)
+
+            sep_loc_refl_coefs = local_reflected_coefs.reshape((self.ps.num_sph, (self.order + 1) ** 2))
             for s in range(self.ps.num_sph):
                 self.ps.spheres[s].reflected_field = flds.SphericalWaveExpansion(self.ps.incident_field.ampl, self.ps.k_fluid,
-                                                                                 local_reflected_coefs[s], 'regular', self.order)
-            self.ps.interface.reflected_field_ex = flds.SphericalWaveExpansion(self.ps.incident_field.ampl, self.ps.k_fluid,
-                                                                               reflected_coefs, 'regular', self.order)
+                                                                                 sep_loc_refl_coefs[s], 'regular', self.order)
+            self.ps.interface.reflected_field = flds.SphericalWaveExpansion(self.ps.incident_field.ampl, self.ps.k_fluid,
+                                                                            reflected_coefs, 'regular', self.order)
             self.solution_coefficients = incident_coefs, scattered_coefs, inner_coefs, reflected_coefs, \
                                          local_reflected_coefs
         else:
@@ -63,12 +64,13 @@ class LinearSystem:
             scattered_coefs = scattered_coefs1d.reshape((self.ps.num_sph, (self.order + 1) ** 2))
             inner_coefs = tsystem.inner_coefficients(scattered_coefs, self.ps, self.order)
             incident_coefs = self.rhs
+            self.solution_coefficients = incident_coefs, scattered_coefs, inner_coefs
 
+        sep_loc_inc_coefs = incident_coefs.reshape((self.ps.num_sph, (self.order + 1) ** 2))
         for s in range(self.ps.num_sph):
             self.ps.spheres[s].incident_field = flds.SphericalWaveExpansion(self.ps.incident_field.ampl, self.ps.k_fluid,
-                                                                            incident_coefs[s], 'regular', self.order)
+                                                                            sep_loc_inc_coefs[s], 'regular', self.order)
             self.ps.spheres[s].scattered_field = flds.SphericalWaveExpansion(self.ps.incident_field.ampl, self.ps.k_fluid,
                                                                              scattered_coefs[s], 'outgoing', self.order)
             self.ps.spheres[s].inner_field = flds.SphericalWaveExpansion(self.ps.incident_field.ampl, self.ps.k_spheres[s],
                                                                          inner_coefs[s], 'regular', self.order)
-        self.solution_coefficients = incident_coefs, scattered_coefs, inner_coefs
