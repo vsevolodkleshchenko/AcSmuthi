@@ -61,13 +61,7 @@ def solve_system(ps, order):
     t_ = system_matrix(ps, order)
     sc_coef1d = scipy.linalg.solve(t_, inc_coef)
     sc_coef = sc_coef1d.reshape((ps.num_sph, (order + 1) ** 2))
-    in_coef = np.zeros((ps.num_sph, (order + 1) ** 2), dtype=complex)
-    for sph in range(ps.num_sph):
-        for m, n in wvfs.multipoles(order):
-            imn = n ** 2 + n + m
-            in_coef[sph, imn] = (ss.spherical_jn(n, ps.k_fluid * ps.spheres[sph].r) / scaled_coefficient(n, sph, ps) +
-                                 mths.sph_hankel1(n, ps.k_fluid * ps.spheres[sph].r)) * sc_coef[sph, imn] / \
-                                ss.spherical_jn(n, ps.k_spheres[sph] * ps.spheres[sph].r)
+    in_coef = inner_coefficients(sc_coef, ps, order)
     return inc_coef, sc_coef, in_coef
 
 

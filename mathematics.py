@@ -82,3 +82,12 @@ def multipoles_fsum(field_array, length):
     for i in range(length):
         field[i] = complex_fsum(field_array[:, i])
     return field
+
+
+def spheres_fsum(field_array, length):
+    r"""Accurate sum by multipoles; the shape of field array: 0 axis - spheres, 1 axis - coordinates
+    return: np.array with values of field in all coordinates """
+    field = np.zeros(length, dtype=complex)
+    for i in range(length):
+        field[i] = complex_fsum(field_array[:, i])
+    return field

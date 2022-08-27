@@ -43,18 +43,18 @@ def compute(physical_system, order, cross_sections_on=False, forces_on=False, sl
 
 def simulation():
     r"""Main simulation function that start computations"""
-    bound, number_of_points = 6, 301
+    bound, number_of_points = 6, 201
 
     physical_system = phs.build_ps_2s()
     # physical_system = phs.build_ps_2s_i()
 
-    order = 5
+    order = 8
 
     plane = 'xz'
     plane_number = int(number_of_points / 2) + 1
 
     # compute(physical_system, order, cross_sections_on=True, forces_on=True)
-    compute(physical_system, order, slice_field_on=True, bound=bound,
+    compute(physical_system, order, cross_sections_on=True, forces_on=True, slice_field_on=True, bound=bound,
             number_of_points=number_of_points, plane=plane, plane_number=plane_number)
 
 
