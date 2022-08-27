@@ -7,6 +7,7 @@ import oop_cross_sections as oop_cs
 import fields
 import oop_fields
 import forces
+import oop_forces
 from layers import Layer
 from particles import Particle
 from linear_system import LinearSystem
@@ -85,7 +86,6 @@ def new_compute(physical_system, order, cross_sections_on=False, forces_on=False
     t_start = time.process_time()
     t_cs_start = t_cs_finish = t_f_start = t_f_finish = t_sf_start = t_sf_finish = 0
     linear_system.solve()
-    solution_coefficients = linear_system.solution_coefficients
     t_solution = time.process_time()
     if cross_sections_on:
         t_cs_start = time.process_time()
@@ -93,15 +93,13 @@ def new_compute(physical_system, order, cross_sections_on=False, forces_on=False
         t_cs_finish = time.process_time()
     if forces_on:
         t_f_start = time.process_time()
-        print("Forces:\n", forces.all_forces(solution_coefficients, physical_system, order))
+        print("Forces:\n", oop_forces.all_forces(physical_system, order))
         t_f_finish = time.process_time()
     if slice_field_on:
         t_sf_start = time.process_time()
         span = rendering.build_discretized_span(bound, number_of_points)
         x_p, y_p, z_p, span_v, span_h = rendering.build_slice(span, plane_number, plane=plane)
         tot_field = np.real(oop_fields.compute_total_field(physical_system, x_p, y_p, z_p))
-        # tot_field = np.real(
-        #     fields.total_field(x_p, y_p, z_p, solution_coefficients, physical_system, order, incident_field_on=True))
         rendering.slice_plot(tot_field, x_p, y_p, z_p, span_v, span_h, physical_system, plane=plane)
         t_sf_finish = time.process_time()
     print("Solving the system:", t_solution - t_start, "s")
@@ -115,7 +113,7 @@ def simulation():
     r"""Main simulation function that start computations"""
     bound, number_of_points = 6, 201
 
-    physical_system = build_new_ps_2s()
+    physical_system = build_new_ps_2s_l()
 
     order = 6
 

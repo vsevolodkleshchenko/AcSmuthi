@@ -45,7 +45,7 @@ def simulation():
     r"""Main simulation function that start computations"""
     bound, number_of_points = 6, 201
 
-    physical_system = phs.build_ps_2s()
+    physical_system = phs.build_ps_2s_i()
 
     order = 6
 
