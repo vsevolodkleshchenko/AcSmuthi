@@ -12,8 +12,8 @@ def build_simulation():
     c_fluid = 331  # [m/s]
 
     # parameters of incident field
-    direction = np.array([0.70711, 0, 0.70711])
-    # direction = np.array([-1, 0, 0])
+    # direction = np.array([0.70711, 0, 0.70711])
+    direction = np.array([-1, 0, 0])
     freq = 82  # [Hz]
     p0 = 1  # [kg/m/s^2] = [Pa]
     k = 2 * np.pi * freq / c_fluid  # [1/m]
@@ -43,7 +43,7 @@ def build_simulation():
     plane = 'xz'
     plane_number = int(number_of_points / 2) + 1
 
-    sim = Simulation(particles, fluid, incident_field, freq, order, layer=None,
+    sim = Simulation(particles, fluid, incident_field, freq, order, layer=layer,
                      plane=plane, bound=bound, plane_number=plane_number, number_of_points=number_of_points)
     return sim
 
