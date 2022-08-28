@@ -120,9 +120,55 @@ def simulation():
     plane = 'xz'
     plane_number = int(number_of_points / 2) + 1
 
-    # compute(physical_system, order, cross_sections_on=True, forces_on=True)
     new_compute(physical_system, order, cross_sections_on=True, forces_on=True, slice_field_on=True, bound=bound,
-            number_of_points=number_of_points, plane=plane, plane_number=plane_number)
+                number_of_points=number_of_points, plane=plane, plane_number=plane_number)
+
+
+class Simulation:
+    def __init__(self, particles, fluid, incident_field, frequency, order, layer=None):
+        self.particles = particles
+        self.layer = layer
+        self.incident_field = incident_field
+        self.fluid = fluid
+        self.freq = frequency
+        self.order = order
+
+
+def build_simulation():
+    # parameters of fluid
+    ro_fluid = 1.225  # [kg/m^3]
+    c_fluid = 331  # [m/s]
+
+    # parameters of incident field
+    direction = np.array([-1, 0, 0])
+    freq = 82  # [Hz]
+    p0 = 1  # [kg/m/s^2] = [Pa]
+    k = 2 * np.pi * freq / c_fluid  # [1/m]
+
+    # parameters of the spheres
+    pos1 = np.array([0, 0, -2.5])
+    pos2 = np.array([0, 0, 2.5])
+    r_sph = 1  # [m]
+    ro_sph = 1050  # [kg/m^3]
+    c_sph = 1403  # [m/s]
+
+    order = 6
+
+    fluid = cls.Fluid(ro_fluid, c_fluid)
+    incident_field = oop_fields.PlaneWave(p0, k, 'regular', order, direction)
+    sphere1 = Particle(pos1, r_sph, ro_sph, c_sph, order)
+    sphere2 = Particle(pos2, r_sph, ro_sph, c_sph, order)
+    particles = np.array([sphere1, sphere2])
+
+    # parameters of interface (substrate)
+    a, b, c, d = 1, 0, 0, 2
+    ro_interface = ro_sph
+    c_interface = c_sph
+    layer = Layer(ro_interface, c_interface, a, b, c, d)
+
+    sim = Simulation(particles, fluid, incident_field, freq, order)
+
+    return sim
 
 
 simulation()

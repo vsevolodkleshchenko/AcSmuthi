@@ -18,7 +18,7 @@ def scaled_coefficient(n, sph, ps):
     s1 = np.zeros((2, 2), dtype=complex)
     s2 = np.zeros((2, 2), dtype=complex)
 
-    s1[0, 0] = gamma_q * scipy.special.spherical_jn(n, k * a_q)
+    s1[0, 0] = gamma_q * ss.spherical_jn(n, k * a_q)
     s1[0, 1] = ss.spherical_jn(n, k_q * a_q)
     s1[1, 0] = ss.spherical_jn(n, k * a_q, derivative=True)
     s1[1, 1] = ss.spherical_jn(n, k_q * a_q, derivative=True)

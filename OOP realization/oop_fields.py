@@ -5,13 +5,13 @@ import reflection
 
 
 class SphericalWaveExpansion:
-    def __init__(self, amplitude, k, coefficients, kind, order):
+    def __init__(self, amplitude, k, kind, order, coefficients=None):
         self.ampl = amplitude
         self.k = k
-        self.coefficients = coefficients
         self.field = None
         self.kind = kind  # 'regular' or 'outgoing'
         self.order = order
+        self.coefficients = coefficients
 
     def compute_pressure_field(self, x, y, z):
         coefficients_array = np.split(np.repeat(self.coefficients, len(x)), (self.order + 1) ** 2)
@@ -21,6 +21,16 @@ class SphericalWaveExpansion:
             wave_functions_array = wvfs.outgoing_wvfs_array(self.order, x, y, z, self.k)
         field_array = coefficients_array * wave_functions_array
         self.field = mths.multipoles_fsum(field_array, len(x))
+
+
+class PlaneWave(SphericalWaveExpansion):
+    def __init__(self, amplitude, k, kind, order, direction):
+        super().__init__(amplitude, k, kind, order)
+        self.dir = direction
+        self.coefficients = wvfs.incident_coefficients(direction, order)
+
+    def intensity(self, density, sound_speed):
+        return self.ampl ** 2 / (2 * density * sound_speed)
 
 
 def compute_reflected_field(layer, x, y, z):
