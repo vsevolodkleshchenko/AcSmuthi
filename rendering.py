@@ -46,12 +46,11 @@ def build_slice(span, plane_number, plane='xz'):
     return x_p, y_p, z_p, span_v, span_h
 
 
-def slice_plot(tot_field, x_p, y_p, z_p, span_v, span_h, ps, plane='xz'):
+def slice_plot(tot_field, span_v, span_h, plane='xz'):
     r""" build a 2D heat-plot of tot_field with spheres in:
      XZ plane for span_y[plane_number] : --->z
      YZ plane for span_x[plane_number] : --->z
      XY plane for span_z[plane_number] : --->y """
-    # tot_field = draw_spheres(tot_field, ps, x_p, y_p, z_p)
     tot_field_reshaped = tot_field.reshape(len(span_v), len(span_h))
     fig, ax = plt.subplots()
     plt.xlabel(plane[1])

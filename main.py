@@ -32,7 +32,7 @@ def compute(physical_system, order, cross_sections_on=False, forces_on=False, sl
         x_p, y_p, z_p, span_v, span_h = rendering.build_slice(span, plane_number, plane=plane)
         tot_field = np.real(
             fields.total_field(x_p, y_p, z_p, solution_coefficients, physical_system, order, incident_field_on=True))
-        rendering.slice_plot(tot_field, x_p, y_p, z_p, span_v, span_h, physical_system, plane=plane)
+        rendering.slice_plot(tot_field, span_v, span_h, plane=plane)
         t_sf_finish = time.process_time()
     print("Solving the system:", t_solution - t_start, "s")
     print("Counting cross sections:", t_cs_finish - t_cs_start, "s")
@@ -45,7 +45,7 @@ def simulation():
     r"""Main simulation function that start computations"""
     bound, number_of_points = 6, 201
 
-    physical_system = phs.build_ps_2s_i()
+    physical_system = phs.build_ps_2s()
 
     order = 6
 
