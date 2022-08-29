@@ -1,8 +1,7 @@
 import numpy as np
 import physical_systems as phs
-import wavefunctions as wvfs
-import rendering
-import mathematics as mths
+from postprocessing import rendering
+from utility import mathematics as mths, wavefunctions as wvfs
 
 ps = phs.build_ps_2s()
 
@@ -46,8 +45,8 @@ def h_additional_theorem_test(m, n):
 #     i = 0
 #     for munu in zip(wvfs.m_idx(order), wvfs.n_idx(order)):
 #         print(munu)
-#         print(wvfs.outgoing_wave_function(munu[0], munu[1], 0.000001, 0.000001, 0.000001, k))
-#         h = wvfs.outgoing_wave_function(munu[0], munu[1], x_p, y_p, z_p, k)
+#         print(wvfs.outgoing_wave_function(munu[0], munu[1], 0.000001, 0.000001, 0.000001, k_l))
+#         h = wvfs.outgoing_wave_function(munu[0], munu[1], x_p, y_p, z_p, k_l)
 #         rendering.plots_for_tests(h, h)
 #         i += 1
 

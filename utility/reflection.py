@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import wavefunctions as wvfs
-import mathematics as mths
+from utility import wavefunctions as wvfs
+from utility import mathematics as mths
 
 
 def reflection_dir(incident_dir, normal):

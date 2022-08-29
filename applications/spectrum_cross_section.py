@@ -1,4 +1,4 @@
-import cross_sections as pp
+from postprocessing import cross_sections as pp
 import numpy as np
 import tsystem
 import physical_systems as phs

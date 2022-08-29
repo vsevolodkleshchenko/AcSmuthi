@@ -1,6 +1,6 @@
 import numpy as np
-import rendering
-import wavefunctions as wvfs
+from postprocessing import rendering
+from utility import wavefunctions as wvfs
 import classes as cls
 
 # coordinates
@@ -12,10 +12,10 @@ freq = 82  # [Hz]
 p0 = 1  # [kg/m/s^2] = [Pa]
 incident_field = cls.PlaneWave(direction, freq, p0)
 
-# parameters of fluid
+# parameters of medium
 ro_fluid = 1.225  # [kg/m^3]
 c_fluid = 331  # [m/s]
-fluid = cls.Fluid(ro_fluid, c_fluid)
+fluid = cls.Medium(ro_fluid, c_fluid)
 
 k_fluid = 2 * np.pi * freq / c_fluid
 

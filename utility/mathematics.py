@@ -2,7 +2,7 @@ import numpy as np
 import math
 import pywigxjpf as wig
 import scipy
-import scipy.special
+import scipy.special as ss
 
 
 def sph_neyman(n, z):
@@ -24,6 +24,15 @@ def sph_hankel1(n, z):
 def sph_hankel1_der(n, z):
     r"""First derivative of spherical Hankel function of the first kind"""
     return scipy.special.spherical_jn(n, z, derivative=True) + 1j * sph_neyman_der(n, z)
+
+
+def sph_bessel_der2(n, z):
+    r"""Second derivative of spherical Bessel function"""
+    if n == 0:
+        return - ss.spherical_jn(1, z, derivative=True)
+    else:
+        return ss.spherical_jn(n - 1, z, derivative=True) + (n + 1) / z**2 * ss.spherical_jn(n, z) - \
+               (n + 1) / z * ss.spherical_jn(n, z, derivative=True)
 
 
 def csph_harm(m, n, phi, theta):

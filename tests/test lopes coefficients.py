@@ -2,13 +2,12 @@ import numpy as np
 import scipy.special
 import physical_systems as phs
 import tsystem
-import mathematics as mths
-import wavefunctions as wvfs
+from utility import mathematics as mths, wavefunctions as wvfs
 
 
 def scaled_coefficient(n, sph, ps):
     k_q = ps.k_spheres[sph]
-    rho_0 = ps.fluid.rho
+    rho_0 = ps.medium.rho
     k = ps.k_fluid
     rho_q = ps.spheres[sph].rho
     a_q = ps.spheres[sph].r

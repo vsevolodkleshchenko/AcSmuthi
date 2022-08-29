@@ -1,9 +1,9 @@
 import math
-import wavefunctions as wvfs
+from utility import wavefunctions as wvfs
 import numpy as np
 
 
-def scattering_cs(incident_field, particles, fluid, freq, order):
+def scattering_cs(particles, medium, freq, order):
     r"""Counts scattering cross section"""
     sigma_sc1 = np.zeros(len(particles))
     sigma_sc2 = np.zeros((len(particles) * (order + 1) ** 2) ** 2)
@@ -19,15 +19,15 @@ def scattering_cs(incident_field, particles, fluid, freq, order):
                     imunu = nu ** 2 + nu + mu
                     distance = particles[sph].pos - particles[osph].pos
                     sigma_sc2[idx2] = np.real(np.conj(scattered_coefs_sph[imn]) * scattered_coefs_osph[imunu] * \
-                                      wvfs.regular_separation_coefficient(mu, m, nu, n, incident_field.k, distance))
+                                              wvfs.regular_separation_coefficient(mu, m, nu, n, medium.incident_field.k_l, distance))
                     idx2 += 1
     omega = 2*np.pi*freq
-    dimensional_coef = incident_field.ampl ** 2 / (2 * omega * fluid.rho * incident_field.k)
-    sigma_sc = (math.fsum(sigma_sc1) + math.fsum(sigma_sc2)) * dimensional_coef / incident_field.intensity(fluid.rho, fluid.speed)
+    dimensional_coef = medium.incident_field.ampl ** 2 / (2 * omega * medium.rho * medium.incident_field.k_l)
+    sigma_sc = (math.fsum(sigma_sc1) + math.fsum(sigma_sc2)) * dimensional_coef / medium.incident_field.intensity(medium.rho, medium.speed_l)
     return sigma_sc
 
 
-def extinction_cs(incident_field, particles, fluid, freq, layer=None):
+def extinction_cs(particles, medium, freq, layer=None):
     r"""Counts extinction cross section"""
     sigma_ex_array = np.zeros(len(particles))
     for s, particle in enumerate(particles):
@@ -36,13 +36,13 @@ def extinction_cs(incident_field, particles, fluid, freq, layer=None):
             incident_coefs += particle.reflected_field.coefficients
         sigma_ex_array[s] = math.fsum(np.real(scattered_coefs * np.conj(incident_coefs)))
     omega = 2*np.pi*freq
-    dimensional_coef = incident_field.ampl ** 2 / (2 * omega * fluid.rho * incident_field.k)
-    sigma_ex = -math.fsum(sigma_ex_array) * dimensional_coef / incident_field.intensity(fluid.rho, fluid.speed)
+    dimensional_coef = medium.incident_field.ampl ** 2 / (2 * omega * medium.rho * medium.incident_field.k_l)
+    sigma_ex = -math.fsum(sigma_ex_array) * dimensional_coef / medium.incident_field.intensity(medium.rho, medium.speed_l)
     return sigma_ex
 
 
-def cross_section(incident_field, particles, fluid, freq, order, layer):
+def cross_section(particles, medium, freq, order, layer):
     r"""Counts scattering and extinction cross sections"""
-    sigma_sc = scattering_cs(incident_field, particles, fluid, freq, order)
-    sigma_ex = extinction_cs(incident_field, particles, fluid, freq, layer=layer)
+    sigma_sc = scattering_cs(particles, medium, freq, order)
+    sigma_ex = extinction_cs(particles, medium, freq, layer=layer)
     return sigma_sc, sigma_ex
