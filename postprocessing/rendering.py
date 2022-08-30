@@ -3,15 +3,6 @@ import matplotlib.pyplot as plt
 from matplotlib import colors
 
 
-def draw_spheres(field, ps, x_p, y_p, z_p):
-    r"""Change the field value to 0 in sphere"""
-    for sph in range(ps.num_sph):
-        rx, ry, rz = x_p - ps.spheres[sph].pos[0], y_p - ps.spheres[sph].pos[1], z_p - ps.spheres[sph].pos[2]
-        r = np.sqrt(rx ** 2 + ry ** 2 + rz ** 2)
-        field = np.where(r <= ps.spheres[sph].r, 0, field)
-    return field
-
-
 def build_discretized_span(bound, number_of_points):
     r"""Build a mesh"""
     span_x = np.linspace(-bound, bound, number_of_points)

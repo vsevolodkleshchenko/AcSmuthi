@@ -17,23 +17,23 @@ def re_pn_coefficient_1s(n):
 
 def desired_scattered_coefficient_1s(n, ps):
     k_sph, r_sph, ro_sphere = ps.k_spheres[0], ps.spheres[0].r, ps.spheres[0].rho
-    gamma = k_sph * ps.medium.rho / ps.k_fluid / ro_sphere
+    gamma = k_sph * ps.medium.rho / ps.k / ro_sphere
     a_n = (gamma * scipy.special.spherical_jn(n, k_sph * r_sph, derivative=True) *
-           scipy.special.spherical_jn(n, ps.k_fluid * r_sph) - scipy.special.spherical_jn(n, k_sph * r_sph) *
-           scipy.special.spherical_jn(n, ps.k_fluid * r_sph, derivative=True)) / \
-          (scipy.special.spherical_jn(n, k_sph * r_sph) * mths.sph_hankel1_der(n, ps.k_fluid * r_sph) -
+           scipy.special.spherical_jn(n, ps.k * r_sph) - scipy.special.spherical_jn(n, k_sph * r_sph) *
+           scipy.special.spherical_jn(n, ps.k * r_sph, derivative=True)) / \
+          (scipy.special.spherical_jn(n, k_sph * r_sph) * mths.sph_hankel1_der(n, ps.k * r_sph) -
            gamma * scipy.special.spherical_jn(n, k_sph * r_sph, derivative=True) *
-           mths.sph_hankel1(n, ps.k_fluid * r_sph))
+           mths.sph_hankel1(n, ps.k * r_sph))
     return a_n
 
 
 def desired_in_coefficient_1s(n, ps):
     k_sph, r_sph, ro_sphere = ps.k_spheres[0], ps.spheres[0].r, ps.spheres[0].rho
-    gamma = k_sph * ps.medium.rho / ps.k_fluid / ro_sphere
-    c_n = 1j / (ps.k_fluid * r_sph) ** 2 / \
-          (scipy.special.spherical_jn(n, k_sph * r_sph) * mths.sph_hankel1_der(n, ps.k_fluid * r_sph) -
+    gamma = k_sph * ps.medium.rho / ps.k / ro_sphere
+    c_n = 1j / (ps.k * r_sph) ** 2 / \
+          (scipy.special.spherical_jn(n, k_sph * r_sph) * mths.sph_hankel1_der(n, ps.k * r_sph) -
            gamma * scipy.special.spherical_jn(n, k_sph * r_sph, derivative=True) *
-           mths.sph_hankel1(n, ps.k_fluid * r_sph))
+           mths.sph_hankel1(n, ps.k * r_sph))
     return c_n
 
 
@@ -46,7 +46,7 @@ def desired_pscattered_coefficients_array_1s(ps, length, order):
 
 def scattered_field_1s(x, y, z, ps, order):
     tot_field_array = desired_pscattered_coefficients_array_1s(ps, len(x), order) * \
-                      wvfs.axisymmetric_outgoing_wvfs_array(x, y, z, ps.k_fluid, len(x), order)
+                      wvfs.axisymmetric_outgoing_wvfs_array(x, y, z, ps.k, len(x), order)
     return np.sum(tot_field_array, axis=0)
 
 
@@ -65,7 +65,7 @@ def one_sphere_test(span, plane_number, ps, order, plane='xz'):
 
 
 def cross_sections_1s(ps, order):
-    prefact = 4 * np.pi / ps.k_fluid / ps.k_fluid
+    prefact = 4 * np.pi / ps.k / ps.k
     sigma_sc_array = np.zeros(order + 1)
     sigma_ex_array = np.zeros(order + 1)
     for n in range(order + 1):

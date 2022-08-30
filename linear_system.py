@@ -47,13 +47,17 @@ class LinearSystem:
 
     def prepare(self):
         for particle in self.particles:
-            particle.incident_field = fldsex.SphericalWaveExpansion(self.medium.incident_field.ampl, self.medium.incident_field.k_l,
-                                                                    particle.pos, 'regular', self.order)
-            particle.scattered_field = fldsex.SphericalWaveExpansion(self.medium.incident_field.ampl, self.medium.incident_field.k_l,
-                                                                     particle.pos, 'outgoing', self.order)
-            k_particle = 2 * np.pi * self.freq / particle.speed_l
-            particle.inner_field = fldsex.SphericalWaveExpansion(self.medium.incident_field.ampl, k_particle, particle.pos,
-                                                               'regular', self.order)
+            ampl = self.medium.incident_field.ampl
+            k_l = self.medium.incident_field.k_l
+            particle.incident_field = fldsex.SphericalWaveExpansion(ampl, k_l, particle.pos, 'regular', self.order)
+            particle.scattered_field = fldsex.SphericalWaveExpansion(ampl, k_l, particle.pos, 'outgoing', self.order)
+            if particle.speed_t:
+                k_particle_t = 2 * np.pi * self.freq / particle.speed_l
+            else:
+                k_particle_t = None
+            k_particle_l = 2 * np.pi * self.freq / particle.speed_l
+            particle.inner_field = fldsex.SphericalWaveExpansion(ampl, k_particle_l, particle.pos, 'regular',
+                                                                 self.order, k_t=k_particle_t)
         self.compute_t_matrix()
         self.compute_d_matrix()
         self.compute_right_hand_side()
