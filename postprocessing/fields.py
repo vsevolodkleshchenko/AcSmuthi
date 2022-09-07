@@ -1,4 +1,6 @@
 import numpy as np
+
+import layers
 from utility import mathematics as mths, reflection
 
 
@@ -35,11 +37,9 @@ def compute_incident_field(medium, freq, x, y, z, layer=None):
     direct = medium.incident_field.dir
     k = 2 * np.pi * freq / medium.speed_l
     inc_field = np.exp(1j * k * (x * direct[0] + y * direct[1] + z * direct[2]))
-
     if layer:
         ref_direct = reflection.reflection_dir(direct, layer.normal)
-        h = k * np.sqrt(1 - np.dot(medium.incident_field.dir, layer.normal) ** 2)
-        ref_coef = reflection.ref_coef_h(h, 2 * np.pi * freq, medium.speed_l, layer.speed_l, medium.rho, layer.rho)
+        ref_coef = layers.reflection_amplitude(medium, layer, freq)
         image_o = - 2 * layer.normal * layer.int_dist0
         inc_field += ref_coef * np.exp(1j * k * ((x - image_o[0]) * ref_direct[0] + (y - image_o[1]) *
                                                  ref_direct[1] + (z - image_o[2]) * ref_direct[2]))
@@ -49,7 +49,7 @@ def compute_incident_field(medium, freq, x, y, z, layer=None):
 def compute_total_field(freq, medium, particles, x, y, z, layer=None):
     incident_field = compute_incident_field(medium, freq, x, y, z, layer=layer)
     scattered_field = compute_scattered_field(particles, x, y, z)
-    outside_field = scattered_field + incident_field
+    outside_field = scattered_field  # + incident_field
     if layer:
         reflected_field = compute_reflected_field(medium, x, y, z)
         outside_field += reflected_field

@@ -23,7 +23,7 @@ def force_on_sphere(particle, medium):
         s_coef = 1/scale[imn, imn] + np.conj(1/scale[imn1, imn1]) + 2/scale[imn, imn] * np.conj(1/scale[imn1, imn1])
         coef1 = np.sqrt((n + m + 1) * (n + m + 2) / (2 * n + 1) / (2 * n + 3))
         term1 = s_coef * ef_inc_coef[imn] * np.conj(ef_inc_coef[imn1]) + \
-               np.conj(s_coef) * np.conj(ef_inc_coef[imn2]) * ef_inc_coef[imn3]
+                np.conj(s_coef) * np.conj(ef_inc_coef[imn2]) * ef_inc_coef[imn3]
         coef2 = np.sqrt((n - m + 1) * (n + m + 1) / (2 * n + 1) / (2 * n + 3))
         term2 = s_coef * ef_inc_coef[imn] * np.conj(ef_inc_coef[imn4])
         fxy_array[imn], fz_array[imn] = coef1 * term1, coef2 * term2

@@ -47,34 +47,31 @@ class LinearSystem:
 
     def prepare(self):
         for particle in self.particles:
-            ampl = self.medium.incident_field.ampl
-            k_l = self.medium.incident_field.k_l
+            ampl, k_l = self.medium.incident_field.ampl, self.medium.incident_field.k_l
             particle.incident_field = fldsex.SphericalWaveExpansion(ampl, k_l, particle.pos, 'regular', self.order)
             particle.scattered_field = fldsex.SphericalWaveExpansion(ampl, k_l, particle.pos, 'outgoing', self.order)
             if particle.speed_t:
-                k_particle_t = 2 * np.pi * self.freq / particle.speed_l
+                kst = 2 * np.pi * self.freq / particle.speed_l
             else:
-                k_particle_t = None
-            k_particle_l = 2 * np.pi * self.freq / particle.speed_l
-            particle.inner_field = fldsex.SphericalWaveExpansion(ampl, k_particle_l, particle.pos, 'regular',
-                                                                 self.order, k_t=k_particle_t)
+                kst = None
+            ksl = 2 * np.pi * self.freq / particle.speed_l
+            particle.inner_field = fldsex.SphericalWaveExpansion(ampl, ksl, particle.pos, 'regular', self.order, k_t=kst)
         self.compute_t_matrix()
         self.compute_d_matrix()
         self.compute_right_hand_side()
 
     def prepare_layer(self):
+        ampl, k_l = self.medium.incident_field.ampl, self.medium.incident_field.k_l
         for particle in self.particles:
-            particle.reflected_field = fldsex.SphericalWaveExpansion(self.medium.incident_field.ampl, self.medium.incident_field.k_l,
-                                                                     particle.pos, 'regular', self.order)
-        self.medium.reflected_field = fldsex.SphericalWaveExpansion(self.medium.incident_field.ampl, self.medium.incident_field.k_l,
-                                                                    np.array([0, 0, 0]), 'regular', self.order)
+            particle.reflected_field = fldsex.SphericalWaveExpansion(ampl, k_l, particle.pos, 'regular', self.order)
+        self.medium.reflected_field = fldsex.SphericalWaveExpansion(ampl, k_l, np.array([0, 0, 0]), 'regular', self.order)
         self.compute_r_matrix()
 
     def solve(self):
         self.prepare()
         if self.layer:
             self.prepare_layer()
-            incident_coefs_origin = layers.layer_inc_coef_origin(self.medium.incident_field, self.layer, self.order)
+            incident_coefs_origin = layers.layer_inc_coef_origin(self.medium, self.layer, self.freq, self.order)
             incident_coefs_array = np.dot(self.d_matrix, incident_coefs_origin)
 
             m1 = self.t_matrix @ self.d_matrix

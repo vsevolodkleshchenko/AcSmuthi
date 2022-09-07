@@ -1,6 +1,6 @@
 import numpy as np
 from postprocessing import rendering
-from utility import wavefunctions as wvfs
+from fields_expansions import PlaneWave
 
 
 freq = 82  # [Hz]
@@ -20,13 +20,13 @@ order = 17
 
 
 def incident_field_test():
-    desired_incident_field = np.exp(1j * k * (direction[0] * x_p + direction[1] * y_p + direction[2] * z_p))
-    actual_incident_field_array = wvfs.incident_coefficients_array(direction, len(x_p), order) * \
-                                  wvfs.regular_wvfs_array(order, x_p, y_p, z_p, k)
-    # actual_incident_field = mths.multipoles_fsum(actual_incident_field_array, len(x_p))
-    actual_incident_field = np.sum(actual_incident_field_array, axis=0)
-    rendering.plots_for_tests(actual_incident_field, desired_incident_field, span_v, span_h)
-    np.testing.assert_allclose(actual_incident_field, desired_incident_field, rtol=1e-2)
+    incident_field = PlaneWave(1, k, np.array([0, 0, 0]), 'regular', order, direction)
+    incident_field.compute_pressure_field(x_p, y_p, z_p)
+    actual_field = incident_field.field
+    incident_field.compute_exact_field(x_p, y_p, z_p)
+    desired_field = incident_field.exact_field
+    rendering.plots_for_tests(actual_field, desired_field, span_v, span_h)
+    np.testing.assert_allclose(actual_field, desired_field, rtol=1e-2)
 
 
 incident_field_test()

@@ -21,7 +21,7 @@ class SphericalWaveExpansion:
             wvf = wvfs.outgoing_wvfs_array
         wave_functions_array = wvf(self.order, x - self.origin[0], y - self.origin[1], z - self.origin[2], self.k_l)
         field_array = coefficients_array * wave_functions_array
-        self.field = mths.multipoles_fsum(field_array, len(x))
+        self.field = self.ampl * mths.multipoles_fsum(field_array, len(x))
 
 
 class PlaneWave(SphericalWaveExpansion):
@@ -29,6 +29,10 @@ class PlaneWave(SphericalWaveExpansion):
         super().__init__(amplitude, k_l, origin, kind, order)
         self.dir = direction
         self.coefficients = wvfs.incident_coefficients(direction, order)
+        self.exact_field = None
+
+    def compute_exact_field(self, x, y, z):
+        self.exact_field = self.ampl * np.exp(1j * self.k_l * (self.dir[0] * x + self.dir[1] * y + self.dir[2] * z))
 
     def intensity(self, density, sound_speed):
         return self.ampl ** 2 / (2 * density * sound_speed)

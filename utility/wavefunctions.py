@@ -71,6 +71,12 @@ def outgoing_wvf(m, n, x, y, z, k):
     return mths.sph_hankel1(n, k * r) * ss.sph_harm(m, n, phi, theta)
 
 
+def coutgoing_wvf(m, n, x, y, z, k):
+    r"""Outgoing basis spherical wave function"""
+    r, phi, theta = mths.dec_to_sph(x, y, z)
+    return mths.sph_hankel1(n, k * r) * mths.csph_harm(m, n, phi, theta)
+
+
 def outgoing_wvfs_array(order, x, y, z, k):
     r"""Builds np.array of all outgoing wave functions with n <= order"""
     ow_array = np.zeros(((order + 1) ** 2, len(x)), dtype=complex)
@@ -84,11 +90,10 @@ def outgoing_wvfs_array(order, x, y, z, k):
 def local_incident_coefficient(m, n, k, direction, position, order):
     r"""Counts local incident coefficients"""
     incident_coefficient_array = np.zeros((order+1) ** 2, dtype=complex)
-    i = 0
-    for munu in multipoles(order):
-        incident_coefficient_array[i] = incident_coefficient(munu[0], munu[1], direction) * \
-                                        regular_separation_coefficient(munu[0], m, munu[1], n, k, position)
-        i += 1
+    for mu, nu in multipoles(order):
+        i = nu ** 2 + nu + mu
+        incident_coefficient_array[i] = incident_coefficient(mu, nu, direction) * \
+                                        regular_separation_coefficient(mu, m, nu, n, k, position)
     return mths.complex_fsum(incident_coefficient_array)
 
 
@@ -116,11 +121,11 @@ def regular_separation_coefficient(m, mu, n, nu, k, dist):
         q0 = abs(m - mu) + 1
     q_lim = (n + nu - q0) // 2
     sum_array = np.zeros(q_lim + 1, dtype=complex)
-    i = 0
     if dist.dtype == complex:
         reg_wvf = cregular_wvf
     else:
         reg_wvf = regular_wvf
+    i = 0
     for q in range(0, q_lim + 1):
         sum_array[i] = (-1) ** q * reg_wvf(m - mu, q0 + 2 * q, dist[0], dist[1], dist[2], k) * \
                        mths.gaunt_coefficient(n, m, nu, -mu, q0 + 2 * q)
@@ -138,9 +143,13 @@ def outgoing_separation_coefficient(m, mu, n, nu, k, dist):
         q0 = abs(m - mu) + 1
     q_lim = (n + nu - q0) // 2
     sum_array = np.zeros(q_lim + 1, dtype=complex)
+    if dist.dtype == complex:
+        out_wvf = coutgoing_wvf
+    else:
+        out_wvf = outgoing_wvf
     i = 0
     for q in range(0, q_lim + 1):
-        sum_array[i] = (-1) ** q * outgoing_wvf(m - mu, q0 + 2 * q, dist[0], dist[1], dist[2], k) * \
+        sum_array[i] = (-1) ** q * out_wvf(m - mu, q0 + 2 * q, dist[0], dist[1], dist[2], k) * \
                        mths.gaunt_coefficient(n, m, nu, -mu, q0 + 2 * q)
         i += 1
     return 4 * np.pi * (-1) ** (mu + nu + q_lim) * mths.complex_fsum(sum_array)
