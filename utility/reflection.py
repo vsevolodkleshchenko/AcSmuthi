@@ -48,25 +48,27 @@ def ref_coef_h(h, w, c_inc, c_t, rho_inc, rho_t):
 
 def ref_coef_approx(w, c_inc, c_t, rho_inc, rho_t, order_approx, t_0):
     r"""Approximation of reflection coefficient with Prony method"""
-    t = np.linspace(0, t_0, 2 * order_approx)
-    v = w / c_inc * (1j * t + (1 - t / t_0))
-    # h = np.linspace(0, w / c * np.sqrt(1 + t_0 ** 2), 2 * order_approx)
-    h = np.emath.sqrt((w / c_inc) ** 2 - np.emath.power(v, 2))
     r_0 = (rho_t - rho_inc) / (rho_t + rho_inc)
+    a, alpha = np.array([r_0], dtype=complex), np.array([0], dtype=complex)
 
-    r_sample = np.zeros_like(v)
-    for i in range(len(v)):
-        r_sample[i] = ref_coef_h(h[i], w, c_inc, c_t, rho_inc, rho_t) - r_0
-    a, alpha = prony(r_sample, order_approx)
-
-    final_a = a * np.emath.power(np.e, alpha * t_0 / (1 - 1j * t_0))
-    final_alpha = alpha * (- t_0) / (w / c_inc * (1 - 1j * t_0))
-    return np.concatenate((np.array([r_0]), final_a)), np.concatenate((np.array([0]), final_alpha))
+    if order_approx > 1:
+        t = np.linspace(0, t_0, 2 * (order_approx - 1))
+        v = w / c_inc * (1j * t + (1 - t / t_0))
+        h = np.emath.sqrt((w / c_inc) ** 2 - np.emath.power(v, 2))
+        r_sample = np.zeros_like(v)
+        for i in range(len(v)):
+            r_sample[i] = ref_coef_h(h[i], w, c_inc, c_t, rho_inc, rho_t) - r_0
+        a_approx, alpha_approx = prony(r_sample, order_approx - 1)
+        alpha_approx = alpha_approx * (2 * order_approx - 3) / t_0
+        a_approx = a_approx * np.emath.power(np.e, alpha_approx * t_0 / (1 - 1j * t_0))
+        alpha_approx = alpha_approx * (- t_0) / (w / c_inc * (1 - 1j * t_0))
+        a, alpha = np.append(a, a_approx), np.append(alpha, alpha_approx)
+    return a, alpha
 
 
 def ref_test(w, c_inc, c_t, rho_inc, rho_t, order_approx, t_0):
     r"""Test for correct approximation reflection coefficient"""
-    angles = np.linspace(0, np.pi / 2, 100)
+    angles = np.linspace(0, 0.5 * np.pi / 2, 100)
     h = w / c_inc * np.sin(angles)
     v = w / c_inc * np.cos(angles)
 
@@ -79,8 +81,8 @@ def ref_test(w, c_inc, c_t, rho_inc, rho_t, order_approx, t_0):
 
     r_approx = np.zeros_like(angles)
     for i in range(len(angles)):
-        r_app = np.sum(a * np.exp(alpha * v[i]))
-        r_approx[i] = np.abs(r_app) + (rho_t - rho_inc) / (rho_t + rho_inc)
+        r_app = mths.complex_fsum(a * np.exp(alpha * v[i]))
+        r_approx[i] = np.abs(r_app)
 
     fig, ax = plt.subplots()
     ax.plot(angles * 180 / np.pi, r)
@@ -88,24 +90,9 @@ def ref_test(w, c_inc, c_t, rho_inc, rho_t, order_approx, t_0):
     plt.show()
 
 
-def image_poses(sphere, layer, alpha):
-    r"""Sphere's images positions"""
-    image_positions = np.zeros((len(alpha), 3), dtype=complex)
-    for q in range(len(alpha)):
-        distance = layer.int_dist(sphere.pos)
-        image_positions[q] = sphere.pos - (2 * distance - 1j * alpha[q]) * layer.normal
-    return image_positions
-
-
-def image_contribution(m, n, mu, nu, k_medium, image_positions, a):
-    r"""Contribution of images to reflected field"""
-    image_contrib = np.zeros(len(a), dtype=complex)
-    for q in range(len(a)):
-        image_contrib[q] = a[q] * wvfs.outgoing_separation_coefficient(mu, m, nu, n, k_medium, - image_positions[q])
-    return mths.complex_fsum(image_contrib)
-
-
-# ref_test(2 * np.pi * 80, 344, 548.7 - 492.321 * 1j, 1.293, 0.063 + 1j * 4.688, 11, 19)
-# ref_test(2 * np.pi * 82, 344, 1400, 1.293, 1000, 1, 0.17)
-# ref_test(2 * np.pi * 82, 344, 1400, 1.293, 1000, 2, 0.39)
-# ref_test(2 * np.pi * 82, 344, 1400, 1.293, 1000, 6, 0.62)
+# ref_test(2 * np.pi * 80, 344, 548.671 - 492.321 * 1j, 1.293, 0.063 + 1j * 4.688, 11, 19)
+# ref_test(2 * np.pi * 82, 331, 1403, 1.225, 997, 1, 1)
+# ref_test(2 * np.pi * 82, 331, 1403, 1.225, 997, 2, 0.07)
+# ref_test(2 * np.pi * 82, 331, 1403, 1.225, 997, 3, 0.01)
+ref_test(2 * np.pi * 82, 331, 1403, 1.225, 997, 6, 0.3)
+# ref_test(2 * np.pi * 82, 331, 1403, 1.225, 997, 10, 0.6)

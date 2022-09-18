@@ -47,7 +47,7 @@ def dec_to_sph(x, y, z):
     r = np.sqrt(x * x + y * y + z * z)
     phi = np.zeros(np.size(r))
     theta = np.zeros(np.size(r))
-    settings = np.seterr(all='ignore')
+    # settings = np.seterr(all='ignore')
     theta = np.where(r >= e, np.arccos(z / r), theta)
     phi = np.where((np.abs(x) <= e) & (y > e), np.pi / 2, phi)
     phi = np.where((np.abs(x) <= e) & (y < -e), 3 * np.pi / 2, phi)
@@ -56,7 +56,7 @@ def dec_to_sph(x, y, z):
     phi = np.where((x < -e) & (y > e), np.pi - np.arctan(- y / x), phi)
     phi = np.where((x < -e) & (y < -e), np.pi + np.arctan(y / x), phi)
     phi = np.where((x > e) & (y < -e), 2 * np.pi - np.arctan(- y / x), phi)
-    np.seterr(**settings)
+    # np.seterr(**settings)
     if len(phi) == len(theta) == 1:
         phi, theta = phi[0], theta[0]
     return r, phi, theta

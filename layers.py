@@ -1,5 +1,6 @@
 import numpy as np
-from utility import reflection, wavefunctions as wvfs
+from utility import reflection, wavefunctions as wvfs, mathematics as mths
+import scipy
 
 
 class Layer:
@@ -32,24 +33,6 @@ class Layer:
         return n
 
 
-def r_matrix(particles, layer, medium, freq, order, order_approx=2):
-    r"""Build R matrix - reflection matrix"""
-    block_matrix = np.zeros((len(particles), (order + 1) ** 2, (order + 1) ** 2), dtype=complex)
-    omega = 2 * np.pi * freq
-    a, alpha = reflection.ref_coef_approx(omega, medium.speed_l, layer.speed_l, medium.rho, layer.rho, order_approx, 0.39)
-    for m, n in wvfs.multipoles(order):
-        imn = n ** 2 + n + m
-        for mu, nu, in wvfs.multipoles(order):
-            imunu = nu ** 2 + nu + mu
-            for s, particle in enumerate(particles):
-                image_poses = reflection.image_poses(particle, layer, alpha)
-                k = particle.incident_field.k_l
-                image_contribution = reflection.image_contribution(m, n, mu, nu, k, image_poses, a)
-                block_matrix[s, imn, imunu] = (-1) ** (nu + mu) * image_contribution
-    matrix2d = np.concatenate(block_matrix, axis=1)
-    return matrix2d
-
-
 def reflection_amplitude(medium, layer, freq):
     k_l = medium.incident_field.k_l
     h = k_l * np.sqrt(1 - np.dot(medium.incident_field.dir, layer.normal) ** 2)
@@ -64,3 +47,103 @@ def layer_inc_coef_origin(medium, layer, freq, order):
     phase = np.exp(1j * k_l * 2 * layer.int_dist0 * np.dot(ref_dir, layer.normal))
     ref_coefs = wvfs.incident_coefficients(ref_dir, order) * phase
     return medium.incident_field.coefficients + reflection_amplitude(medium, layer, freq) * ref_coefs
+
+
+def r_matrix(particles, layer, medium, freq, order, order_approx=6):
+    r_block_matrix = np.zeros((len(particles), (order + 1) ** 2, (order + 1) ** 2), dtype=complex)
+    w = 2 * np.pi * freq
+    a, alpha = reflection.ref_coef_approx(w, medium.speed_l, layer.speed_l, medium.rho, layer.rho, order_approx, 0.3)
+    for s, particle in enumerate(particles):
+        r_block_matrix[s] = compute_r_block(particle, layer, a, alpha, order)
+    r = np.concatenate(r_block_matrix, axis=1)
+    print('r:', scipy.linalg.norm(r, 2), sep='\n')
+    return r
+
+
+def compute_r_block(particle, layer, a, alpha, order):
+    r_block = np.zeros(((order + 1) ** 2, (order + 1) ** 2), dtype=complex)
+    for m, n in wvfs.multipoles(order):
+        imn = n ** 2 + n + m
+        for mu, nu in wvfs.multipoles(order):
+            imunu = nu ** 2 + nu + mu
+            r_block[imn, imunu] = image_contrib(particle, layer, a, alpha, mu, m, nu, n)
+    return r_block
+
+
+def image_contrib(particle, layer, a, alpha, mu, m, nu, n):
+    k = particle.incident_field.k_l
+    contribution = np.zeros(len(a), dtype=complex)
+    for q in range(len(a)):
+        dist = particle.pos - (2 * layer.int_dist(particle.pos) - 1j * alpha[q]) * layer.normal
+        contribution[q] = a[q] * wvfs.outgoing_separation_coefficient(mu, m, nu, n, k, -dist)
+    return (-1) ** (mu + nu) * mths.complex_fsum(contribution)
+
+
+def new_r_matrix(particles, layer, medium, freq, order, order_approx=6):
+    r"""Build R matrix - reflection matrix"""
+    r1_block_matrix = np.zeros((len(particles), (order + 1) ** 2, (order + 1) ** 2), dtype=complex)
+    r2_block_matrix = np.zeros((len(particles), (order + 1) ** 2, (order + 1) ** 2), dtype=complex)
+    r3_block_matrix = np.zeros((len(particles), len(particles), (order + 1) ** 2, (order + 1) ** 2), dtype=complex)
+
+    w = 2 * np.pi * freq
+    a, alpha = reflection.ref_coef_approx(w, medium.speed_l, layer.speed_l, medium.rho, layer.rho, order_approx, 0.3)
+
+    r3_block = compute_r3_block(medium.incident_field.k_l, layer.normal, a, alpha, order)
+    for s, particle in enumerate(particles):
+        r1_block_matrix[s] = compute_r1_block(particle, layer, a[0], order)
+        r2_block_matrix[s] = compute_r2_block(particle, layer, order)
+        r3_block_matrix[s, s] = r3_block
+
+    r1 = np.concatenate(r1_block_matrix, axis=1)
+    r2 = np.concatenate(r2_block_matrix, axis=1)
+    r3 = np.concatenate(np.concatenate(r3_block_matrix, axis=1), axis=1)
+    r23 = r2 @ r3
+    print('r1:', scipy.linalg.norm(r1, 2), sep='\n')
+    print('r2:', scipy.linalg.norm(r2, 2), sep='\n')
+    print('r3:', scipy.linalg.norm(r3, 2), sep='\n')
+    print('r23:', scipy.linalg.norm(r23, 2), sep='\n')
+    r = r1 + r23
+    return r
+
+
+def compute_r1_block(particle, layer, a0, order):
+    r1_block = np.zeros(((order + 1) ** 2, (order + 1) ** 2), dtype=complex)
+    k = particle.incident_field.k_l
+    image_pos = particle.pos - 2 * layer.int_dist(particle.pos) * layer.normal
+    for m, n in wvfs.multipoles(order):
+        imn = n ** 2 + n + m
+        for mu, nu in wvfs.multipoles(order):
+            imunu = nu ** 2 + nu + mu
+            r1_block[imn, imunu] = (-1)**(mu + nu) * wvfs.outgoing_separation_coefficient(mu, m, nu, n, k, -image_pos)
+    return a0 * r1_block
+
+
+def compute_r2_block(particle, layer, order):
+    r2_block = np.zeros(((order + 1) ** 2, (order + 1) ** 2), dtype=complex)
+    k = particle.incident_field.k_l
+    image_pos = particle.pos - 2 * layer.int_dist(particle.pos) * layer.normal
+    for m, n in wvfs.multipoles(order):
+        imn = n ** 2 + n + m
+        for mu, nu in wvfs.multipoles(order):
+            imunu = nu ** 2 + nu + mu
+            r2_block[imn, imunu] = wvfs.regular_separation_coefficient(mu, m, nu, n, k, -image_pos)
+    return r2_block
+
+
+def compute_r3_block(k, normal, a, alpha, order):
+    r3_block = np.zeros(((order + 1) ** 2, (order + 1) ** 2), dtype=complex)
+    a, alpha = a[1:], alpha[1:]
+    for mu, nu in wvfs.multipoles(order):
+        imunu = nu ** 2 + nu + mu
+        for f, l in wvfs.multipoles(order):
+            ifl = l ** 2 + l + f
+            r3_block[imunu, ifl] = new_image_contrib(f, mu, l, nu, a, alpha, k, normal)
+    return r3_block
+
+
+def new_image_contrib(f, mu, l, nu, a, alpha, k, normal):
+    contribution = np.zeros(len(a), dtype=complex)
+    for q in range(len(a)):
+        dist = -1j * alpha[q] * normal
+        contribution[q] = a[q] * wvfs.outgoing_separation_coefficient(f, mu, l, nu, k, dist)
+    return (-1) ** (f + l) * mths.complex_fsum(contribution)

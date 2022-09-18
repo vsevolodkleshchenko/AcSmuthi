@@ -57,7 +57,7 @@ def two_fluid_spheres():
     ro_sph = 1050  # [kg/m^3]
     c_sph = 1403  # [m/s]
 
-    order = 6
+    order = 10
 
     incident_field = PlaneWave(p0, k_l, np.array([0, 0, 0]), 'regular', order, direction)
     fluid = Medium(ro_fluid, c_fluid, incident_field=incident_field)
@@ -123,7 +123,7 @@ def two_fluid_spheres_above_interface():
     pos1 = np.array([0, 0, -2])
     pos2 = np.array([0, 0, 2])
     r_sph = 1  # [m]
-    ro_sph = 1050  # [kg/m^3]
+    ro_sph = 997  # [kg/m^3]
     c_sph = 1403  # [m/s]
 
     # parameters of interface (substrate)
@@ -131,7 +131,7 @@ def two_fluid_spheres_above_interface():
     ro_interface = ro_sph
     c_interface = c_sph
 
-    order = 6
+    order = 10
 
     layer = Layer(ro_interface, c_interface, a, b, c, d)
     incident_field = PlaneWave(p0, k_l, np.array([0, 0, 0]), 'regular', order, direction)

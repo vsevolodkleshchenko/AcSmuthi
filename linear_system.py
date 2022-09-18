@@ -1,4 +1,6 @@
 import numpy as np
+import scipy.linalg
+
 import particles
 import fields_expansions as fldsex
 import scipy.special as ss
@@ -22,11 +24,11 @@ class LinearSystem:
         block_matrix = np.zeros((len(self.particles), len(self.particles), (self.order+1)**2, (self.order+1)**2), dtype=complex)
         all_spheres = np.arange(len(self.particles))
         for sph in all_spheres:
-            self.particles[sph].compute_t_matrix(self.medium)
+            self.particles[sph].compute_t_matrix(self.medium.speed_l, self.medium.rho, self.freq)
             block_matrix[sph, sph] = self.particles[sph].t_matrix
             other_spheres = np.where(all_spheres != sph)[0]
             for osph in other_spheres:
-                block_matrix[sph, osph] = particles.coupling_block(self.particles[sph], self.particles[osph],
+                block_matrix[sph, osph] = particles.coupling_block(self.particles[sph].pos, self.particles[osph].pos,
                                                                    self.medium.incident_field.k_l, self.order)
         matrix2d = np.concatenate(np.concatenate(block_matrix, axis=1), axis=1)
         self.t_matrix = np.linalg.inv(matrix2d)
@@ -51,7 +53,7 @@ class LinearSystem:
             particle.incident_field = fldsex.SphericalWaveExpansion(ampl, k_l, particle.pos, 'regular', self.order)
             particle.scattered_field = fldsex.SphericalWaveExpansion(ampl, k_l, particle.pos, 'outgoing', self.order)
             if particle.speed_t:
-                kst = 2 * np.pi * self.freq / particle.speed_l
+                kst = 2 * np.pi * self.freq / particle.speed_t
             else:
                 kst = None
             ksl = 2 * np.pi * self.freq / particle.speed_l
@@ -74,8 +76,15 @@ class LinearSystem:
             incident_coefs_origin = layers.layer_inc_coef_origin(self.medium, self.layer, self.freq, self.order)
             incident_coefs_array = np.dot(self.d_matrix, incident_coefs_origin)
 
+            print('t:', scipy.linalg.norm(self.t_matrix, 2), sep='\n')
+            print('d:', scipy.linalg.norm(self.d_matrix, 2), sep='\n')
+            print('r:', scipy.linalg.norm(self.r_matrix, 2), sep='\n')
+
             m1 = self.t_matrix @ self.d_matrix
+            print('td:', scipy.linalg.norm(m1, 2), sep='\n')
             m2 = self.r_matrix @ m1
+            print('rtd:', scipy.linalg.norm(m2, 2), sep='\n')
+
             m3 = np.linalg.inv(np.eye(m2.shape[0]) - m2)
 
             scattered_coefs1d = np.dot(m1 @ m3, incident_coefs_origin)
