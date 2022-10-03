@@ -45,7 +45,7 @@ class LinearSystem:
         self.rhs = np.dot(self.d_matrix, self.medium.incident_field.coefficients)
 
     def compute_r_matrix(self):
-        self.r_matrix = layers.r_matrix(self.particles, self.layer, self.medium, self.freq, self.order)
+        self.r_matrix = layers.new_r_matrix(self.particles, self.layer, self.medium, self.freq, self.order)
 
     def prepare(self):
         for particle in self.particles:
@@ -76,15 +76,8 @@ class LinearSystem:
             incident_coefs_origin = layers.layer_inc_coef_origin(self.medium, self.layer, self.freq, self.order)
             incident_coefs_array = np.dot(self.d_matrix, incident_coefs_origin)
 
-            print('t:', scipy.linalg.norm(self.t_matrix, 2), sep='\n')
-            print('d:', scipy.linalg.norm(self.d_matrix, 2), sep='\n')
-            print('r:', scipy.linalg.norm(self.r_matrix, 2), sep='\n')
-
             m1 = self.t_matrix @ self.d_matrix
-            print('td:', scipy.linalg.norm(m1, 2), sep='\n')
             m2 = self.r_matrix @ m1
-            print('rtd:', scipy.linalg.norm(m2, 2), sep='\n')
-
             m3 = np.linalg.inv(np.eye(m2.shape[0]) - m2)
 
             scattered_coefs1d = np.dot(m1 @ m3, incident_coefs_origin)

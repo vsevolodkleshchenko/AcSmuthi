@@ -131,7 +131,7 @@ def two_fluid_spheres_above_interface():
     ro_interface = ro_sph
     c_interface = c_sph
 
-    order = 10
+    order = 7
 
     layer = Layer(ro_interface, c_interface, a, b, c, d)
     incident_field = PlaneWave(p0, k_l, np.array([0, 0, 0]), 'regular', order, direction)

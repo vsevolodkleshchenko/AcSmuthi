@@ -1,6 +1,5 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from utility import wavefunctions as wvfs
 from utility import mathematics as mths
 
 
@@ -16,27 +15,6 @@ def ref_coef(alpha_inc, freq, c_inc, c_t, rho_inc, rho_t):
     kv_inc = np.emath.sqrt(w ** 2 / c_inc ** 2 - h ** 2)
     kv_t = np.emath.sqrt(w ** 2 / c_t ** 2 - h ** 2)
     return (rho_t * kv_inc - rho_inc * kv_t) / (rho_t * kv_inc - rho_inc * kv_t)
-
-
-def prony(sample, order_approx):
-    r"""Prony (exponential) approximation of sample"""
-    matrix1 = np.zeros((order_approx, order_approx), dtype=complex)
-    for j in range(order_approx):
-        matrix1[j] = sample[j:j+order_approx]
-    rhs1 = - sample[order_approx:]
-    c_coefficients = np.linalg.solve(matrix1, rhs1)
-
-    p_coefficients = np.flip(np.append(c_coefficients, 1.))
-    p = np.roots(p_coefficients)
-    alpha_coefficients = np.emath.log(p)
-
-    matrix2 = np.zeros((order_approx, order_approx), dtype=complex)
-    for j in range(order_approx):
-        matrix2[j] = np.emath.power(p, j)
-    rhs2 = sample[:order_approx]
-    a_coefficients = np.linalg.solve(matrix2, rhs2)
-
-    return a_coefficients, alpha_coefficients
 
 
 def ref_coef_h(h, w, c_inc, c_t, rho_inc, rho_t):
@@ -58,7 +36,7 @@ def ref_coef_approx(w, c_inc, c_t, rho_inc, rho_t, order_approx, t_0):
         r_sample = np.zeros_like(v)
         for i in range(len(v)):
             r_sample[i] = ref_coef_h(h[i], w, c_inc, c_t, rho_inc, rho_t) - r_0
-        a_approx, alpha_approx = prony(r_sample, order_approx - 1)
+        a_approx, alpha_approx = mths.prony(r_sample, order_approx - 1)
         alpha_approx = alpha_approx * (2 * order_approx - 3) / t_0
         a_approx = a_approx * np.emath.power(np.e, alpha_approx * t_0 / (1 - 1j * t_0))
         alpha_approx = alpha_approx * (- t_0) / (w / c_inc * (1 - 1j * t_0))
@@ -94,5 +72,5 @@ def ref_test(w, c_inc, c_t, rho_inc, rho_t, order_approx, t_0):
 # ref_test(2 * np.pi * 82, 331, 1403, 1.225, 997, 1, 1)
 # ref_test(2 * np.pi * 82, 331, 1403, 1.225, 997, 2, 0.07)
 # ref_test(2 * np.pi * 82, 331, 1403, 1.225, 997, 3, 0.01)
-ref_test(2 * np.pi * 82, 331, 1403, 1.225, 997, 6, 0.3)
+# ref_test(2 * np.pi * 82, 331, 1403, 1.225, 997, 6, 0.3)
 # ref_test(2 * np.pi * 82, 331, 1403, 1.225, 997, 10, 0.6)

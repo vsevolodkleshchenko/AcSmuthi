@@ -47,7 +47,7 @@ def dec_to_sph(x, y, z):
     r = np.sqrt(x * x + y * y + z * z)
     phi = np.zeros(np.size(r))
     theta = np.zeros(np.size(r))
-    # settings = np.seterr(all='ignore')
+    settings = np.seterr(all='ignore')
     theta = np.where(r >= e, np.arccos(z / r), theta)
     phi = np.where((np.abs(x) <= e) & (y > e), np.pi / 2, phi)
     phi = np.where((np.abs(x) <= e) & (y < -e), 3 * np.pi / 2, phi)
@@ -56,7 +56,7 @@ def dec_to_sph(x, y, z):
     phi = np.where((x < -e) & (y > e), np.pi - np.arctan(- y / x), phi)
     phi = np.where((x < -e) & (y < -e), np.pi + np.arctan(y / x), phi)
     phi = np.where((x > e) & (y < -e), 2 * np.pi - np.arctan(- y / x), phi)
-    # np.seterr(**settings)
+    np.seterr(**settings)
     if len(phi) == len(theta) == 1:
         phi, theta = phi[0], theta[0]
     return r, phi, theta
@@ -102,3 +102,24 @@ def spheres_fsum(field_array, length):
     for i in range(length):
         field[i] = complex_fsum(field_array[:, i])
     return field
+
+
+def prony(sample, order_approx):
+    r"""Prony (exponential) approximation of sample"""
+    matrix1 = np.zeros((order_approx, order_approx), dtype=complex)
+    for j in range(order_approx):
+        matrix1[j] = sample[j:j+order_approx]
+    rhs1 = - sample[order_approx:]
+    c_coefficients = np.linalg.solve(matrix1, rhs1)
+
+    p_coefficients = np.flip(np.append(c_coefficients, 1.))
+    p = np.roots(p_coefficients)
+    alpha_coefficients = np.emath.log(p)
+
+    matrix2 = np.zeros((order_approx, order_approx), dtype=complex)
+    for j in range(order_approx):
+        matrix2[j] = np.emath.power(p, j)
+    rhs2 = sample[:order_approx]
+    a_coefficients = np.linalg.solve(matrix2, rhs2)
+
+    return a_coefficients, alpha_coefficients

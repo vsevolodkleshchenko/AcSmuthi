@@ -1,6 +1,5 @@
 import numpy as np
 from utility import reflection, wavefunctions as wvfs, mathematics as mths
-import scipy
 
 
 class Layer:
@@ -49,6 +48,9 @@ def layer_inc_coef_origin(medium, layer, freq, order):
     return medium.incident_field.coefficients + reflection_amplitude(medium, layer, freq) * ref_coefs
 
 
+#  first way to compute R matrix  ######################################################################################
+
+
 def r_matrix(particles, layer, medium, freq, order, order_approx=6):
     r_block_matrix = np.zeros((len(particles), (order + 1) ** 2, (order + 1) ** 2), dtype=complex)
     w = 2 * np.pi * freq
@@ -56,7 +58,7 @@ def r_matrix(particles, layer, medium, freq, order, order_approx=6):
     for s, particle in enumerate(particles):
         r_block_matrix[s] = compute_r_block(particle, layer, a, alpha, order)
     r = np.concatenate(r_block_matrix, axis=1)
-    print('r:', scipy.linalg.norm(r, 2), sep='\n')
+    # print('r:', scipy.linalg.norm(r, 2), sep='\n')
     return r
 
 
@@ -79,6 +81,9 @@ def image_contrib(particle, layer, a, alpha, mu, m, nu, n):
     return (-1) ** (mu + nu) * mths.complex_fsum(contribution)
 
 
+#  second way to compute R matrix  #####################################################################################
+
+
 def new_r_matrix(particles, layer, medium, freq, order, order_approx=6):
     r"""Build R matrix - reflection matrix"""
     r1_block_matrix = np.zeros((len(particles), (order + 1) ** 2, (order + 1) ** 2), dtype=complex)
@@ -98,10 +103,10 @@ def new_r_matrix(particles, layer, medium, freq, order, order_approx=6):
     r2 = np.concatenate(r2_block_matrix, axis=1)
     r3 = np.concatenate(np.concatenate(r3_block_matrix, axis=1), axis=1)
     r23 = r2 @ r3
-    print('r1:', scipy.linalg.norm(r1, 2), sep='\n')
-    print('r2:', scipy.linalg.norm(r2, 2), sep='\n')
-    print('r3:', scipy.linalg.norm(r3, 2), sep='\n')
-    print('r23:', scipy.linalg.norm(r23, 2), sep='\n')
+    # print('r1:', scipy.linalg.norm(r1, 2), sep='\n')
+    # print('r2:', scipy.linalg.norm(r2, 2), sep='\n')
+    # print('r3:', scipy.linalg.norm(r3, 2), sep='\n')
+    # print('r23:', scipy.linalg.norm(r23, 2), sep='\n')
     r = r1 + r23
     return r
 
