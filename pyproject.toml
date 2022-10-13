@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "acsmuthi"
+version = "0.1.0"
+description = ""
+authors = ["Vsevolod Kleshchenko <k.vd@icloud.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+scipy = "^1.9.2"
+matplotlib = "^3.6.1"
+pywigxjpf = "^1.11"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
