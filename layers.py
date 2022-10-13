@@ -1,4 +1,5 @@
 import numpy as np
+import scipy
 from utility import reflection, wavefunctions as wvfs, mathematics as mths
 
 
@@ -55,6 +56,7 @@ def r_matrix(particles, layer, medium, freq, order, order_approx=6):
     r_block_matrix = np.zeros((len(particles), (order + 1) ** 2, (order + 1) ** 2), dtype=complex)
     w = 2 * np.pi * freq
     a, alpha = reflection.ref_coef_approx(w, medium.speed_l, layer.speed_l, medium.rho, layer.rho, order_approx, 0.3)
+    a, alpha = np.array([0.95]), np.array([0])
     for s, particle in enumerate(particles):
         r_block_matrix[s] = compute_r_block(particle, layer, a, alpha, order)
     r = np.concatenate(r_block_matrix, axis=1)
@@ -92,12 +94,13 @@ def new_r_matrix(particles, layer, medium, freq, order, order_approx=6):
 
     w = 2 * np.pi * freq
     a, alpha = reflection.ref_coef_approx(w, medium.speed_l, layer.speed_l, medium.rho, layer.rho, order_approx, 0.3)
+    a, alpha = np.array([0.997]), np.array([0])
 
     r3_block = compute_r3_block(medium.incident_field.k_l, layer.normal, a, alpha, order)
     for s, particle in enumerate(particles):
         r1_block_matrix[s] = compute_r1_block(particle, layer, a[0], order)
-        r2_block_matrix[s] = compute_r2_block(particle, layer, order)
-        r3_block_matrix[s, s] = r3_block
+        # r2_block_matrix[s] = compute_r2_block(particle, layer, order)
+        # r3_block_matrix[s, s] = r3_block
 
     r1 = np.concatenate(r1_block_matrix, axis=1)
     r2 = np.concatenate(r2_block_matrix, axis=1)
