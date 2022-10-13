@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from utility import mathematics as mths
+from acsmuthi.utility import mathematics as mths
 
 
 def reflection_dir(incident_dir, normal):

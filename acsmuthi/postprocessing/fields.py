@@ -1,7 +1,7 @@
 import numpy as np
 
-import layers
-from utility import mathematics as mths, reflection
+from acsmuthi import layers
+from acsmuthi.utility import mathematics as mths, reflection
 
 
 def compute_reflected_field(medium, x, y, z):

@@ -1,7 +1,6 @@
 import numpy as np
-from postprocessing import rendering
-from utility import mathematics as mths, wavefunctions as wvfs
-
+from acsmuthi.postprocessing import rendering
+from acsmuthi.utility import mathematics as mths, wavefunctions as wvfs
 
 freq = 82  # [Hz]
 c = 331  # [m/s]

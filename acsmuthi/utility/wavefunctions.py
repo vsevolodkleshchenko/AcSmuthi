@@ -1,7 +1,7 @@
 import numpy as np
 import scipy
 import scipy.special as ss
-from utility import mathematics as mths
+from acsmuthi.utility import mathematics as mths
 
 
 def n_idx(order):

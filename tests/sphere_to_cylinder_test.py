@@ -1,7 +1,7 @@
 import numpy as np
 import scipy.special as ss
 import scipy.integrate
-from utility import wavefunctions as wvfs, mathematics as mths
+from acsmuthi.utility import mathematics as mths, wavefunctions as wvfs
 
 
 def incident_field_test(m, n, x, y, z, k):
@@ -47,4 +47,4 @@ def reflected_field_test(m, n, x, y, z, k):
     print("error:", error)
 
 
-print(reflected_field_test(1, 1, 1, 1, 0.5, 1.5))
+print(reflected_field_test(1, 1, 1.1, 1.1, 0.5, 1.5))

@@ -1,5 +1,5 @@
 import numpy as np
-from utility import wavefunctions as wvfs, mathematics as mths
+from acsmuthi.utility import mathematics as mths, wavefunctions as wvfs
 
 
 class SphericalWaveExpansion:

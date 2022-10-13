@@ -1,4 +1,4 @@
-from utility import mathematics as mths, wavefunctions as wvfs
+from acsmuthi.utility import mathematics as mths, wavefunctions as wvfs
 import numpy as np
 
 

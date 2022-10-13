@@ -1,6 +1,6 @@
 import numpy as np
-from utility import wavefunctions as wvfs, mathematics as mths, reflection
-from postprocessing import rendering
+from acsmuthi.utility import mathematics as mths, reflection, wavefunctions as wvfs
+from acsmuthi.postprocessing import rendering
 
 
 def exact_ref_wave(x, y, z):

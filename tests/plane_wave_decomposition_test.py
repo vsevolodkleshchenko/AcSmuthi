@@ -1,6 +1,6 @@
 import numpy as np
-from postprocessing import rendering
-from fields_expansions import PlaneWave
+from acsmuthi.postprocessing import rendering
+from acsmuthi.fields_expansions import PlaneWave
 
 
 freq = 82  # [Hz]

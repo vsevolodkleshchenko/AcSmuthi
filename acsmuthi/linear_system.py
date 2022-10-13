@@ -1,11 +1,10 @@
 import numpy as np
-import scipy.linalg
 
-import particles
-import fields_expansions as fldsex
+from acsmuthi import particles
+from acsmuthi import fields_expansions as fldsex
 import scipy.special as ss
-from utility import mathematics as mths, wavefunctions as wvfs
-import layers
+from acsmuthi.utility import mathematics as mths, wavefunctions as wvfs
+from acsmuthi import layers
 
 
 class LinearSystem:

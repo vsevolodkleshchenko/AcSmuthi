@@ -1,7 +1,7 @@
 import numpy as np
 import time
-from postprocessing import forces, fields, rendering, cross_sections as cs
-from linear_system import LinearSystem
+from acsmuthi.postprocessing import forces, cross_sections as cs, fields, rendering
+from acsmuthi.linear_system import LinearSystem
 
 
 class Simulation:

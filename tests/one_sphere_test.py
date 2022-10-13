@@ -1,14 +1,12 @@
 import math
-from utility import mathematics as mths, wavefunctions as wvfs
+from acsmuthi.utility import mathematics as mths, wavefunctions as wvfs
 import numpy as np
 import scipy.special
-from fields_expansions import PlaneWave
-from medium import Medium
-import particles
-from postprocessing import rendering
-from linear_system import LinearSystem
-from postprocessing import fields
-from postprocessing import cross_sections as cs
+from acsmuthi.fields_expansions import PlaneWave
+from acsmuthi.medium import Medium
+from acsmuthi import particles
+from acsmuthi.linear_system import LinearSystem
+from acsmuthi.postprocessing import cross_sections as cs, fields, rendering
 
 
 def pn_coefficient_1s(n):
@@ -97,7 +95,8 @@ def one_sphere_test1():
     system.solve()
     span = rendering.build_discretized_span(bound, number_of_points)
     x_p, y_p, z_p, span_v, span_h = rendering.build_slice(span, plane_number, plane=plane)
-    actual_field = np.real(fields.compute_total_field(freq, system.medium, system.particles, x_p, y_p, z_p, system.layer))
+    actual_field = np.real(
+        fields.compute_total_field(freq, system.medium, system.particles, x_p, y_p, z_p, system.layer))
 
     desired_field = scattered_field_1s(x_p, y_p, z_p, 2 * np.pi * freq / c_sph, r_sph, ro_sph, k_l, ro_fluid, order)
 

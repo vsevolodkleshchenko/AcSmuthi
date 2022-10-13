@@ -1,5 +1,5 @@
 import math
-from utility import wavefunctions as wvfs
+from acsmuthi.utility import wavefunctions as wvfs
 import numpy as np
 
 

@@ -1,9 +1,9 @@
 import numpy as np
-from fields_expansions import PlaneWave
-from layers import Layer
-from particles import Particle
-from medium import Medium
-from simulation import Simulation
+from acsmuthi.fields_expansions import PlaneWave
+from acsmuthi.layers import Layer
+from acsmuthi.particles import Particle
+from acsmuthi.medium import Medium
+from acsmuthi.simulation import Simulation
 
 
 def one_fluid_sphere():

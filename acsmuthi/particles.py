@@ -1,6 +1,6 @@
 import numpy as np
 import scipy.special as ss
-from utility import mathematics as mths, wavefunctions as wvfs
+from acsmuthi.utility import mathematics as mths, wavefunctions as wvfs
 
 
 class Particle:

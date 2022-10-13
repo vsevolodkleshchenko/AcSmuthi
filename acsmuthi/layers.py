@@ -1,6 +1,5 @@
 import numpy as np
-import scipy
-from utility import reflection, wavefunctions as wvfs, mathematics as mths
+from acsmuthi.utility import mathematics as mths, reflection, wavefunctions as wvfs
 
 
 class Layer:
