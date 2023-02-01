@@ -37,7 +37,6 @@ def ref_coef_approx(w, c_inc, c_t, rho_inc, rho_t, order_approx, t_0):
         for i in range(len(v)):
             r_sample[i] = ref_coef_h(h[i], w, c_inc, c_t, rho_inc, rho_t) - r_0
         a_approx, alpha_approx = mths.prony(r_sample, order_approx - 1)
-        alpha_approx = alpha_approx * (2 * order_approx - 3) / t_0
         a_approx = a_approx * np.emath.power(np.e, alpha_approx * t_0 / (1 - 1j * t_0))
         alpha_approx = alpha_approx * (- t_0) / (w / c_inc * (1 - 1j * t_0))
         a, alpha = np.append(a, a_approx), np.append(alpha, alpha_approx)
@@ -46,21 +45,21 @@ def ref_coef_approx(w, c_inc, c_t, rho_inc, rho_t, order_approx, t_0):
 
 def ref_test(w, c_inc, c_t, rho_inc, rho_t, order_approx, t_0):
     r"""Test for correct approximation reflection coefficient"""
-    angles = np.linspace(0, 0.5 * np.pi / 2, 100)
+    angles = np.linspace(0, 0.5 * np.pi / 1.1, 100)
     h = w / c_inc * np.sin(angles)
     v = w / c_inc * np.cos(angles)
 
     r = np.zeros_like(angles)
     for i in range(len(angles)):
         r_h = ref_coef_h(h[i], w, c_inc, c_t, rho_inc, rho_t)
-        r[i] = np.abs(r_h)
+        r[i] = np.real(r_h)
 
     a, alpha = ref_coef_approx(w, c_inc, c_t, rho_inc, rho_t, order_approx, t_0)
 
     r_approx = np.zeros_like(angles)
     for i in range(len(angles)):
         r_app = mths.complex_fsum(a * np.exp(alpha * v[i]))
-        r_approx[i] = np.abs(r_app)
+        r_approx[i] = np.real(r_app)
 
     fig, ax = plt.subplots()
     ax.plot(angles * 180 / np.pi, r)
@@ -68,9 +67,9 @@ def ref_test(w, c_inc, c_t, rho_inc, rho_t, order_approx, t_0):
     plt.show()
 
 
-# ref_test(2 * np.pi * 80, 344, 548.671 - 492.321 * 1j, 1.293, 0.063 + 1j * 4.688, 11, 19)
+# ref_test(2 * np.pi * 80, 344, 548.671 - 492.321 * 1j, 1.293, 0.063 + 1j * 4.688, 11, 4)
 # ref_test(2 * np.pi * 82, 331, 1403, 1.225, 997, 1, 1)
 # ref_test(2 * np.pi * 82, 331, 1403, 1.225, 997, 2, 0.07)
-# ref_test(2 * np.pi * 82, 331, 1403, 1.225, 997, 3, 0.01)
+# ref_test(2 * np.pi * 82, 331, 1403, 1.225, 997, 3, 0.7)
 # ref_test(2 * np.pi * 82, 331, 1403, 1.225, 997, 6, 0.3)
 # ref_test(2 * np.pi * 82, 331, 1403, 1.225, 997, 10, 0.6)

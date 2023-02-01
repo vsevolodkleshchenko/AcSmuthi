@@ -24,7 +24,7 @@ def scattering_cs(particles, medium, freq, order):
     omega = 2*np.pi*freq
     dimensional_coef = medium.incident_field.ampl ** 2 / (2 * omega * medium.rho * medium.incident_field.k_l)
     sigma_sc = (math.fsum(sigma_sc1) + math.fsum(sigma_sc2)) * dimensional_coef / medium.incident_field.intensity(medium.rho, medium.speed_l)
-    return sigma_sc
+    return sigma_sc / (np.pi * particles[0].r**2)
 
 
 def extinction_cs(particles, medium, freq, layer=None):
@@ -38,7 +38,7 @@ def extinction_cs(particles, medium, freq, layer=None):
     omega = 2*np.pi*freq
     dimensional_coef = medium.incident_field.ampl ** 2 / (2 * omega * medium.rho * medium.incident_field.k_l)
     sigma_ex = -math.fsum(sigma_ex_array) * dimensional_coef / medium.incident_field.intensity(medium.rho, medium.speed_l)
-    return sigma_ex
+    return sigma_ex / (np.pi * particles[0].r**2)
 
 
 def cross_section(particles, medium, freq, order, layer):

@@ -64,7 +64,7 @@ order = 14
 
 
 def test():
-    actual_field = np.real(image_multipole_ref_wave(x_p - int_dist, y_p, z_p))
+    actual_field = np.real(translation_multipole_ref_wave(x_p - int_dist, y_p, z_p))
     desired_field = np.real(exact_ref_wave(x_p - int_dist, y_p, z_p))
     rendering.plots_for_tests(actual_field, desired_field, span_v, span_h)
     rendering.slice_plot(np.abs(actual_field - desired_field), span_v, span_h)

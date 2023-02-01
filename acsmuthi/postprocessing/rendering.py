@@ -56,9 +56,11 @@ def plots_for_tests(actual_data, desired_data, span_v, span_h):
     r"""Draw 2 plots of actual and desired data"""
     actual_data = np.real(actual_data).reshape(len(span_v), len(span_h))
     desired_data = np.real(desired_data).reshape(len(span_v), len(span_h))
-    fig, ax = plt.subplots(1, 2)
+    fig, ax = plt.subplots(1, 2, figsize=(9, 4))
     im1 = ax[0].imshow(actual_data, norm=colors.CenteredNorm(), cmap='seismic', origin='lower',
                    extent=[span_h.min(), span_h.max(), span_v.min(), span_v.max()])
+    plt.colorbar(im1)
     im2 = ax[1].imshow(desired_data, norm=colors.CenteredNorm(), cmap='seismic', origin='lower',
                    extent=[span_h.min(), span_h.max(), span_v.min(), span_v.max()])
+    plt.colorbar(im2)
     plt.show()

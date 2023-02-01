@@ -36,7 +36,9 @@ def compute_inner_field(particles_array, x, y, z):
 def compute_incident_field(medium, freq, x, y, z, layer=None):
     direct = medium.incident_field.dir
     k = 2 * np.pi * freq / medium.speed_l
-    inc_field = np.exp(1j * k * (x * direct[0] + y * direct[1] + z * direct[2]))
+    # inc_field = np.exp(1j * k * (x * direct[0] + y * direct[1] + z * direct[2]))
+    medium.incident_field.compute_exact_field(x, y, z)
+    inc_field = medium.incident_field.exact_field
     if layer:
         ref_direct = reflection.reflection_dir(direct, layer.normal)
         ref_coef = layers.reflection_amplitude(medium, layer, freq)
@@ -49,7 +51,7 @@ def compute_incident_field(medium, freq, x, y, z, layer=None):
 def compute_total_field(freq, medium, particles, x, y, z, layer=None):
     incident_field = compute_incident_field(medium, freq, x, y, z, layer=layer)
     scattered_field = compute_scattered_field(particles, x, y, z)
-    outside_field = scattered_field  # + incident_field
+    outside_field = scattered_field + incident_field
     if layer:
         reflected_field = compute_reflected_field(medium, x, y, z)
         outside_field += reflected_field
@@ -57,6 +59,6 @@ def compute_total_field(freq, medium, particles, x, y, z, layer=None):
         rx, ry, rz = x - particle.pos[0], y - particle.pos[1], z - particle.pos[2]
         r = np.sqrt(rx ** 2 + ry ** 2 + rz ** 2)
         outside_field = np.where(r > particle.r, outside_field, 0)
-    inner_field = compute_inner_field(particles, x, y, z)
-    total_field = outside_field + inner_field
+    # inner_field = compute_inner_field(particles, x, y, z)
+    total_field = outside_field  # + inner_field
     return total_field

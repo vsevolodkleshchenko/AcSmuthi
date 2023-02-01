@@ -9,6 +9,7 @@ from acsmuthi.postprocessing import forces
 from acsmuthi.fields_expansions import PlaneWave
 from acsmuthi.particles import Particle
 from acsmuthi.medium import Medium
+from acsmuthi.simulation import Simulation
 
 
 def two_fluid_spheres_ls(pos1, pos2, freq):
@@ -17,7 +18,7 @@ def two_fluid_spheres_ls(pos1, pos2, freq):
     c_fluid = 331  # [m/s]
 
     # parameters of incident field
-    direction = np.array([-0.70711, 0, 0.70711])
+    direction = np.array([-0.1, 0, 1])
     p0 = 100  # [kg/m/s^2] = [Pa]
     k_l = 2 * np.pi * freq / c_fluid  # [1/m]
 
@@ -38,7 +39,7 @@ def two_fluid_spheres_ls(pos1, pos2, freq):
     return ls
 
 
-def freq_proc(freq, pos1, pos2, freq_result):
+def dist_proc(freq, pos1, pos2, freq_result):
     r"""Counts scattering and extinction cross section for physical system with given frequency"""
     lin_sys = two_fluid_spheres_ls(pos1, pos2, freq)
     lin_sys.solve()
@@ -47,34 +48,34 @@ def freq_proc(freq, pos1, pos2, freq_result):
     freq_result.put((ecs, np.concatenate(all_forces)))
 
 
-def spectrum_freq_proc(freqs, pos1, pos2, spec_result):
+def spectrum_dist_proc(coord_z, freq, spec_result):
     r"""Counts scattering cross sections for all frequencies"""
-    ecs = np.zeros(len(freqs), dtype=float)
-    frcs = np.zeros((len(freqs), 6), dtype=float)
-    for i, freq in enumerate(freqs):
-        print("     Frequency:", i)
+    ecs = np.zeros(len(coord_z), dtype=float)
+    frcs = np.zeros((len(coord_z), 6), dtype=float)
+    for i, z in enumerate(coord_z):
+        print("     Position:", i)
+        pos1 = np.array([0, 0, -z])
+        pos2 = np.array([0, 0, z])
         queue_res = Queue()
-        freq_process = Process(target=freq_proc, args=(freq, pos1, pos2, queue_res,))
-        freq_process.start()
+        dist_process = Process(target=dist_proc, args=(freq, pos1, pos2, queue_res,))
+        dist_process.start()
         ecs[i], frcs[i] = queue_res.get()
-        freq_process.join()
+        dist_process.join()
     spec_result.put((ecs, frcs))
 
 
 def spectrum_dist_freq(coord_z, freqs):
     r"""Counts scattering cross sections for all distances between spheres"""
-    table = np.zeros((len(freqs), 7 * len(coord_z)))
-    for i, z in enumerate(coord_z):
-        print("Position:", i)
-        pos1 = np.array([0, 0, -z])
-        pos2 = np.array([0, 0, z])
+    table = np.zeros((len(coord_z), 7 * len(freqs)))
+    for i, freq in enumerate(freqs):
+        print("Frequency:", i)
         queue_res = Queue()
-        dist_process = Process(target=spectrum_freq_proc, args=(freqs, pos1, pos2, queue_res,))
-        dist_process.start()
+        freq_process = Process(target=spectrum_dist_proc, args=(coord_z, freq, queue_res,))
+        freq_process.start()
         ecs, frcs = queue_res.get()
         table[:, 7 * i] = ecs[:]
         table[:, 7*i+1:7*i+7] = frcs[:]
-        dist_process.join()
+        freq_process.join()
     return table
 
 
@@ -86,10 +87,13 @@ def write_csv(data, fieldnames, filename):
 
 
 if __name__ == '__main__':
-    frequencies = np.linspace(5, 500, 60, dtype=float)
-    coord_z = np.array([1.25, 2., 3])
-    spectrum_table = np.zeros((len(frequencies), 7 * len(coord_z) + 1))
-    spectrum_table[:, 0] = 2 * np.pi * frequencies / 331
-    spectrum_table[:, 1:] = spectrum_dist_freq(coord_z, frequencies)
-    header = ["ka"]+["ecs", "f1x", "f1y", "f1z", "f2x", "f2y", "f2z"] * len(coord_z)
-    write_csv(spectrum_table, header, "spectrum_dist_ecs_forces_angle_big")
+    coord_z = np.linspace(1.1, 3, 60, dtype=float)
+    frequencies = np.array([55, 100, 155])
+    spectrum_table = np.zeros((len(coord_z), 7 * len(frequencies) + 3))
+    spectrum_table[:, 0] = 2 * (coord_z - 1) / 6.02
+    spectrum_table[:, 1] = 2 * (coord_z - 1) / 3.31
+    spectrum_table[:, 2] = 2 * (coord_z - 1) / 2.14
+    spectrum_table[:, 3:] = spectrum_dist_freq(coord_z, frequencies)
+    header = ["bl0", "bl1", "bl2"]+["ecs", "f1x", "f1y", "f1z", "f2x", "f2y", "f2z"] * len(frequencies)
+    write_csv(spectrum_table, header, "forces_dist_norm")
+
