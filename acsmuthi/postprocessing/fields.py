@@ -33,12 +33,12 @@ def compute_inner_field(particles_array, x, y, z):
     return mths.spheres_fsum(inner_fields_array, len(x))
 
 
-def compute_incident_field(medium, freq, x, y, z, layer=None):
-    direct = medium.incident_field.dir
+def compute_incident_field(medium, incident_field, freq, x, y, z, layer=None):
+    inc_field = incident_field.compute_exact_field(x, y, z)
+    # medium.incident_field.compute_exact_field(x, y, z)
+    # inc_field = medium.incident_field.exact_field
     k = 2 * np.pi * freq / medium.speed_l
-    # inc_field = np.exp(1j * k * (x * direct[0] + y * direct[1] + z * direct[2]))
-    medium.incident_field.compute_exact_field(x, y, z)
-    inc_field = medium.incident_field.exact_field
+    direct = incident_field.dir
     if layer:
         ref_direct = reflection.reflection_dir(direct, layer.normal)
         ref_coef = layers.reflection_amplitude(medium, layer, freq)
@@ -48,8 +48,8 @@ def compute_incident_field(medium, freq, x, y, z, layer=None):
     return inc_field
 
 
-def compute_total_field(freq, medium, particles, x, y, z, layer=None):
-    incident_field = compute_incident_field(medium, freq, x, y, z, layer=layer)
+def compute_total_field(freq, medium, particles, incident_field, x, y, z, layer=None):
+    incident_field = compute_incident_field(medium, incident_field, freq, x, y, z, layer=layer)
     scattered_field = compute_scattered_field(particles, x, y, z)
     outside_field = scattered_field + incident_field
     if layer:

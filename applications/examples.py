@@ -175,6 +175,9 @@ def silica_aerogel_sphere_in_standing_wave():
     order = 5
 
     incident_field = PlaneWave(p0, k_l, np.array([0, 0, 0]), 'regular', order, direction)
+    # from acsmuthi.initial_field import PlaneWave as nPlaneWave
+    # incident_field = nPlaneWave(k_l, p0, direction)
+
     fluid = Medium(ro_fluid, c_fluid, incident_field=incident_field)
     sphere1 = Particle(pos1, r_sph, ro_sph, c_sph_l, order, speed_t=c_sph_t)
     particles = np.array([sphere1])
@@ -185,6 +188,8 @@ def silica_aerogel_sphere_in_standing_wave():
 
     sim = Simulation(particles, fluid, freq, order, bound=bound, number_of_points=number_of_points, plane=plane,
                      plane_number=plane_number)
+    # sim = Simulation(particles, fluid, incident_field, freq, order, bound=bound, number_of_points=number_of_points,
+    #                  plane=plane, plane_number=plane_number)
     return sim
 
 

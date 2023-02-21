@@ -8,7 +8,7 @@ from acsmuthi import layers
 
 
 class LinearSystem:
-    def __init__(self, particles_array, layer, medium, frequency, order):
+    def __init__(self, particles_array, layer, medium, initial_field, frequency, order):
         self.order = order
         self.rhs = None
         self.t_matrix = None
@@ -18,6 +18,7 @@ class LinearSystem:
         self.layer = layer
         self.medium = medium
         self.freq = frequency
+        self.incident_field = initial_field
 
     def compute_t_matrix(self):
         block_matrix = np.zeros((len(self.particles), len(self.particles), (self.order+1)**2, (self.order+1)**2), dtype=complex)
@@ -41,14 +42,16 @@ class LinearSystem:
         self.d_matrix = matrix2d
 
     def compute_right_hand_side(self):
-        self.rhs = np.dot(self.d_matrix, self.medium.incident_field.coefficients)
+        i_sfe = self.incident_field.spherical_wave_expansion(np.array([0, 0, 0]), self.order)
+        incident_coefs_origin = i_sfe.coefficients
+        self.rhs = np.dot(self.d_matrix, incident_coefs_origin)
 
     def compute_r_matrix(self):
         self.r_matrix = layers.new_r_matrix(self.particles, self.layer, self.medium, self.freq, self.order)
 
     def prepare(self):
         for particle in self.particles:
-            ampl, k_l = self.medium.incident_field.ampl, self.medium.incident_field.k_l
+            ampl, k_l = self.incident_field.ampl, self.incident_field.k_l
             particle.incident_field = fldsex.SphericalWaveExpansion(ampl, k_l, particle.pos, 'regular', self.order)
             particle.scattered_field = fldsex.SphericalWaveExpansion(ampl, k_l, particle.pos, 'outgoing', self.order)
             if particle.speed_t:
@@ -72,7 +75,8 @@ class LinearSystem:
         self.prepare()
         if self.layer:
             self.prepare_layer()
-            incident_coefs_origin = layers.layer_inc_coef_origin(self.medium, self.layer, self.freq, self.order)
+            i_sfe = self.incident_field.spherical_wave_expansion(np.array([0, 0, 0]), self.order)
+            incident_coefs_origin = i_sfe.coefficients
             incident_coefs_array = np.dot(self.d_matrix, incident_coefs_origin)
 
             m1 = self.t_matrix @ self.d_matrix

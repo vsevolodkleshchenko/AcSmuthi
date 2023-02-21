@@ -11,7 +11,7 @@ def effective_incident_coefficients(particle):
     return ef_inc_coef
 
 
-def force_on_sphere(particle, medium):
+def force_on_sphere(particle, medium, incident_field):
     r"""Cartesian components of force on sphere[sph]"""
     ef_inc_coef = effective_incident_coefficients(particle)
     scale = particle.t_matrix
@@ -28,18 +28,18 @@ def force_on_sphere(particle, medium):
         term2 = s_coef * ef_inc_coef[imn] * np.conj(ef_inc_coef[imn4])
         fxy_array[imn], fz_array[imn] = coef1 * term1, coef2 * term2
     k = particle.incident_field.k_l
-    prefactor1 = 1j * particle.incident_field.ampl ** 2 / (2 * medium.rho * medium.speed_l ** 2) / 2 / k ** 2
-    prefactor2 = particle.incident_field.ampl ** 2 / (2 * medium.rho * medium.speed_l ** 2) / k ** 2
+    prefactor1 = 1j * incident_field.ampl ** 2 / (2 * medium.rho * medium.speed_l ** 2) / 2 / k ** 2
+    prefactor2 = incident_field.ampl ** 2 / (2 * medium.rho * medium.speed_l ** 2) / k ** 2
     fxy = prefactor1 * mths.complex_fsum(fxy_array)
     fx, fy = np.real(fxy), np.imag(fxy)
     fz = prefactor2 * np.imag(mths.complex_fsum(fz_array))
-    norm = medium.incident_field.intensity(medium.rho, medium.speed_l) * np.pi * particle.r ** 2 / medium.speed_l
+    norm = incident_field.intensity(medium.rho, medium.speed_l) * np.pi * particle.r ** 2 / medium.speed_l
     return np.array([fx, fy, fz]) / norm
 
 
-def all_forces(particles_array, medium):
+def all_forces(particles_array, medium, incident_field):
     r"""Cartesian components of force for all spheres"""
     forces_array = np.zeros((len(particles_array), 3), dtype=float)
     for s, particle in enumerate(particles_array):
-        forces_array[s] = force_on_sphere(particle, medium)
+        forces_array[s] = force_on_sphere(particle, medium, incident_field)
     return forces_array
