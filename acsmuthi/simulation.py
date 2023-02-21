@@ -36,8 +36,8 @@ class Simulation:
             t_sf_start = time.process_time()
             span = rendering.build_discretized_span(self.bound, self.number_of_points)
             x_p, y_p, z_p, span_v, span_h = rendering.build_slice(span, self.plane_number, plane=self.plane)
-            tot_field = np.real(fields.compute_total_field(self.freq, self.medium, self.particles, x_p, y_p, z_p,
-                                                           layer=self.layer))
+            tot_field = np.abs(fields.compute_total_field(self.freq, self.medium, self.particles, x_p, y_p, z_p,
+                                                           layer=self.layer))**2
             rendering.slice_plot(tot_field, span_v, span_h, plane=self.plane)
             t_sf_finish = time.process_time()
         print("Solving the system:", t_solution - t_start, "s")
