@@ -13,9 +13,7 @@ class Particle:
         self.incident_field = None
         self.scattered_field = None
         self.inner_field = None
-        self.reflected_field = None
         self.t_matrix = None
-        self.d_matrix = None
         self.order = order
 
     def compute_t_matrix(self, c_medium, rho_medium, freq):
@@ -37,7 +35,6 @@ class Particle:
             for mu, nu, in wvfs.multipoles(self.order):
                 imunu = nu ** 2 + nu + mu
                 d[imn, imunu] = wvfs.regular_separation_coefficient(mu, m, nu, n, self.incident_field.k_l, self.pos)
-        # self.d_matrix = d
         return d
 
 
@@ -92,6 +89,6 @@ def elastic_scaled_coefficient(n, c_medium, rho_medium, c_l, c_t, rho, r, freq):
     g_n = coefficient * (alpha_n * delta_n + beta_n * xi_n) / (alpha_n * eta_n + beta_n * epsilon_n)
 
     scale = - (g_n * ss.spherical_jn(n, k_medium * r) - k_medium * r * ss.spherical_jn(n, k_medium * r, derivative=True)) / \
-            (g_n * mths.sph_hankel1(n, k_medium * r) - k_medium * r * mths.sph_hankel1_der(n, k_medium * r))
+              (g_n * mths.sph_hankel1(n, k_medium * r) - k_medium * r * mths.sph_hankel1_der(n, k_medium * r))
     return scale
 

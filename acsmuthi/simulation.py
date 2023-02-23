@@ -6,9 +6,8 @@ from acsmuthi.linear_system import LinearSystem
 
 class Simulation:
     def __init__(self, particles, medium, initial_field, frequency, order,
-                 bound=None, number_of_points=None, plane=None, plane_number=None, layer=None):
+                 bound=None, number_of_points=None, plane=None, plane_number=None):
         self.particles = particles
-        self.layer = layer
         self.medium = medium
         self.freq = frequency
         self.order = order
@@ -19,7 +18,7 @@ class Simulation:
         self.incident_field = initial_field
 
     def run(self, cross_sections_flag=False, forces_flag=False, plot_flag=False):
-        linear_system = LinearSystem(self.particles, self.layer, self.medium, self.incident_field, self.freq, self.order)
+        linear_system = LinearSystem(self.particles, self.medium, self.incident_field, self.freq, self.order)
         t_start = time.process_time()
         t_cs_start = t_cs_finish = t_f_start = t_f_finish = t_sf_start = t_sf_finish = 0
         linear_system.solve()
@@ -27,7 +26,7 @@ class Simulation:
         if cross_sections_flag:
             t_cs_start = time.process_time()
             print("Scattering and extinction cs:", *cs.cross_section(self.particles, self.medium, self.incident_field,
-                                                                     self.freq, self.order, self.layer))
+                                                                     self.freq, self.order))
             t_cs_finish = time.process_time()
         if forces_flag:
             t_f_start = time.process_time()
@@ -37,8 +36,7 @@ class Simulation:
             t_sf_start = time.process_time()
             span = rendering.build_discretized_span(self.bound, self.number_of_points)
             x_p, y_p, z_p, span_v, span_h = rendering.build_slice(span, self.plane_number, plane=self.plane)
-            tot_field = np.abs(fields.compute_total_field(self.freq, self.medium, self.particles, self.incident_field,
-                                                          x_p, y_p, z_p, layer=self.layer))**2
+            tot_field = np.abs(fields.compute_total_field(self.particles, self.incident_field, x_p, y_p, z_p)) ** 2
             rendering.slice_plot(tot_field, span_v, span_h, plane=self.plane)
             t_sf_finish = time.process_time()
         print("Solving the system:", t_solution - t_start, "s")

@@ -102,24 +102,3 @@ def spheres_fsum(field_array, length):
     for i in range(length):
         field[i] = complex_fsum(field_array[:, i])
     return field
-
-
-def prony(sample, order_approx):
-    r"""Prony (exponential) approximation of sample"""
-    matrix1 = np.zeros((order_approx, order_approx), dtype=complex)
-    for j in range(order_approx):
-        matrix1[j] = sample[j:j+order_approx]
-    rhs1 = - sample[order_approx:]
-    c_coefficients = np.linalg.solve(matrix1, rhs1)
-
-    p_coefficients = np.flip(np.append(c_coefficients, 1.))
-    p = np.roots(p_coefficients)
-    alpha_coefficients = np.emath.log(p)
-
-    matrix2 = np.zeros((order_approx, order_approx), dtype=complex)
-    for j in range(order_approx):
-        matrix2[j] = np.emath.power(p, j)
-    rhs2 = sample[:order_approx]
-    a_coefficients = np.linalg.solve(matrix2, rhs2)
-
-    return a_coefficients, alpha_coefficients

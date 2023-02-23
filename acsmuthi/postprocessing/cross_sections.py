@@ -27,13 +27,11 @@ def scattering_cs(particles, medium, incident_field, freq, order):
     return sigma_sc / (np.pi * particles[0].r**2)
 
 
-def extinction_cs(particles, medium, incident_field, freq, layer=None):
+def extinction_cs(particles, medium, incident_field, freq):
     r"""Counts extinction cross section"""
     sigma_ex_array = np.zeros(len(particles))
     for s, particle in enumerate(particles):
         scattered_coefs, incident_coefs = particle.scattered_field.coefficients, particle.incident_field.coefficients
-        if layer:
-            incident_coefs += particle.reflected_field.coefficients
         sigma_ex_array[s] = math.fsum(np.real(scattered_coefs * np.conj(incident_coefs)))
     omega = 2*np.pi*freq
     dimensional_coef = incident_field.ampl ** 2 / (2 * omega * medium.rho * incident_field.k_l)
@@ -41,8 +39,8 @@ def extinction_cs(particles, medium, incident_field, freq, layer=None):
     return sigma_ex / (np.pi * particles[0].r**2)
 
 
-def cross_section(particles, medium, incident_field, freq, order, layer):
+def cross_section(particles, medium, incident_field, freq, order):
     r"""Counts scattering and extinction cross sections"""
     sigma_sc = scattering_cs(particles, medium, incident_field, freq, order)
-    sigma_ex = extinction_cs(particles, medium, incident_field, freq, layer=layer)
+    sigma_ex = extinction_cs(particles, medium, incident_field, freq)
     return sigma_sc, sigma_ex

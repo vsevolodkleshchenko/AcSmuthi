@@ -147,32 +147,3 @@ class SphericalWaveExpansion(FieldExpansion):
                                          outer_r=min(self.outer_r, other.outer_r))
         swe_sum.coefficients = self.coefficients + other.coefficients
         return swe_sum
-
-
-class PlaneWave(SphericalWaveExpansion):
-    def __init__(self, amplitude, k_l, origin, kind, order, direction):
-        super().__init__(amplitude, k_l, origin, kind, order)
-        self.dir = direction
-        self.coefficients = wvfs.incident_coefficients(direction, order)
-        self.exact_field = None
-
-    def compute_exact_field(self, x, y, z):
-        self.exact_field = self.ampl * np.exp(1j * self.k_l * (self.dir[0] * x + self.dir[1] * y + self.dir[2] * z))
-
-    def intensity(self, density, sound_speed):
-        return self.ampl ** 2 / (2 * density * sound_speed)
-
-
-class StandingWave(SphericalWaveExpansion):
-    def __init__(self, amplitude, k_l, origin, kind, order, direction):
-        super().__init__(amplitude, k_l, origin, kind, order)
-        self.dir = direction
-        self.coefficients = wvfs.incident_coefficients(direction, order) + wvfs.incident_coefficients(-direction, order)
-        self.exact_field = None
-
-    def compute_exact_field(self, x, y, z):
-        self.exact_field = self.ampl * np.exp(1j * self.k_l * (self.dir[0] * x + self.dir[1] * y + self.dir[2] * z)) + \
-                           self.ampl * np.exp(1j * self.k_l * (-self.dir[0] * x - self.dir[1] * y - self.dir[2] * z))
-
-    def intensity(self, density, sound_speed):
-        return self.ampl ** 2 / (2 * density * sound_speed)
