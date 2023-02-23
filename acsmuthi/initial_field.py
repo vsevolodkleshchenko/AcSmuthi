@@ -1,6 +1,8 @@
+import numpy as np
+
 import acsmuthi.fields_expansions as fldsex
 import acsmuthi.utility.wavefunctions as wvfs
-import numpy as np
+import acsmuthi.linear_system.coupling_matrix as cmt
 
 
 class InitialField:
@@ -25,12 +27,17 @@ class PlaneWave(InitialField):
         self.exact_field = None
 
     def spherical_wave_expansion(self, origin, order):
+        base_coefficients = wvfs.incident_coefficients(self.dir, order)
+        if origin.all() == self.reference_point.all():
+            coefficients = base_coefficients
+        else:
+            coefficients = cmt.translation_block(order, self.k_l, origin - self.reference_point) @ base_coefficients
         return fldsex.SphericalWaveExpansion(amplitude=self.ampl,
                                              k_l=self.k_l,
                                              origin=origin,
                                              kind='regular',
                                              order=order,
-                                             coefficients=wvfs.incident_coefficients(self.dir, order))
+                                             coefficients=coefficients)
 
     def compute_exact_field(self, x, y, z):
         self.exact_field = self.ampl * np.exp(1j * self.k_l * (self.dir[0] * (x - self.reference_point[0]) +
