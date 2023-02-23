@@ -28,6 +28,7 @@ class Particle:
             else:
                 t[i, i] = 1 / scaled_coefficient(n, c_medium, rho_medium, self.speed_l, self.rho, self.r, freq)
         self.t_matrix = t
+        return t
 
     def compute_d_matrix(self):
         d = np.zeros(((self.order + 1) ** 2, (self.order + 1) ** 2), dtype=complex)
@@ -36,7 +37,8 @@ class Particle:
             for mu, nu, in wvfs.multipoles(self.order):
                 imunu = nu ** 2 + nu + mu
                 d[imn, imunu] = wvfs.regular_separation_coefficient(mu, m, nu, n, self.incident_field.k_l, self.pos)
-        self.d_matrix = d
+        # self.d_matrix = d
+        return d
 
 
 def coupling_block(particle_pos, other_particle_pos, k_medium, order):

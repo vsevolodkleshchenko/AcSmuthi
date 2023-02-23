@@ -19,7 +19,7 @@ def scattering_cs(particles, medium, incident_field, freq, order):
                     imunu = nu ** 2 + nu + mu
                     distance = particles[sph].pos - particles[osph].pos
                     sigma_sc2[idx2] = np.real(np.conj(scattered_coefs_sph[imn]) * scattered_coefs_osph[imunu] * \
-                                              wvfs.regular_separation_coefficient(mu, m, nu, n, medium.incident_field.k_l, distance))
+                                              wvfs.regular_separation_coefficient(mu, m, nu, n, incident_field.k_l, distance))
                     idx2 += 1
     omega = 2*np.pi*freq
     dimensional_coef = incident_field.ampl ** 2 / (2 * omega * medium.rho * incident_field.k_l)

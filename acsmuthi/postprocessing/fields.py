@@ -35,8 +35,6 @@ def compute_inner_field(particles_array, x, y, z):
 
 def compute_incident_field(medium, incident_field, freq, x, y, z, layer=None):
     inc_field = incident_field.compute_exact_field(x, y, z)
-    # medium.incident_field.compute_exact_field(x, y, z)
-    # inc_field = medium.incident_field.exact_field
     k = 2 * np.pi * freq / medium.speed_l
     direct = incident_field.dir
     if layer:
