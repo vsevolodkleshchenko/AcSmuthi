@@ -8,7 +8,7 @@ from acsmuthi.utility import mathematics as mths, wavefunctions as wvfs
 
 
 class LinearSystem:
-    def __init__(self, particles_array, medium, initial_field, frequency, order):
+    def __init__(self, particles_array, medium, initial_field, frequency, order, store_t_matrix):
         self.order = order
         self.rhs = None
         self.t_matrix = None
@@ -17,11 +17,12 @@ class LinearSystem:
         self.medium = medium
         self.freq = frequency
         self.incident_field = initial_field
+        self.store_t_matrix = store_t_matrix
 
     def compute_t_matrix(self):
         for sph in range(len(self.particles)):
             self.particles[sph].compute_t_matrix(self.medium.speed_l, self.medium.rho, self.freq)
-        self.t_matrix = TMatrix(self.particles, self.order)
+        self.t_matrix = TMatrix(self.particles, self.order, self.store_t_matrix)
 
     def compute_coupling_matrix(self):
         self.coupling_matrix = CouplingMatrixExplicit(self.particles, self.order, self.incident_field.k_l)
@@ -49,8 +50,12 @@ class LinearSystem:
 
     def solve(self):
         self.prepare()
-        master_matrix = self.t_matrix.linear_operator + self.coupling_matrix.linear_operator
-        scattered_coefs1d, _ = scipy.sparse.linalg.gmres(master_matrix, self.rhs)
+        if not self.store_t_matrix:
+            master_matrix = self.t_matrix.linear_operator + self.coupling_matrix.linear_operator
+            scattered_coefs1d, _ = scipy.sparse.linalg.gmres(master_matrix, self.rhs)
+        else:
+            master_matrix = self.t_matrix.linear_operator.A + self.coupling_matrix.linear_operator.A
+            scattered_coefs1d = scipy.linalg.solve(master_matrix, self.rhs)
         scattered_coefs = scattered_coefs1d.reshape((len(self.particles), (self.order + 1) ** 2))
         inner_coefs = _inner_coefficients(self.particles, scattered_coefs, self.order)
         for s, particle in enumerate(self.particles):
@@ -69,18 +74,27 @@ class SystemMatrix:
 
 
 class TMatrix(SystemMatrix):
-    def __init__(self, particle_array, order):
+    def __init__(self, particle_array, order, store_t_matrix):
         SystemMatrix.__init__(self, particle_array, order)
 
-        def apply_t_matrix(vector):
-            tv = np.zeros(vector.shape, dtype=complex)
-            for i_s, particle in enumerate(particle_array):
-                tv[self.index_block(i_s):self.index_block(i_s + 1)] = particle.t_matrix.dot(
-                    vector[self.index_block(i_s):self.index_block(i_s + 1)])
-            return tv
+        if not store_t_matrix:
+            def apply_t_matrix(vector):
+                tv = np.zeros(vector.shape, dtype=complex)
+                for i_s, particle in enumerate(particle_array):
+                    tv[self.index_block(i_s):self.index_block(i_s + 1)] = particle.t_matrix.dot(
+                        vector[self.index_block(i_s):self.index_block(i_s + 1)])
+                return tv
 
-        self.linear_operator = scipy.sparse.linalg.LinearOperator(shape=self.shape, matvec=apply_t_matrix,
-                                                                  matmat=apply_t_matrix, dtype=complex)
+            self.linear_operator = scipy.sparse.linalg.LinearOperator(shape=self.shape, matvec=apply_t_matrix,
+                                                                      matmat=apply_t_matrix, dtype=complex)
+        else:
+            t_mat = np.zeros(self.shape, dtype=complex)
+
+            for i_s, particle in enumerate(particle_array):
+                t_mat[self.index_block(i_s):self.index_block(i_s + 1),
+                      self.index_block(i_s):self.index_block(i_s + 1)] = particle.t_matrix
+
+            self.linear_operator = scipy.sparse.linalg.aslinearoperator(t_mat)
 
 
 class CouplingMatrixExplicit(SystemMatrix):

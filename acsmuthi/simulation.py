@@ -6,7 +6,8 @@ from acsmuthi.linear_system.linear_system import LinearSystem
 
 class Simulation:
     def __init__(self, particles, medium, initial_field, frequency, order,
-                 bound=None, number_of_points=None, plane=None, plane_number=None):
+                 bound=None, number_of_points=None, plane=None, plane_number=None,
+                 store_t_matrix=False):
         self.particles = particles
         self.medium = medium
         self.freq = frequency
@@ -16,9 +17,15 @@ class Simulation:
         self.plane = plane
         self.plane_number = plane_number
         self.incident_field = initial_field
+        self.store_t_matrix = store_t_matrix
 
     def run(self, cross_sections_flag=False, forces_flag=False, plot_flag=False):
-        linear_system = LinearSystem(self.particles, self.medium, self.incident_field, self.freq, self.order)
+        linear_system = LinearSystem(particles_array=self.particles,
+                                     medium=self.medium,
+                                     initial_field=self.incident_field,
+                                     frequency=self.freq,
+                                     order=self.order,
+                                     store_t_matrix=self.store_t_matrix)
         t_start = time.time()
         t_cs_start = t_cs_finish = t_f_start = t_f_finish = t_sf_start = t_sf_finish = 0
         linear_system.solve()

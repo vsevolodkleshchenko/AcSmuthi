@@ -26,7 +26,7 @@ ro_sph = 80  # [kg/m^3]
 c_sph_l = np.sqrt(2 * g * (1 - poisson) / ro_sph / (1 - 2 * poisson))  # [m/s]
 c_sph_t = np.sqrt(g / ro_sph)  # [m/s]
 
-order = 8
+order = 14
 
 incident_field = PlaneWave(k_l, p0, direction)
 
@@ -40,6 +40,6 @@ plane = 'xz'
 plane_number = int(number_of_points / 2) + 1
 
 simulation = Simulation(particles, fluid, incident_field, freq, order, bound=bound, number_of_points=number_of_points,
-                 plane=plane, plane_number=plane_number)
+                 plane=plane, plane_number=plane_number, store_t_matrix=True)
 
 simulation.run(cross_sections_flag=True, forces_flag=True, plot_flag=False)
