@@ -28,7 +28,7 @@ ro_sph = 80  # [kg/m^3]
 c_sph_l = np.sqrt(2 * g * (1 - poisson) / ro_sph / (1 - 2 * poisson))  # [m/s]
 c_sph_t = np.sqrt(g / ro_sph)  # [m/s]
 
-order = 12
+order = 18
 
 incident_field = PlaneWave(k_l, p0, direction)
 
