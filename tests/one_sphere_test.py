@@ -83,7 +83,7 @@ def one_sphere_test1():
     order = 8
 
     incident_field = PlaneWave(p0, k_l, np.array([0, 0, 0]), 'regular', order, direction)
-    fluid = Medium(ro_fluid, c_fluid, incident_field=incident_field)
+    fluid = Medium(ro_fluid, c_fluid)
     sphere1 = particles.Particle(pos1, r_sph, ro_sph, c_sph, order)
     spheres = np.array([sphere1])
 
@@ -101,8 +101,8 @@ def one_sphere_test1():
     desired_field = scattered_field_1s(x_p, y_p, z_p, 2 * np.pi * freq / c_sph, r_sph, ro_sph, k_l, ro_fluid, order)
 
     r = np.sqrt(x_p ** 2 + y_p ** 2 + z_p ** 2)
-    actual_field = np.where(r <= sphere1.r, 0, actual_field)
-    desired_field = np.where(r <= sphere1.r, 0, desired_field)
+    actual_field = np.where(r <= sphere1.radius, 0, actual_field)
+    desired_field = np.where(r <= sphere1.radius, 0, desired_field)
 
     err = np.abs((actual_field - desired_field))
     rendering.slice_plot(err, span_v, span_h, plane=plane)

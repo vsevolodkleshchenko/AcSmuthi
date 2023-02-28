@@ -28,21 +28,45 @@ ro_sph = 80  # [kg/m^3]
 c_sph_l = np.sqrt(2 * g * (1 - poisson) / ro_sph / (1 - 2 * poisson))  # [m/s]
 c_sph_t = np.sqrt(g / ro_sph)  # [m/s]
 
-order = 18
+order = 8
 
-incident_field = PlaneWave(k_l, p0, direction)
+incident_field = PlaneWave(k_l=k_l,
+                           amplitude=p0,
+                           direction=direction)
 
-fluid = Medium(rho_fluid, c_fluid)
-sphere1 = Particle(pos1, r_sph, ro_sph, c_sph_l, order, speed_t=c_sph_t)
-sphere2 = Particle(pos2, r_sph, ro_sph, c_sph_l, order, speed_t=c_sph_t)
-sphere3 = Particle(pos3, r_sph, ro_sph, c_sph_l, order, speed_t=c_sph_t)
+fluid = Medium(density=rho_fluid, speed_l=c_fluid)
+
+sphere1 = Particle(position=pos1,
+                   radius=r_sph,
+                   density=ro_sph,
+                   speed_l=c_sph_l,
+                   order=order,
+                   speed_t=c_sph_t)
+sphere2 = Particle(position=pos2,
+                   radius=r_sph,
+                   density=ro_sph,
+                   speed_l=c_sph_l,
+                   order=order,
+                   speed_t=c_sph_t)
+sphere3 = Particle(position=pos3,
+                   radius=r_sph,
+                   density=ro_sph,
+                   speed_l=c_sph_l,
+                   order=order,
+                   speed_t=c_sph_t)
+
 particles = np.array([sphere1, sphere2, sphere3])
 
 bound, number_of_points = 0.045, 151
 plane = 'xz'
 plane_number = int(number_of_points / 2) + 1
 
-simulation = Simulation(particles, fluid, incident_field, freq, order, bound=bound, number_of_points=number_of_points,
-                 plane=plane, plane_number=plane_number, store_t_matrix=True)
+simulation = Simulation(particles=particles,
+                        medium=fluid,
+                        initial_field=incident_field,
+                        frequency=freq,
+                        store_t_matrix=True,
+                        order=order, bound=bound, number_of_points=number_of_points,
+                        plane=plane, plane_number=plane_number)
 
 simulation.run(cross_sections_flag=True, forces_flag=True, plot_flag=False)

@@ -17,14 +17,14 @@ def scattering_cs(particles, medium, incident_field, freq, order):
                 scattered_coefs_osph = particles[osph].scattered_field.coefficients
                 for mu, nu in wvfs.multipoles(order):
                     imunu = nu ** 2 + nu + mu
-                    distance = particles[sph].pos - particles[osph].pos
+                    distance = particles[sph].position - particles[osph].position
                     sigma_sc2[idx2] = np.real(np.conj(scattered_coefs_sph[imn]) * scattered_coefs_osph[imunu] * \
                                               wvfs.regular_separation_coefficient(mu, m, nu, n, incident_field.k_l, distance))
                     idx2 += 1
     omega = 2*np.pi*freq
-    dimensional_coef = incident_field.ampl ** 2 / (2 * omega * medium.rho * incident_field.k_l)
-    sigma_sc = (math.fsum(sigma_sc1) + math.fsum(sigma_sc2)) * dimensional_coef / incident_field.intensity(medium.rho, medium.speed_l)
-    return sigma_sc / (np.pi * particles[0].r**2)
+    dimensional_coef = incident_field.ampl ** 2 / (2 * omega * medium.density * incident_field.k_l)
+    sigma_sc = (math.fsum(sigma_sc1) + math.fsum(sigma_sc2)) * dimensional_coef / incident_field.intensity(medium.density, medium.speed_l)
+    return sigma_sc / (np.pi * particles[0].radius ** 2)
 
 
 def extinction_cs(particles, medium, incident_field, freq):
@@ -34,9 +34,9 @@ def extinction_cs(particles, medium, incident_field, freq):
         scattered_coefs, incident_coefs = particle.scattered_field.coefficients, particle.incident_field.coefficients
         sigma_ex_array[s] = math.fsum(np.real(scattered_coefs * np.conj(incident_coefs)))
     omega = 2*np.pi*freq
-    dimensional_coef = incident_field.ampl ** 2 / (2 * omega * medium.rho * incident_field.k_l)
-    sigma_ex = -math.fsum(sigma_ex_array) * dimensional_coef / incident_field.intensity(medium.rho, medium.speed_l)
-    return sigma_ex / (np.pi * particles[0].r**2)
+    dimensional_coef = incident_field.ampl ** 2 / (2 * omega * medium.density * incident_field.k_l)
+    sigma_ex = -math.fsum(sigma_ex_array) * dimensional_coef / incident_field.intensity(medium.density, medium.speed_l)
+    return sigma_ex / (np.pi * particles[0].radius ** 2)
 
 
 def cross_section(particles, medium, incident_field, freq, order):

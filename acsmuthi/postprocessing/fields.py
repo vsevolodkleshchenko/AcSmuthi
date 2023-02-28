@@ -18,9 +18,9 @@ def compute_inner_field(particles_array, x, y, z):
     inner_fields_array = np.zeros((len(particles_array), len(x)), dtype=complex)
     for s, particle in enumerate(particles_array):
         particle.inner_field.compute_pressure_field(x, y, z)
-        rx, ry, rz = x - particle.pos[0], y - particle.pos[1], z - particle.pos[2]
+        rx, ry, rz = x - particle.position[0], y - particle.position[1], z - particle.position[2]
         r = np.sqrt(rx ** 2 + ry ** 2 + rz ** 2)
-        particle.inner_field.field = np.where(r <= particle.r, particle.inner_field.field, 0)
+        particle.inner_field.field = np.where(r <= particle.radius, particle.inner_field.field, 0)
         inner_fields_array[s] = particle.inner_field.field
     return mths.spheres_fsum(inner_fields_array, len(x))
 
@@ -35,9 +35,9 @@ def compute_total_field(particles, incident_field, x, y, z):
     scattered_field = compute_scattered_field(particles, x, y, z)
     outside_field = scattered_field + incident_field
     for s, particle in enumerate(particles):
-        rx, ry, rz = x - particle.pos[0], y - particle.pos[1], z - particle.pos[2]
+        rx, ry, rz = x - particle.position[0], y - particle.position[1], z - particle.position[2]
         r = np.sqrt(rx ** 2 + ry ** 2 + rz ** 2)
-        outside_field = np.where(r > particle.r, outside_field, 0)
+        outside_field = np.where(r > particle.radius, outside_field, 0)
     # inner_field = compute_inner_field(particles, x, y, z)
     total_field = outside_field  # + inner_field
     return total_field
