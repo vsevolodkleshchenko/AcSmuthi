@@ -28,12 +28,14 @@ class Simulation:
                                      store_t_matrix=self.store_t_matrix)
         t_start = time.time()
         t_cs_start = t_cs_finish = t_f_start = t_f_finish = t_sf_start = t_sf_finish = 0
+        linear_system.prepare()
+        t_preparation = time.time()
         linear_system.solve()
         t_solution = time.time()
         if cross_sections_flag:
             t_cs_start = time.time()
-            print("Scattering and extinction cs:", *cs.cross_section(self.particles, self.medium, self.incident_field,
-                                                                     self.freq, self.order))
+            print("Scattering and extinction cs:", cs.extinction_cs(self.particles, self.medium, self.incident_field,
+                                                                    self.freq))
             t_cs_finish = time.time()
         if forces_flag:
             t_f_start = time.time()
@@ -46,8 +48,9 @@ class Simulation:
             tot_field = np.abs(fields.compute_total_field(self.particles, self.incident_field, x_p, y_p, z_p)) ** 2
             rendering.slice_plot(tot_field, span_v, span_h, plane=self.plane)
             t_sf_finish = time.time()
-        print("Solving the system:", round(t_solution - t_start, 2), "s")
-        print("Counting cross sections:", round(t_cs_finish - t_cs_start, 2), "s")
-        print("Counting forces:", round(t_f_finish - t_f_start, 2), "s")
-        print("Counting fields and drawing the slice plot:", round(t_sf_finish - t_sf_start, 2), "s")
-        print("All process:", round(time.time() - t_start, 2), "s")
+        print("Preparation of the system:", round(t_preparation - t_start, 3), "s")
+        print("Solving the system:", round(t_solution - t_preparation, 3), "s")
+        print("Counting cross sections:", round(t_cs_finish - t_cs_start, 3), "s")
+        print("Counting forces:", round(t_f_finish - t_f_start, 3), "s")
+        print("Counting fields and drawing the slice plot:", round(t_sf_finish - t_sf_start, 3), "s")
+        print("All process:", round(time.time() - t_start, 3), "s")

@@ -49,7 +49,6 @@ class LinearSystem:
         self.compute_right_hand_side()
 
     def solve(self):
-        self.prepare()
         if not self.store_t_matrix:
             master_matrix = self.t_matrix.linear_operator + self.coupling_matrix.linear_operator
             scattered_coefs1d, _ = scipy.sparse.linalg.gmres(master_matrix, self.rhs)

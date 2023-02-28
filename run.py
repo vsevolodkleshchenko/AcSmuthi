@@ -19,21 +19,24 @@ k_l = 2 * np.pi * freq / c_fluid  # [1/m]
 poisson = 0.12
 young = 197920
 g = 0.5 * young / (1 + poisson)
-pos1 = np.array([-0.015, 0, 0])  # [m]
-pos2 = np.array([0.015, 0, 0])  # [m]
+pos1 = np.array([-0.015, 0, -0.015/2])  # [m]
+pos2 = np.array([0.015, 0, -0.015/2])  # [m]
+pos3 = np.array([0, 0, 0.015])
+# [m]
 r_sph = 0.01  # [m]
 ro_sph = 80  # [kg/m^3]
 c_sph_l = np.sqrt(2 * g * (1 - poisson) / ro_sph / (1 - 2 * poisson))  # [m/s]
 c_sph_t = np.sqrt(g / ro_sph)  # [m/s]
 
-order = 14
+order = 12
 
 incident_field = PlaneWave(k_l, p0, direction)
 
 fluid = Medium(rho_fluid, c_fluid)
 sphere1 = Particle(pos1, r_sph, ro_sph, c_sph_l, order, speed_t=c_sph_t)
 sphere2 = Particle(pos2, r_sph, ro_sph, c_sph_l, order, speed_t=c_sph_t)
-particles = np.array([sphere1, sphere2])
+sphere3 = Particle(pos3, r_sph, ro_sph, c_sph_l, order, speed_t=c_sph_t)
+particles = np.array([sphere1, sphere2, sphere3])
 
 bound, number_of_points = 0.045, 151
 plane = 'xz'
