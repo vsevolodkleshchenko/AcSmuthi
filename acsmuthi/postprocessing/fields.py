@@ -33,7 +33,7 @@ def compute_incident_field(incident_field, x, y, z):
 def compute_total_field(particles, incident_field, x, y, z):
     incident_field = compute_incident_field(incident_field, x, y, z)
     scattered_field = compute_scattered_field(particles, x, y, z)
-    outside_field = scattered_field + incident_field
+    outside_field = scattered_field  # + incident_field
     for s, particle in enumerate(particles):
         rx, ry, rz = x - particle.position[0], y - particle.position[1], z - particle.position[2]
         r = np.sqrt(rx ** 2 + ry ** 2 + rz ** 2)

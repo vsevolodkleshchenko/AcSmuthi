@@ -31,8 +31,12 @@ class Simulation:
         self.store_t_matrix = store_t_matrix
 
     def run(self, cross_sections_flag=False, forces_flag=False, plot_flag=False):
-        linear_system = LinearSystem(particles=self.particles, medium=self.medium, initial_field=self.incident_field,
-                                     frequency=self.freq, order=self.order, store_t_matrix=self.store_t_matrix)
+        linear_system = LinearSystem(particles=self.particles,
+                                     medium=self.medium,
+                                     initial_field=self.incident_field,
+                                     frequency=self.freq,
+                                     order=self.order,
+                                     store_t_matrix=self.store_t_matrix)
         t_start = time.time()
         t_cs_start = t_cs_finish = t_f_start = t_f_finish = t_sf_start = t_sf_finish = 0
         linear_system.prepare()

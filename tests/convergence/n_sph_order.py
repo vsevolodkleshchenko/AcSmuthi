@@ -14,82 +14,66 @@ from acsmuthi.medium import Medium
 
 
 def silica_aerogel_spheres_in_plane_wave_ls(order, n_sph):
-    ro_fluid = 1.225  # [kg/m^3]
-    c_fluid = 331  # [m/s]
-
+    ro_fluid = 1.225
+    c_fluid = 331
     direction = np.array([0, 0, 1])
-    freq = 14000  # [Hz]
-    p0 = 10000  # [kg/m/s^2] = [Pa]
-    k_l = 2 * np.pi * freq / c_fluid  # [1/m]
-
+    freq = 14000
+    p0 = 10000
+    k_l = 2 * np.pi * freq / c_fluid
     poisson = 0.12
     young = 197920
     g = 0.5 * young / (1 + poisson)
-    r_sph = 0.01  # [m]
-    ro_sph = 80  # [kg/m^3]
-    c_sph_l = np.sqrt(2 * g * (1 - poisson) / ro_sph / (1 - 2 * poisson))  # [m/s]
-    c_sph_t = np.sqrt(g / ro_sph)  # [m/s]
-
+    r_sph = 0.01
+    ro_sph = 80
+    c_sph_l = np.sqrt(2 * g * (1 - poisson) / ro_sph / (1 - 2 * poisson))
+    c_sph_t = np.sqrt(g / ro_sph)
     incident_field = PlaneWave(k_l, p0, direction)
     fluid = Medium(ro_fluid, c_fluid)
 
+    poses = []
+
     if n_sph == 1:
-        pos1 = np.array([0, 0, 0])
-        sphere1 = Particle(pos1, r_sph, ro_sph, c_sph_l, order, speed_t=c_sph_t)
-        particles = np.array([sphere1])
-    if n_sph == 2:
-        pos1, pos2 = np.array([-0.02, 0, 0]), np.array([0.02, 0, 0])
-        sphere1 = Particle(pos1, r_sph, ro_sph, c_sph_l, order, speed_t=c_sph_t)
-        sphere2 = Particle(pos2, r_sph, ro_sph, c_sph_l, order, speed_t=c_sph_t)
-        particles = np.array([sphere1, sphere2])
-    if n_sph == 3:
-        pos1, pos2, pos3 = np.array([-0.018, 0, -0.018]), np.array([0.018, 0, -0.018]), np.array([0, 0, 0.018])
-        sphere1 = Particle(pos1, r_sph, ro_sph, c_sph_l, order, speed_t=c_sph_t)
-        sphere2 = Particle(pos2, r_sph, ro_sph, c_sph_l, order, speed_t=c_sph_t)
-        sphere3 = Particle(pos3, r_sph, ro_sph, c_sph_l, order, speed_t=c_sph_t)
-        particles = np.array([sphere1, sphere2, sphere3])
-    if n_sph == 4:
-        pos1, pos2 = np.array([-0.018, 0, -0.018]), np.array([0.018, 0, -0.018])
-        pos3, pos4 = np.array([-0.018, 0, 0.018]), np.array([0.018, 0, 0.018])
-        sphere1 = Particle(pos1, r_sph, ro_sph, c_sph_l, order, speed_t=c_sph_t)
-        sphere2 = Particle(pos2, r_sph, ro_sph, c_sph_l, order, speed_t=c_sph_t)
-        sphere3 = Particle(pos3, r_sph, ro_sph, c_sph_l, order, speed_t=c_sph_t)
-        sphere4 = Particle(pos4, r_sph, ro_sph, c_sph_l, order, speed_t=c_sph_t)
-        particles = np.array([sphere1, sphere2, sphere3, sphere4])
-    if n_sph == 5:
-        pos1, pos2 = np.array([-0.018, 0, -0.018]), np.array([0.018, 0, -0.018])
-        pos3, pos4, pos5 = np.array([-0.036, 0, 0.018]), np.array([0, 0, 0.018]), np.array([0.036, 0, 0.018])
-        sphere1 = Particle(pos1, r_sph, ro_sph, c_sph_l, order, speed_t=c_sph_t)
-        sphere2 = Particle(pos2, r_sph, ro_sph, c_sph_l, order, speed_t=c_sph_t)
-        sphere3 = Particle(pos3, r_sph, ro_sph, c_sph_l, order, speed_t=c_sph_t)
-        sphere4 = Particle(pos4, r_sph, ro_sph, c_sph_l, order, speed_t=c_sph_t)
-        sphere5 = Particle(pos5, r_sph, ro_sph, c_sph_l, order, speed_t=c_sph_t)
-        particles = np.array([sphere1, sphere2, sphere3, sphere4, sphere5])
-    if n_sph == 6:
-        pos1, pos2, pos3 = np.array([-0.036, 0, -0.018]), np.array([0, 0, -0.018]), np.array([0.036, 0, -0.018])
-        pos4, pos5, pos6 = np.array([-0.036, 0, 0.018]), np.array([0, 0, 0.018]), np.array([0.036, 0, 0.018])
-        sphere1 = Particle(pos1, r_sph, ro_sph, c_sph_l, order, speed_t=c_sph_t)
-        sphere2 = Particle(pos2, r_sph, ro_sph, c_sph_l, order, speed_t=c_sph_t)
-        sphere3 = Particle(pos3, r_sph, ro_sph, c_sph_l, order, speed_t=c_sph_t)
-        sphere4 = Particle(pos4, r_sph, ro_sph, c_sph_l, order, speed_t=c_sph_t)
-        sphere5 = Particle(pos5, r_sph, ro_sph, c_sph_l, order, speed_t=c_sph_t)
-        sphere6 = Particle(pos6, r_sph, ro_sph, c_sph_l, order, speed_t=c_sph_t)
-        particles = np.array([sphere1, sphere2, sphere3, sphere4, sphere5, sphere6])
+        poses = [np.array([0, 0, 0])]
 
-    if n_sph == 7:
-        pos1, pos2, pos3 = np.array([-0.036, 0, -0.018]), np.array([0, 0, -0.018]), np.array([0.036, 0, -0.018])
-        pos4, pos5, pos6 = np.array([-0.036, 0, 0.018]), np.array([0, 0, 0.018]), np.array([0.036, 0, 0.018])
-        pos7 = np.array([0, 0, -0.036])
-        sphere1 = Particle(pos1, r_sph, ro_sph, c_sph_l, order, speed_t=c_sph_t)
-        sphere2 = Particle(pos2, r_sph, ro_sph, c_sph_l, order, speed_t=c_sph_t)
-        sphere3 = Particle(pos3, r_sph, ro_sph, c_sph_l, order, speed_t=c_sph_t)
-        sphere4 = Particle(pos4, r_sph, ro_sph, c_sph_l, order, speed_t=c_sph_t)
-        sphere5 = Particle(pos5, r_sph, ro_sph, c_sph_l, order, speed_t=c_sph_t)
-        sphere6 = Particle(pos6, r_sph, ro_sph, c_sph_l, order, speed_t=c_sph_t)
-        sphere7 = Particle(pos7, r_sph, ro_sph, c_sph_l, order, speed_t=c_sph_t)
-        particles = np.array([sphere1, sphere2, sphere3, sphere4, sphere5, sphere6, sphere7])
+    elif n_sph == 2:
+        poses = [np.array([-0.02, 0, 0]), np.array([0.02, 0, 0])]
 
-    ls = LinearSystem(particles, fluid, incident_field, freq, order, True)
+    elif n_sph == 3:
+        poses = [np.array([-0.018, 0, -0.018]), np.array([0.018, 0, -0.018]), np.array([0, 0, 0.018])]
+
+    elif n_sph == 4:
+        poses = [np.array([-0.018, 0, -0.018]), np.array([0.018, 0, -0.018]),
+                 np.array([-0.018, 0, 0.018]), np.array([0.018, 0, 0.018])]
+
+    elif n_sph == 5:
+        poses = [np.array([-0.018, 0, -0.018]), np.array([0.018, 0, -0.018]),
+                 np.array([-0.036, 0, 0.018]), np.array([0, 0, 0.018]), np.array([0.036, 0, 0.018])]
+
+    elif n_sph == 6:
+        poses = [np.array([-0.036, 0, -0.018]), np.array([0, 0, -0.018]), np.array([0.036, 0, -0.018]),
+                 np.array([-0.036, 0, 0.018]), np.array([0, 0, 0.018]), np.array([0.036, 0, 0.018])]
+
+    elif n_sph == 7:
+        poses = [np.array([-0.036, 0, -0.018]), np.array([0, 0, -0.018]), np.array([0.036, 0, -0.018]),
+                 np.array([-0.036, 0, 0.018]), np.array([0, 0, 0.018]), np.array([0.036, 0, 0.018]),
+                 np.array([0, 0, -0.05])]
+
+    elif n_sph == 8:
+        poses = [np.array([-0.036, 0, -0.018]), np.array([0, 0, -0.018]), np.array([0.036, 0, -0.018]),
+                 np.array([-0.036, 0, 0.018]), np.array([0, 0, 0.018]), np.array([0.036, 0, 0.018]),
+                 np.array([0, 0, -0.05]), np.array([0, 0, 0.05])]
+
+    else:
+        n = int(np.round(np.sqrt(n_sph), 0))
+        for i in range(n):
+            for j in range(n):
+                poses.append(np.array([i - (n - 1) / 2, 0, j - (n - 1) / 2]) * 0.038)
+
+    particles_lst = []
+    for pos in poses:
+        particles_lst.append(Particle(pos, r_sph, ro_sph, c_sph_l, order, speed_t=c_sph_t))
+
+    ls = LinearSystem(np.array(particles_lst), fluid, incident_field, freq, order, True)
     return ls
 
 
@@ -128,52 +112,27 @@ def write_csv(data, fieldnames, filename):
         file_writer.writerows(data)
 
 
+def write_header(n):
+    forces_header = []
+    for s in range(1, n + 1):
+        for ax in ("x", "y", "z"):
+            forces_header.append(f"f{s}"+ax)
+    return ["order", "ecs"] + forces_header + ["t_s", "t_cs", "t_f"]
+
+
 if __name__ == '__main__':
-    orders = np.arange(4, 19)
+    # orders = np.arange(4, 19)
+    # for n_s in range(1, 9):
+    #     header = write_header(n_s)
+    #     tot_table = np.zeros((len(orders), len(header)))
+    #     tot_table[:, 0] = orders[:]
+    #     tot_table[:, 1:] = main_proc(orders, n_s, len(header) - 1)
+    #     write_csv(tot_table, header, f"{n_s}_sph_order")
 
-    # header = ["order"]+["ecs", "f1x", "f1y", "f1z", "t_s", "t_cs", "t_f"]
-    # tot_table = np.zeros((len(orders), len(header)))
-    # tot_table[:, 0] = orders[:]
-    # tot_table[:, 1:] = main_proc(orders, 1, len(header) - 1)
-    # write_csv(tot_table, header, "1_sph_order")
-    #
-    # header = ["order"]+["ecs", "f1x", "f1y", "f1z", "f2x", "f2y", "f2z", "t_s", "t_cs", "t_f"]
-    # tot_table = np.zeros((len(orders), len(header)))
-    # tot_table[:, 0] = orders[:]
-    # tot_table[:, 1:] = main_proc(orders, 2, len(header) - 1)
-    # write_csv(tot_table, header, "2_sph_order")
-    #
-    # header = ["order"]+["ecs", "f1x", "f1y", "f1z", "f2x", "f2y", "f2z", "f3x", "f3y", "f3z", "t_s", "t_cs", "t_f"]
-    # tot_table = np.zeros((len(orders), len(header)))
-    # tot_table[:, 0] = orders[:]
-    # tot_table[:, 1:] = main_proc(orders, 3, len(header) - 1)
-    # write_csv(tot_table, header, "3_sph_order")
-
-    # header = ["order"]+["ecs", "f1x", "f1y", "f1z", "f2x", "f2y", "f2z", "f3x", "f3y", "f3z", "f4x",
-    #                     "f4y", "f4z", "t_s", "t_cs", "t_f"]
-    # tot_table = np.zeros((len(orders), len(header)))
-    # tot_table[:, 0] = orders[:]
-    # tot_table[:, 1:] = main_proc(orders, 4, len(header) - 1)
-    # write_csv(tot_table, header, "4_sph_order")
-
-    # header = ["order"]+["ecs", "f1x", "f1y", "f1z", "f2x", "f2y", "f2z", "f3x", "f3y", "f3z",
-    #                     "f4x", "f4y", "f4z", "f5x", "f5y", "f5z", "t_s", "t_cs", "t_f"]
-    # tot_table = np.zeros((len(orders), len(header)))
-    # tot_table[:, 0] = orders[:]
-    # tot_table[:, 1:] = main_proc(orders, 5, len(header) - 1)
-    # write_csv(tot_table, header, "5_sph_order")
-
-    header = ["order"]+["ecs", "f1x", "f1y", "f1z", "f2x", "f2y", "f2z", "f3x", "f3y", "f3z",
-                        "f4x", "f4y", "f4z", "f5x", "f5y", "f5z", "f6x", "f6y", "f6z", "t_s", "t_cs", "t_f"]
-    tot_table = np.zeros((len(orders), len(header)))
-    tot_table[:, 0] = orders[:]
-    tot_table[:, 1:] = main_proc(orders, 6, len(header) - 1)
-    write_csv(tot_table, header, "6_sph_order")
-
-    header = ["order"]+["ecs", "f1x", "f1y", "f1z", "f2x", "f2y", "f2z", "f3x", "f3y", "f3z",
-                        "f4x", "f4y", "f4z", "f5x", "f5y", "f5z", "f6x", "f6y", "f6z",
-                        "f7x", "f7y", "f7z", "t_s", "t_cs", "t_f"]
-    tot_table = np.zeros((len(orders), len(header)))
-    tot_table[:, 0] = orders[:]
-    tot_table[:, 1:] = main_proc(orders, 7, len(header) - 1)
-    write_csv(tot_table, header, "7_sph_order")
+    orders = np.arange(3, 11)
+    for n_s in np.arange(3, 8) ** 2:
+        header = write_header(n_s)
+        tot_table = np.zeros((len(orders), len(header)))
+        tot_table[:, 0] = orders[:]
+        tot_table[:, 1:] = main_proc(orders, n_s, len(header) - 1)
+        write_csv(tot_table, header, f"{n_s}_sph_order")

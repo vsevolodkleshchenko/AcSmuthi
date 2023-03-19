@@ -2,23 +2,25 @@ import numpy as np
 from acsmuthi.postprocessing import rendering
 from acsmuthi.utility import mathematics as mths, wavefunctions as wvfs
 
-c = 331  # [m/s]
-freq = 82  # [Hz]
-k = 2 * np.pi * freq / c  # [1/m]
-pos1, pos2 = np.array([0, 0, -2.5]), np.array([0, 0, 2.5])
 
-# coordinates
-bound, number_of_points = 5, 201
-span = rendering.build_discretized_span(bound, number_of_points)
-plane = 'xz'
-plane_number = int(number_of_points / 2) + 1
-x_p, y_p, z_p, span_v, span_h = rendering.build_slice(span, plane_number, plane=plane)
+def test_h_additional_theorem():
+    c = 331  # [m/s]
+    freq = 82  # [Hz]
+    k = 2 * np.pi * freq / c  # [1/m]
+    pos1, pos2 = np.array([0, 0, -2.5]), np.array([0, 0, 2.5])
 
-# order of decomposition
-order = 20
+    # coordinates
+    bound, number_of_points = 5, 201
+    span = rendering.build_discretized_span(bound, number_of_points)
+    plane = 'xz'
+    plane_number = int(number_of_points / 2) + 1
+    x_p, y_p, z_p, span_v, span_h = rendering.build_slice(span, plane_number, plane=plane)
 
+    # order of decomposition
+    order = 20
 
-def h_additional_theorem_test(m, n):
+    # main part
+    m, n = 1, 1
     dist = pos1 - pos2
     desired_h = wvfs.outgoing_wvf(m, n, x_p - pos2[0], y_p - pos2[1], z_p - pos2[2], k)
 
@@ -39,9 +41,6 @@ def h_additional_theorem_test(m, n):
     actual_h = np.where(r >= 0.6 * np.sqrt(dist[0]**2 + dist[1]**2 + dist[2]**2), 0, actual_h)
     desired_h = np.where(r >= 0.6 * np.sqrt(dist[0] ** 2 + dist[1] ** 2 + dist[2] ** 2), 0, desired_h)
 
-    rendering.plots_for_tests(actual_h, desired_h, span_v, span_h)
-    rendering.slice_plot(np.abs(actual_h - desired_h), span_v, span_h)
+    # rendering.plots_for_tests(actual_h, desired_h, span_v, span_h)
+    # rendering.slice_plot(np.abs(actual_h - desired_h), span_v, span_h)
     np.testing.assert_allclose(actual_h, desired_h, rtol=1e-2)
-
-
-h_additional_theorem_test(1, 1)
