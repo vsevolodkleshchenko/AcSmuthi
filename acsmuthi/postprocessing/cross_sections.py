@@ -36,7 +36,7 @@ def extinction_cs(particles, medium, incident_field, freq):
     omega = 2*np.pi*freq
     dimensional_coef = incident_field.ampl ** 2 / (2 * omega * medium.density * incident_field.k_l)
     sigma_ex = -math.fsum(sigma_ex_array) * dimensional_coef / incident_field.intensity(medium.density, medium.speed_l)
-    return sigma_ex # / (np.pi * particles[0].radius ** 2)
+    return sigma_ex  # / (np.pi * particles[0].radius ** 2)
 
 
 def cross_section(particles, medium, incident_field, freq, order):

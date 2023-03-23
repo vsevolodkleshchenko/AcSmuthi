@@ -13,19 +13,21 @@ def test_two_water_spheres_in_air():
 
     # parameters of incident field
     direction = np.array([0.70711, 0, 0.70711])
-    freq = 10_000  # [Hz]
+    freq = 82  # [Hz] 10000
     p0 = 1  # [kg/m/s^2] = [Pa]
     k_l = 2 * np.pi * freq / c_fluid  # [1/m]
 
     # parameters of the spheres
-    r_sph = 0.01  # [m]
+    r_sph = 1  # [m]
     ro_sph = 997  # [kg/m^3]
     c_sph_l = 1403  # [m/s]
 
-    pos1 = np.array([0, -1.6 * r_sph, 0])  # [m]
-    pos2 = np.array([0, 1.6 * r_sph, 0])  # [m]
+    # pos1 = np.array([0, -1.6 * r_sph, 0])  # [m]
+    # pos2 = np.array([0, 1.6 * r_sph, 0])  # [m]
+    pos1 = np.array([-2.5, 0, 0])  # [m]
+    pos2 = np.array([2.5, 0, 0])  # [m]
 
-    order = 8
+    order = 12
 
     incident_field = PlaneWave(k_l=k_l,
                                amplitude=p0,
@@ -64,9 +66,10 @@ def test_two_water_spheres_in_air():
                              medium=fluid,
                              incident_field=incident_field)
 
-    comsol_scs = 9.5773E-4  # 9.6687E-4
-    comsol_frcs = np.array([[3.3725E-14, 3.1652E-14, -3.1027E-14], [2.7348E-14, 3.5052E-14, -2.8459E-14],
-                            [2.7348E-14, 3.5052E-14, -2.8459E-14], [3.2758E-14, 3.2033E-14, -3.1599E-14]])
+    # comsol_scs = 3.9407  # 3.9369
+    # comsol_frcs = np.array([[6.7778E-6, -9.7296E-9, 5.8066E-6], [5.5507E-6, 9.0569E-9, 6.0051E-6]])
+    comsol_scs = 3.9354  # 3.9339
+    comsol_frcs = np.array([[6.8436E-6, - 4.8389E-10, 5.8481E-6], [5.5495E-6, 1.1734E-10, 5.9831E-6]])
 
     # np.testing.assert_allclose(frcs, comsol_frcs, rtol=1e-1)
-    assert scs == 9.5773E-4  # 9.6687E-4
+    assert scs == comsol_scs
