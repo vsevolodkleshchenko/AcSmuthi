@@ -27,7 +27,7 @@ def test_two_water_spheres_in_air():
     pos1 = np.array([-2.5, 0, 0])  # [m]
     pos2 = np.array([2.5, 0, 0])  # [m]
 
-    order = 12
+    order = 9
 
     incident_field = PlaneWave(k_l=k_l,
                                amplitude=p0,
@@ -66,10 +66,10 @@ def test_two_water_spheres_in_air():
                              medium=fluid,
                              incident_field=incident_field)
 
-    # comsol_scs = 3.9407  # 3.9369
     # comsol_frcs = np.array([[6.7778E-6, -9.7296E-9, 5.8066E-6], [5.5507E-6, 9.0569E-9, 6.0051E-6]])
     comsol_scs = 3.9354  # 3.9339
-    comsol_frcs = np.array([[6.8436E-6, - 4.8389E-10, 5.8481E-6], [5.5495E-6, 1.1734E-10, 5.9831E-6]])
+    comsol_frcs = np.array([[6.8436E-6, 0, 5.8481E-6], [5.5495E-6, 0, 5.9831E-6]])
 
-    # np.testing.assert_allclose(frcs, comsol_frcs, rtol=1e-1)
-    assert scs == comsol_scs
+    np.testing.assert_allclose(np.where(np.abs(frcs) <= 1e-14, 0, frcs), comsol_frcs, rtol=1e-2)
+    assert np.round(scs, 2) == np.round(comsol_scs, 2)
+

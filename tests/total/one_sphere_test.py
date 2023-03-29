@@ -15,6 +15,19 @@ comparison: solution using package and exact solution using spherical expansion
 source: Acoustic force and torque on small objects. Notes. Ivan Toftul
 '''
 
+def axisymmetric_outgoing_wvf(n, x, y, z, k):
+    r"""Outgoing axisymmetric basis spherical wave function"""
+    r, phi, theta = mths.dec_to_sph(x, y, z)
+    return mths.spherical_h1n(n, k * r) * scipy.special.lpmv(0, n, np.cos(theta))
+
+
+def axisymmetric_outgoing_wvfs_array(x, y, z, k, length, order):
+    r"""Builds np.array of all axisymmetric outgoing wave functions with n <= order"""
+    as_ow_array = np.zeros((order + 1, length), dtype=complex)
+    for n in range(order + 1):
+        as_ow_array[n] = axisymmetric_outgoing_wvf(n, x, y, z, k)
+    return as_ow_array
+
 
 def pn_coefficient_1s(n):
     r"""
@@ -40,9 +53,9 @@ def desired_scattered_coefficient_1s(n, k_s, r_s, rho_s, k, rho):
     a_n = (gamma * scipy.special.spherical_jn(n, k_s * r_s, derivative=True) *
            scipy.special.spherical_jn(n, k * r_s) - scipy.special.spherical_jn(n, k_s * r_s) *
            scipy.special.spherical_jn(n, k * r_s, derivative=True)) / \
-          (scipy.special.spherical_jn(n, k_s * r_s) * mths.sph_hankel1_der(n, k * r_s) -
+          (scipy.special.spherical_jn(n, k_s * r_s) * mths.spherical_h1n(n, k * r_s, derivative=True) -
            gamma * scipy.special.spherical_jn(n, k_s * r_s, derivative=True) *
-           mths.sph_hankel1(n, k * r_s))
+           mths.spherical_h1n(n, k * r_s))
     return a_n
 
 
@@ -52,9 +65,9 @@ def desired_in_coefficient_1s(n, k_s, r_s, rho_s, k, rho):
     in basis of functions :math:`j_n(kr) P_n(\cos\theta)`
     """
     gamma = k_s * rho / k / rho_s
-    c_n = 1j / (k * r_s) ** 2 / (scipy.special.spherical_jn(n, k_s * r_s) * mths.sph_hankel1_der(n, k * r_s) -
+    c_n = 1j / (k * r_s) ** 2 / (scipy.special.spherical_jn(n, k_s * r_s) * mths.spherical_h1n(n, k * r_s, derivative=True) -
                                  gamma * scipy.special.spherical_jn(n, k_s * r_s, derivative=True) *
-                                 mths.sph_hankel1(n, k * r_s))
+                                 mths.spherical_h1n(n, k * r_s))
     return c_n
 
 
@@ -74,7 +87,7 @@ def scattered_field_1s(x, y, z, k_s, r_s, rho_s, k, rho, order):
     calculates scattered field in every point
     """
     tot_field_array = desired_pscattered_coefficients_array_1s(k_s, r_s, rho_s, k, rho, len(x), order) * \
-                      wvfs.axisymmetric_outgoing_wvfs_array(x, y, z, k, len(x), order)
+                      axisymmetric_outgoing_wvfs_array(x, y, z, k, len(x), order)
     return np.real(np.sum(tot_field_array, axis=0))
 
 
@@ -95,7 +108,7 @@ def cross_sections_1s(k_s, r_s, rho_s, k, rho, order):
     return sigma_sc, sigma_ex
 
 
-def one_sphere_test1():
+def test_one_sphere():
     # parameters of medium
     ro_fluid = 1.225  # [kg/m^3]
     c_fluid = 331  # [m/s]
@@ -168,14 +181,11 @@ def one_sphere_test1():
     desired_field = np.where(r <= sphere1.radius, 0, desired_field)
 
     err = np.abs((actual_field - desired_field))
-    rendering.slice_plot(err, span_v, span_h, plane=plane)
-    rendering.plots_for_tests(actual_field, desired_field, span_v, span_h)
+    # rendering.slice_plot(err, span_v, span_h, plane=plane)
+    # rendering.plots_for_tests(actual_field, desired_field, span_v, span_h)
 
     desired_scs, desired_ecs = cross_sections_1s(2 * np.pi * freq / c_sph, r_sph, ro_sph, k_l, ro_fluid, order)
 
     np.testing.assert_allclose(actual_field, desired_field, rtol=1e-5)
     np.testing.assert_allclose(desired_ecs, ecs)
-    np.testing.assert_allclose(desired_scs, scs)
-
-
-one_sphere_test1()
+    np.testing.assert_allclose(desired_scs, scs / (np.pi * r_sph ** 2))

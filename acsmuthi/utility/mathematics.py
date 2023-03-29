@@ -5,40 +5,21 @@ import scipy
 import scipy.special as ss
 
 
-def sph_neyman(n, z):
-    r"""Spherical Neyman function"""
-    return (-1) ** (n + 1) * np.sqrt(np.pi / 2 / z) * scipy.special.jv(-n - 0.5, z)
-
-
-def sph_neyman_der(n, z):
-    r"""First derivative of spherical Neyman function"""
-    return (-1) ** n * np.sqrt(np.pi / (8 * z ** 3)) * scipy.special.jv(-n - 0.5, z) + \
-           (-1) ** (n + 1) * np.sqrt(np.pi / 2 / z) * scipy.special.jvp(-n - 0.5, z)
-
-
-def sph_hankel1(n, z):
+def spherical_h1n(n, z, derivative=False):
     r"""Spherical Hankel function of the first kind"""
-    return scipy.special.spherical_jn(n, z) + 1j * sph_neyman(n, z)
+    if derivative:
+        return ss.spherical_jn(n, z, derivative=True) + 1j * ss.spherical_yn(n, z, derivative=True)
+    else:
+        return scipy.special.spherical_jn(n, z) + 1j * scipy.special.spherical_yn(n, z)
 
 
-def sph_hankel1_der(n, z):
-    r"""First derivative of spherical Hankel function of the first kind"""
-    return scipy.special.spherical_jn(n, z, derivative=True) + 1j * sph_neyman_der(n, z)
-
-
-def sph_bessel_der2(n, z):
+def spherical_jn_der2(n, z):
     r"""Second derivative of spherical Bessel function"""
     if n == 0:
         return - ss.spherical_jn(1, z, derivative=True)
     else:
         return ss.spherical_jn(n - 1, z, derivative=True) + (n + 1) / z**2 * ss.spherical_jn(n, z) - \
                (n + 1) / z * ss.spherical_jn(n, z, derivative=True)
-
-
-def csph_harm(m, n, phi, theta):
-    r"""Spherical harmonic of complex argument"""
-    coefficient = np.sqrt((2 * n + 1) / 4 / np.pi * scipy.special.factorial(n - m) / scipy.special.factorial(n + m))
-    return coefficient * np.exp(1j * m * phi) * scipy.special.clpmn(m, n, np.cos(theta), type=2)[0][-1][-1]
 
 
 def dec_to_sph(x, y, z):

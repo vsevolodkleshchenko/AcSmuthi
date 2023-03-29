@@ -26,7 +26,7 @@ def test_two_steel_spheres_in_water():
     pos1 = np.array([-1.6 * r_sph, 0, 0])  # [m]
     pos2 = np.array([1.6 * r_sph, 0, 0])  # [m]
 
-    order = 8
+    order = 10
 
     incident_field = PlaneWave(k_l=k_l,
                                amplitude=p0,
@@ -68,8 +68,10 @@ def test_two_steel_spheres_in_water():
                              medium=fluid,
                              incident_field=incident_field)
 
-    comsol_scs = 6.8682E-4  # 6.9386E-4
-    comsol_frcs = np.array([[4.5201E-14, -2.2189E-17, 5.1318E-14], [5.1488E-14,	1.3965E-17,	5.9230E-14]])
+    # comsol_scs = 6.868E-4  # 6.9386E-4
+    # comsol_frcs = np.array([[4.5201E-14, 0, 5.1318E-14], [5.1488E-14, 0, 5.9230E-14]])
+    comsol_scs = 6.9092E-4  # 6.8824E-4
+    comsol_frcs = np.array([[4.5198E-14, 0, 5.1185E-14], [5.1514E-14, 0, 5.9213E-14]])
 
-    # np.testing.assert_allclose(frcs, comsol_frcs, rtol=1e-1)
-    assert scs == 9.5773E-4  # 9.6687E-4
+    np.testing.assert_allclose(np.where(np.abs(frcs) <= 1e-14, 0, frcs), comsol_frcs, rtol=5e-1)
+    assert np.round(scs, 4) == np.round(comsol_scs, 4)

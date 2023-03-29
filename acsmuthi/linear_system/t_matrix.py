@@ -19,9 +19,9 @@ def scaled_coefficient(n, c_medium, rho_medium, c_l, rho, r, freq):
     s1[1, 0] = ss.spherical_jn(n, k_medium * r, derivative=True)
     s1[1, 1] = ss.spherical_jn(n, k_l * r, derivative=True)
 
-    s2[0, 0] = - gamma * mths.sph_hankel1(n, k_medium * r)
+    s2[0, 0] = - gamma * mths.spherical_h1n(n, k_medium * r)
     s2[0, 1] = ss.spherical_jn(n, k_l * r)
-    s2[1, 0] = - mths.sph_hankel1_der(n, k_medium * r)
+    s2[1, 0] = - mths.spherical_h1n(n, k_medium * r, derivative=True)
     s2[1, 1] = ss.spherical_jn(n, k_l * r, derivative=True)
 
     return np.linalg.det(s1) / np.linalg.det(s2)
@@ -35,17 +35,18 @@ def elastic_scaled_coefficient(n, c_medium, rho_medium, c_l, c_t, rho, r, freq):
     sigma = (c_l**2 / 2 - c_t**2) / (c_l**2 - c_t**2)
 
     alpha_n = ss.spherical_jn(n, k_l * r) - k_l * r * ss.spherical_jn(n, k_l * r, derivative=True)
-    beta_n = (n**2 + n - 2) * ss.spherical_jn(n, k_t * r) + k_t ** 2 * r ** 2 ** mths.sph_bessel_der2(n, k_t * r)
+    beta_n = (n**2 + n - 2) * ss.spherical_jn(n, k_t * r) + k_t ** 2 * r ** 2 ** mths.spherical_jn_der2(n, k_t * r)
     xi_n = k_l * r * ss.spherical_jn(n, k_l * r, derivative=True)
     delta_n = 2 * n * (n + 1) * ss.spherical_jn(n, k_t * r)
-    epsilon_n = k_l ** 2 * r ** 2 * (ss.spherical_jn(n, k_l * r) * sigma/(1-2*sigma) - mths.sph_bessel_der2(n, k_l * r))
+    epsilon_n = k_l ** 2 * r ** 2 * (ss.spherical_jn(n, k_l * r) * sigma / (1-2*sigma) - mths.spherical_jn_der2(n,
+                                                                                                                k_l * r))
     eta_n = 2 * n * (n + 1) * (ss.spherical_jn(n, k_t * r) - k_t * r * ss.spherical_jn(n, k_t * r, derivative=True))
 
     coefficient = rho_medium * k_t ** 2 * r ** 2 / 2 / rho
     g_n = coefficient * (alpha_n * delta_n + beta_n * xi_n) / (alpha_n * eta_n + beta_n * epsilon_n)
 
     scale = - (g_n * ss.spherical_jn(n, k_medium * r) - k_medium * r * ss.spherical_jn(n, k_medium * r, derivative=True)) / \
-              (g_n * mths.sph_hankel1(n, k_medium * r) - k_medium * r * mths.sph_hankel1_der(n, k_medium * r))
+              (g_n * mths.spherical_h1n(n, k_medium * r) - k_medium * r * mths.spherical_h1n(n, k_medium * r, derivative=True))
     return scale
 
 

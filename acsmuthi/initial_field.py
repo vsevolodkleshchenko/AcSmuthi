@@ -28,7 +28,7 @@ class PlaneWave(InitialField):
 
     def spherical_wave_expansion(self, origin, order):
         base_coefficients = wvfs.incident_coefficients(self.dir, order)
-        if origin.all() == self.reference_point.all():
+        if np.array_equal(origin, self.reference_point):
             coefficients = base_coefficients
         else:
             coefficients = cmt.translation_block(order, self.k_l, origin - self.reference_point) @ base_coefficients

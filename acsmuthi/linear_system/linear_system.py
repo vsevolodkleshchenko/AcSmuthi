@@ -159,5 +159,5 @@ def _inner_coefficients(particles_array, scattered_coefficients, order):
             k, k_s = particle.incident_field.k_l, particle.inner_field.k_l
             sc_coef = scattered_coefficients[s, imn]
             in_coef[s, imn] = (ss.spherical_jn(n, k * particle.radius) * particle.t_matrix[imn, imn] +
-                               mths.sph_hankel1(n, k * particle.radius)) * sc_coef / ss.spherical_jn(n, k_s * particle.radius)
+                               mths.spherical_h1n(n, k * particle.radius)) * sc_coef / ss.spherical_jn(n, k_s * particle.radius)
     return in_coef
