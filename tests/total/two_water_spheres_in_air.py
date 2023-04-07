@@ -1,4 +1,4 @@
-from acsmuthi.linear_system.linear_system import LinearSystem
+from acsmuthi.simulation import Simulation
 from acsmuthi.particles import Particle
 from acsmuthi.medium import Medium
 from acsmuthi.initial_field import PlaneWave
@@ -48,14 +48,15 @@ def test_two_water_spheres_in_air():
                        order=order)
 
     particles = np.array([sphere1, sphere2])
-    linear_system = LinearSystem(particles=particles,
-                                 medium=fluid,
-                                 initial_field=incident_field,
-                                 frequency=freq,
-                                 order=order,
-                                 store_t_matrix=True)
-    linear_system.prepare()
-    linear_system.solve()
+    sim = Simulation(
+        particles=particles,
+        medium=fluid,
+        initial_field=incident_field,
+        frequency=freq,
+        order=order,
+        store_t_matrix=True
+    )
+    sim.run()
 
     scs = cs.extinction_cs(particles=particles,
                            medium=fluid,

@@ -1,4 +1,4 @@
-from acsmuthi.linear_system.linear_system import LinearSystem
+from acsmuthi.simulation import Simulation
 from acsmuthi.particles import Particle
 from acsmuthi.medium import Medium
 from acsmuthi.initial_field import PlaneWave
@@ -61,23 +61,28 @@ def test_four_water_spheres_in_air():
 
     particles = np.array([sphere1, sphere2, sphere3, sphere4])
 
-    linear_system = LinearSystem(particles=particles,
-                                 medium=fluid,
-                                 initial_field=incident_field,
-                                 frequency=freq,
-                                 order=order,
-                                 store_t_matrix=True)
-    linear_system.prepare()
-    linear_system.solve()
+    sim = Simulation(
+        particles=particles,
+        medium=fluid,
+        initial_field=incident_field,
+        frequency=freq,
+        order=order,
+        store_t_matrix=True
+    )
+    sim.run()
 
-    scs = cs.extinction_cs(particles=particles,
-                           medium=fluid,
-                           incident_field=incident_field,
-                           freq=freq)
+    scs = cs.extinction_cs(
+        particles=particles,
+        medium=fluid,
+        incident_field=incident_field,
+        freq=freq
+    )
 
-    frcs = forces.all_forces(particles_array=particles,
-                             medium=fluid,
-                             incident_field=incident_field)
+    frcs = forces.all_forces(
+        particles_array=particles,
+        medium=fluid,
+        incident_field=incident_field
+    )
 
     comsol_scs = 8.0687	 # 8.0799
     comsol_frcs = np.array([[4.2871E-6,	6.8757E-6, -3.4738E-6],	[6.3812E-6,	5.9692E-6, -4.8634E-6],

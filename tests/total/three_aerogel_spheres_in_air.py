@@ -1,4 +1,4 @@
-from acsmuthi.linear_system.linear_system import LinearSystem
+from acsmuthi.simulation import Simulation
 from acsmuthi.particles import Particle
 from acsmuthi.medium import Medium
 from acsmuthi.initial_field import StandingWave
@@ -62,14 +62,15 @@ def test_three_aerogel_spheres_in_air():
                        speed_t=c_sph_t)
 
     particles = np.array([sphere1, sphere2, sphere3])
-    linear_system = LinearSystem(particles=particles,
-                                 medium=fluid,
-                                 initial_field=incident_field,
-                                 frequency=freq,
-                                 order=order,
-                                 store_t_matrix=True)
-    linear_system.prepare()
-    linear_system.solve()
+    sim = Simulation(
+        particles=particles,
+        medium=fluid,
+        initial_field=incident_field,
+        frequency=freq,
+        order=order,
+        store_t_matrix=True
+    )
+    sim.run()
 
     scs = cs.extinction_cs(particles=particles,
                            medium=fluid,

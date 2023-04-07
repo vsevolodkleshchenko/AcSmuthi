@@ -29,7 +29,7 @@ class Particle:
         return t
 
 
-@memo.Memoize
+# @memo.Memoize
 def _compute_t_matrix(order, c_medium, rho_medium, c_sphere_l, rho_sphere, r_sphere, freq, c_sphere_t=None):
     return tmt.t_matrix_sphere(order, c_medium, rho_medium, c_sphere_l, rho_sphere, r_sphere, freq, c_sphere_t)
 

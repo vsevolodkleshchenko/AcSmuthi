@@ -1,11 +1,11 @@
 import math
-from acsmuthi.utility import mathematics as mths, wavefunctions as wvfs
+from acsmuthi.utility import mathematics as mths
 import numpy as np
 import scipy.special
 from acsmuthi.initial_field import PlaneWave
 from acsmuthi.medium import Medium
 from acsmuthi import particles
-from acsmuthi.linear_system.linear_system import LinearSystem
+from acsmuthi.simulation import Simulation
 from acsmuthi.postprocessing import cross_sections as cs, fields, rendering
 '''
 test: scattering of plane wave, propagating along z axis, on 1 water sphere.
@@ -14,6 +14,7 @@ comparison: solution using package and exact solution using spherical expansion
 
 source: Acoustic force and torque on small objects. Notes. Ivan Toftul
 '''
+
 
 def axisymmetric_outgoing_wvf(n, x, y, z, k):
     r"""Outgoing axisymmetric basis spherical wave function"""
@@ -147,14 +148,15 @@ def test_one_sphere():
 
     spheres = np.array([sphere1])
 
-    linear_system = LinearSystem(particles=spheres,
-                                 medium=fluid,
-                                 initial_field=incident_field,
-                                 frequency=freq,
-                                 order=order,
-                                 store_t_matrix=True)
-    linear_system.prepare()
-    linear_system.solve()
+    sim = Simulation(
+        particles=spheres,
+        medium=fluid,
+        initial_field=incident_field,
+        frequency=freq,
+        order=order,
+        store_t_matrix=True
+    )
+    sim.run()
 
     ecs, scs = cs.cross_section(particles=spheres,
                                 medium=fluid,
