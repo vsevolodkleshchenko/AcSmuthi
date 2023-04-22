@@ -36,6 +36,7 @@ class Simulation:
         t_start = time.time()
         linear_system.prepare()
         t_preparation = time.time() - t_start
+        t_start_solving = time.time()
         linear_system.solve()
-        t_solution = time.time() - t_preparation
+        t_solution = time.time() - t_start_solving
         return t_preparation, t_solution

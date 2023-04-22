@@ -16,7 +16,7 @@ def silica_aerogel_spheres_in_plane_wave_ls(order, n_sph):
     ro_fluid = 1.225
     c_fluid = 331
     direction = np.array([0.70711, 0, 0.70711])
-    freq = 140
+    freq = 140  # for D/l ~ 0.85; 14 for D/l ~ 0.1
     p0 = 1
     k_l = 2 * np.pi * freq / c_fluid
     poisson = 0.12
@@ -29,14 +29,14 @@ def silica_aerogel_spheres_in_plane_wave_ls(order, n_sph):
     incident_field = PlaneWave(k_l, p0, direction)
     fluid = Medium(ro_fluid, c_fluid)
 
-    d_har = 1.8 * r_sph
+    d_har = 1.8 * r_sph  # for freq=140 ; 0.4 * c_fluid / freq  # for freq=14
     poses = []
 
     if n_sph == 1:
         poses = [np.array([0., 0., 0.])]
 
     elif n_sph == 2:
-        poses = [np.array([-2 * r_sph, 0, 0]), np.array([2 * r_sph, 0, 0])]
+        poses = [np.array([-1.1 * d_har, 0., 0.]), np.array([1.1 * d_har, 0., 0.])]
 
     elif n_sph == 3:
         poses = [np.array([-d_har, 0, -d_har]), np.array([d_har, 0, -d_har]), np.array([0, 0, d_har])]
@@ -65,7 +65,7 @@ def silica_aerogel_spheres_in_plane_wave_ls(order, n_sph):
 
     else:
         n = int(np.round(np.sqrt(n_sph), 0))
-        d_h = 3.8 * r_sph
+        d_h = 3.8 * r_sph  # for freq=140 ; 0.7 * c_fluid / freq for freq=14
         for i in range(n):
             for j in range(n):
                 poses.append(np.array([i - (n - 1) / 2, 0, j - (n - 1) / 2]) * d_h)
@@ -89,7 +89,7 @@ def main_proc(orders, n_sph):
     tab_len = 1 + 3 * n_sph + 3
     table = np.zeros((len(orders), tab_len), dtype=float)
     for i, order in enumerate(orders):
-        print("Order:", i, "of", len(orders) - 1)
+        print("    Order:", i, "of", len(orders) - 1)
         ecs, frcs, timing = silica_aerogel_spheres_in_plane_wave_ls(order, n_sph)
         table[i, 0] = ecs
         table[i, 1:tab_len-3] = frcs
@@ -98,7 +98,7 @@ def main_proc(orders, n_sph):
 
 
 def write_csv(data, fieldnames, filename):
-    with open(".\\n_particles_order_csv\\"+filename+".csv", mode="w", encoding='utf-8') as w_file:
+    with open(".\\n_particles_order_csv\\Dll_1\\"+filename+".csv", mode="w", encoding='utf-8') as w_file:
         file_writer = csv.writer(w_file, delimiter=",", lineterminator="\r")
         file_writer.writerow(fieldnames)
         file_writer.writerows(data)
@@ -113,17 +113,17 @@ def write_header(n):
 
 
 def main():
-    orders = np.arange(3, 14)
-    # for n_s in range(1, 9):
-    #     header = write_header(n_s)
-    #     tot_table = np.zeros((len(orders), len(header)))
-    #     tot_table[:, 0] = orders[:]
-    #     print(f"Number of particles: {n_s}")
-    #     tot_table[:, 1:] = main_proc(orders, n_s)
-    #     write_csv(tot_table, header, f"{n_s}_sph_order")
+    orders = np.arange(1, 13)  # for freq=140; np.arange(1, 7)  for freq=14
+    for n_s in range(1, 9):
+        header = write_header(n_s)
+        tot_table = np.zeros((len(orders), len(header)))
+        tot_table[:, 0] = orders[:]
+        print(f"Number of particles: {n_s}")
+        tot_table[:, 1:] = main_proc(orders, n_s)
+        write_csv(tot_table, header, f"{n_s}_sph_order")
 
-    orders = np.arange(7, 10)
-    for n_s in np.arange(5, 8) ** 2:
+    orders = np.arange(1, 10)   # for freq=140; np.arange(1, 7) for freq=14
+    for n_s in np.arange(3, 8) ** 2:
         header = write_header(n_s)
         tot_table = np.zeros((len(orders), len(header)))
         tot_table[:, 0] = orders[:]

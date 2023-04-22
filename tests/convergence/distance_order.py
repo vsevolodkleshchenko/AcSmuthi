@@ -15,7 +15,7 @@ def silica_aerogel_sphere_in_standing_wave_ls(order, dist):
     c_fluid = 331  # [m/s]
 
     direction = np.array([0, 0, 1])
-    freq = 140  # [Hz]
+    freq = 18.8  #
     p0 = 1  # [kg/m/s^2] = [Pa]
     k_l = 2 * np.pi * freq / c_fluid  # [1/m]
 
@@ -53,16 +53,16 @@ def main_proc(orders, distance):
 
 
 def write_csv(data, fieldnames, filename):
-    with open(".\\distance_order_csv\\Dl0_85\\" + filename + ".csv", mode="w", encoding='utf-8') as w_file:
+    with open(".\\distance_order_csv\\Dl0_11\\" + filename + ".csv", mode="w", encoding='utf-8') as w_file:
         file_writer = csv.writer(w_file, delimiter=",", lineterminator="\r")
         file_writer.writerow(fieldnames)
         file_writer.writerows(data)
 
 
 def main():
-    orders = np.arange(5, 14)
-    lda = 331 / 140
-    distances = np.linspace(2.2, 5 * lda, 31)
+    orders = np.arange(1, 14)
+    lda = 331 / 18.8
+    distances = np.linspace(2.2, 4 * lda, 31)
     header = ["ord", "ecs", "f1x", "f1y", "f1z", "f2x", "f2y", "f2z"]
     tot_table = np.zeros((len(orders), len(header)))
     tot_table[:, 0] = orders[:]
