@@ -11,13 +11,15 @@ from acsmuthi.initial_field import InitialField
 
 
 class LinearSystem:
-    def __init__(self,
-                 particles: np.ndarray[Particle],
-                 medium: Medium,
-                 initial_field: InitialField,
-                 frequency: float,
-                 order: int,
-                 store_t_matrix: bool):
+    def __init__(
+            self,
+            particles: np.ndarray[Particle],
+            medium: Medium,
+            initial_field: InitialField,
+            frequency: float,
+            order: int,
+            store_t_matrix: bool
+    ):
         self.order = order
         self.rhs = None
         self.t_matrix = None
@@ -30,12 +32,16 @@ class LinearSystem:
 
     def compute_t_matrix(self):
         for sph in range(len(self.particles)):
-            self.particles[sph].compute_t_matrix(c_medium=self.medium.speed_l,
-                                                 rho_medium=self.medium.density,
-                                                 freq=self.freq)
-        self.t_matrix = TMatrix(particles=self.particles,
-                                order=self.order,
-                                store_t_matrix=self.store_t_matrix)
+            self.particles[sph].compute_t_matrix(
+                c_medium=self.medium.speed_l,
+                rho_medium=self.medium.density,
+                freq=self.freq
+            )
+        self.t_matrix = TMatrix(
+            particles=self.particles,
+            order=self.order,
+            store_t_matrix=self.store_t_matrix
+        )
 
     def compute_coupling_matrix(self):
         self.coupling_matrix = CouplingMatrixExplicit(particles=self.particles,
@@ -50,25 +56,31 @@ class LinearSystem:
 
     def prepare(self):
         for particle in self.particles:
-            ampl, k_l = self.incident_field.ampl, self.incident_field.k_l
-            particle.incident_field = self.incident_field.spherical_wave_expansion(origin=particle.position,
-                                                                                   order=self.order)
-            particle.scattered_field = fldsex.SphericalWaveExpansion(amplitude=ampl,
-                                                                     k_l=k_l,
-                                                                     origin=particle.position,
-                                                                     kind='outgoing',
-                                                                     order=self.order)
+            amplitude, k_l = self.incident_field.amplitude, self.incident_field.k_l
+            particle.incident_field = self.incident_field.spherical_wave_expansion(
+                origin=particle.position,
+                order=self.order
+            )
+            particle.scattered_field = fldsex.SphericalWaveExpansion(
+                amplitude=amplitude,
+                k_l=k_l,
+                origin=particle.position,
+                kind='outgoing',
+                order=self.order
+            )
             if particle.speed_t:
                 kst = 2 * np.pi * self.freq / particle.speed_t
             else:
                 kst = None
             ksl = 2 * np.pi * self.freq / particle.speed_l
-            particle.inner_field = fldsex.SphericalWaveExpansion(amplitude=ampl,
-                                                                 k_l=ksl,
-                                                                 origin=particle.position,
-                                                                 kind='regular',
-                                                                 order=self.order,
-                                                                 k_t=kst)
+            particle.inner_field = fldsex.SphericalWaveExpansion(
+                amplitude=amplitude,
+                k_l=ksl,
+                origin=particle.position,
+                kind='regular',
+                order=self.order,
+                k_t=kst
+            )
         self.compute_t_matrix()
         self.compute_coupling_matrix()
         self.compute_right_hand_side()
@@ -88,9 +100,11 @@ class LinearSystem:
 
 
 class SystemMatrix:
-    def __init__(self,
-                 particles: np.ndarray[Particle],
-                 order: int):
+    def __init__(
+            self,
+            particles: np.ndarray[Particle],
+            order: int
+    ):
         self.particles = particles
         self.order = order
         self.shape = (len(particles) * (order + 1) ** 2,
@@ -101,13 +115,17 @@ class SystemMatrix:
 
 
 class TMatrix(SystemMatrix):
-    def __init__(self,
-                 particles: np.ndarray[Particle],
-                 order: int,
-                 store_t_matrix: bool):
-        SystemMatrix.__init__(self,
-                              particles=particles,
-                              order=order)
+    def __init__(
+            self,
+            particles: np.ndarray[Particle],
+            order: int,
+            store_t_matrix: bool
+    ):
+        SystemMatrix.__init__(
+            self,
+            particles=particles,
+            order=order
+        )
 
         if not store_t_matrix:
             def apply_t_matrix(vector):
@@ -124,20 +142,23 @@ class TMatrix(SystemMatrix):
 
             for i_s, particle in enumerate(particles):
                 t_mat[self.index_block(i_s):self.index_block(i_s + 1),
-                      self.index_block(i_s):self.index_block(i_s + 1)] = particle.t_matrix
+                      self.index_block(i_s):self.index_block(i_s + 1)] = np.linalg.inv(particle.t_matrix)
 
             self.linear_operator = scipy.sparse.linalg.aslinearoperator(t_mat)
 
 
 class CouplingMatrixExplicit(SystemMatrix):
-    def __init__(self,
-                 particles: np.ndarray[Particle],
-                 order: int,
-                 k: float):
-
-        SystemMatrix.__init__(self,
-                              particles=particles,
-                              order=order)
+    def __init__(
+            self,
+            particles: np.ndarray[Particle],
+            order: int,
+            k: float
+    ):
+        SystemMatrix.__init__(
+            self,
+            particles=particles,
+            order=order
+        )
         coup_mat = np.zeros(self.shape, dtype=complex)
 
         for sph in range(len(self.particles)):
@@ -158,6 +179,6 @@ def _inner_coefficients(particles_array, scattered_coefficients, order):
             imn = n ** 2 + n + m
             k, k_s = particle.incident_field.k_l, particle.inner_field.k_l
             sc_coef = scattered_coefficients[s, imn]
-            in_coef[s, imn] = (ss.spherical_jn(n, k * particle.radius) * particle.t_matrix[imn, imn] +
+            in_coef[s, imn] = (ss.spherical_jn(n, k * particle.radius) / particle.t_matrix[imn, imn] +
                                mths.spherical_h1n(n, k * particle.radius)) * sc_coef / ss.spherical_jn(n, k_s * particle.radius)
     return in_coef

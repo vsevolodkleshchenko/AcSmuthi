@@ -140,7 +140,7 @@ def test_one_sphere():
     fluid = Medium(density=ro_fluid,
                    speed_l=c_fluid)
 
-    sphere1 = particles.Particle(position=pos1,
+    sphere1 = particles.SphericalParticle(position=pos1,
                                  radius=r_sph,
                                  density=ro_sph,
                                  speed_l=c_sph,

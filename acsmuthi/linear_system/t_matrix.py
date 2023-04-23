@@ -55,8 +55,8 @@ def t_matrix_sphere(order, c_medium, rho_medium, c_sphere_l, rho_sphere, r_spher
     for m, n in wvfs.multipoles(order):
         i = n ** 2 + n + m
         if c_sphere_t is not None:
-            t[i, i] = 1 / elastic_scaled_coefficient(n, c_medium, rho_medium, c_sphere_l, c_sphere_t,
-                                                     rho_sphere, r_sphere, freq)
+            t[i, i] = elastic_scaled_coefficient(n, c_medium, rho_medium, c_sphere_l, c_sphere_t,
+                                                 rho_sphere, r_sphere, freq)
         else:
-            t[i, i] = 1 / scaled_coefficient(n, c_medium, rho_medium, c_sphere_l, rho_sphere, r_sphere, freq)
+            t[i, i] = scaled_coefficient(n, c_medium, rho_medium, c_sphere_l, rho_sphere, r_sphere, freq)
     return t

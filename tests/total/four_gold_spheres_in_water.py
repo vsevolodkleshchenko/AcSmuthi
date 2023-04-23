@@ -1,5 +1,5 @@
 from acsmuthi.simulation import Simulation
-from acsmuthi.particles import Particle
+from acsmuthi.particles import SphericalParticle
 from acsmuthi.medium import Medium
 from acsmuthi.initial_field import PlaneWave
 from acsmuthi.postprocessing import forces, cross_sections as cs
@@ -36,28 +36,28 @@ def test_four_gold_spheres_in_water():
 
     fluid = Medium(density=rho_fluid, speed_l=c_fluid)
 
-    sphere1 = Particle(position=pos1,
+    sphere1 = SphericalParticle(position=pos1,
                        radius=r_sph,
                        density=ro_sph,
                        speed_l=c_sph_l,
                        order=order,
                        speed_t=c_sph_t)
 
-    sphere2 = Particle(position=pos2,
+    sphere2 = SphericalParticle(position=pos2,
                        radius=r_sph,
                        density=ro_sph,
                        speed_l=c_sph_l,
                        order=order,
                        speed_t=c_sph_t)
 
-    sphere3 = Particle(position=pos3,
+    sphere3 = SphericalParticle(position=pos3,
                        radius=r_sph,
                        density=ro_sph,
                        speed_l=c_sph_l,
                        order=order,
                        speed_t=c_sph_t)
 
-    sphere4 = Particle(position=pos4,
+    sphere4 = SphericalParticle(position=pos4,
                        radius=r_sph,
                        density=ro_sph,
                        speed_l=c_sph_l,

@@ -1,5 +1,5 @@
 from acsmuthi.simulation import Simulation
-from acsmuthi.particles import Particle
+from acsmuthi.particles import SphericalParticle
 from acsmuthi.medium import Medium
 from acsmuthi.initial_field import PlaneWave
 from acsmuthi.postprocessing import fields
@@ -31,7 +31,7 @@ ro_sph = 80  # [kg/m^3]
 c_sph_l = np.sqrt(2 * g * (1 - poisson) / ro_sph / (1 - 2 * poisson))  # [m/s]
 c_sph_t = np.sqrt(g / ro_sph)  # [m/s]
 
-order = 1
+order = 3
 
 incident_field = PlaneWave(k_l=k_l,
                            amplitude=p0,
@@ -39,13 +39,13 @@ incident_field = PlaneWave(k_l=k_l,
 
 fluid = Medium(density=rho_fluid, speed_l=c_fluid)
 
-sphere1 = Particle(position=pos1,
+sphere1 = SphericalParticle(position=pos1,
                    radius=r_sph,
                    density=ro_sph,
                    speed_l=c_sph_l,
                    order=order,
                    speed_t=c_sph_t)
-sphere2 = Particle(position=pos2,
+sphere2 = SphericalParticle(position=pos2,
                    radius=r_sph,
                    density=ro_sph,
                    speed_l=c_sph_l,

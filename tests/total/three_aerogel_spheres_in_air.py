@@ -1,5 +1,5 @@
 from acsmuthi.simulation import Simulation
-from acsmuthi.particles import Particle
+from acsmuthi.particles import SphericalParticle
 from acsmuthi.medium import Medium
 from acsmuthi.initial_field import StandingWave
 from acsmuthi.postprocessing import forces, cross_sections as cs
@@ -40,21 +40,21 @@ def test_three_aerogel_spheres_in_air():
 
     fluid = Medium(density=rho_fluid, speed_l=c_fluid)
 
-    sphere1 = Particle(position=pos1,
+    sphere1 = SphericalParticle(position=pos1,
                        radius=r_sph1,
                        density=ro_sph,
                        speed_l=c_sph_l,
                        order=order,
                        speed_t=c_sph_t)
 
-    sphere2 = Particle(position=pos2,
+    sphere2 = SphericalParticle(position=pos2,
                        radius=r_sph2,
                        density=ro_sph,
                        speed_l=c_sph_l,
                        order=order,
                        speed_t=c_sph_t)
 
-    sphere3 = Particle(position=pos3,
+    sphere3 = SphericalParticle(position=pos3,
                        radius=r_sph1,
                        density=ro_sph,
                        speed_l=c_sph_l,
