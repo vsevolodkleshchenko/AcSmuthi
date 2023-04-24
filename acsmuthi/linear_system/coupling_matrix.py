@@ -10,12 +10,13 @@ try:
         return cysp.translation_block(order, k_medium, distance)
 
 
-except:
+except Exception as e:
+    print("Failed to import cython speedups", str(e))
+
     import numpy as np
 
     import acsmuthi.utility.wavefunctions as wvfs
-
-    print("Failed")
+    import acsmuthi.utility.separation_coefficients as seps
 
 
     def coupling_block(particle_pos, other_particle_pos, k_medium, order):
@@ -25,7 +26,7 @@ except:
             for mu, nu in wvfs.multipoles(order):
                 imunu = nu ** 2 + nu + mu
                 distance = particle_pos - other_particle_pos
-                block[imn, imunu] = - wvfs.outgoing_separation_coefficient(mu, m, nu, n, k_medium, distance)
+                block[imn, imunu] = - seps.outgoing_separation_coefficient(mu, m, nu, n, k_medium, distance)
         return block
 
 
@@ -35,5 +36,5 @@ except:
             imn = n ** 2 + n + m
             for mu, nu, in wvfs.multipoles(order):
                 imunu = nu ** 2 + nu + mu
-                d[imn, imunu] = wvfs.regular_separation_coefficient(mu, m, nu, n, k_medium, distance)
+                d[imn, imunu] = seps.regular_separation_coefficient(mu, m, nu, n, k_medium, distance)
         return d

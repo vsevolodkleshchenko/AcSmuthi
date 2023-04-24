@@ -6,7 +6,7 @@ from acsmuthi.initial_field import PlaneWave
 from acsmuthi.medium import Medium
 from acsmuthi import particles
 from acsmuthi.simulation import Simulation
-from acsmuthi.postprocessing import cross_sections as cs, fields, rendering
+from acsmuthi.postprocessing import cross_sections as cs, fields
 '''
 test: scattering of plane wave, propagating along z axis, on 1 water sphere.
 
@@ -22,9 +22,9 @@ def axisymmetric_outgoing_wvf(n, x, y, z, k):
     return mths.spherical_h1n(n, k * r) * scipy.special.lpmv(0, n, np.cos(theta))
 
 
-def axisymmetric_outgoing_wvfs_array(x, y, z, k, length, order):
+def axisymmetric_outgoing_wvfs_array(x, y, z, k, order):
     r"""Builds np.array of all axisymmetric outgoing wave functions with n <= order"""
-    as_ow_array = np.zeros((order + 1, length), dtype=complex)
+    as_ow_array = np.zeros((order + 1, *x.shape), dtype=complex)
     for n in range(order + 1):
         as_ow_array[n] = axisymmetric_outgoing_wvf(n, x, y, z, k)
     return as_ow_array
@@ -72,7 +72,7 @@ def desired_in_coefficient_1s(n, k_s, r_s, rho_s, k, rho):
     return c_n
 
 
-def desired_pscattered_coefficients_array_1s(k_s, r_s, rho_s, k, rho, length, order):
+def desired_pscattered_coefficients_array_1s(k_s, r_s, rho_s, k, rho, shape, order):
     r"""
     array of scattered coefficients for all n <= order,
     repeated length times (number of points) - for field calculation
@@ -80,15 +80,16 @@ def desired_pscattered_coefficients_array_1s(k_s, r_s, rho_s, k, rho, length, or
     sc_coef = np.zeros(order + 1, dtype=complex)
     for n in range(order + 1):
         sc_coef[n] = pn_coefficient_1s(n) * desired_scattered_coefficient_1s(n, k_s, r_s, rho_s, k, rho)
-    return np.split(np.repeat(sc_coef, length), order + 1)
+    return np.broadcast_to(sc_coef, shape).T
 
 
 def scattered_field_1s(x, y, z, k_s, r_s, rho_s, k, rho, order):
     r"""
     calculates scattered field in every point
     """
-    tot_field_array = desired_pscattered_coefficients_array_1s(k_s, r_s, rho_s, k, rho, len(x), order) * \
-                      axisymmetric_outgoing_wvfs_array(x, y, z, k, len(x), order)
+    wave_functions_array = axisymmetric_outgoing_wvfs_array(x, y, z, k, order)
+    tot_field_array = desired_pscattered_coefficients_array_1s(k_s, r_s, rho_s, k, rho, wave_functions_array.T.shape, order) * \
+                      wave_functions_array
     return np.real(np.sum(tot_field_array, axis=0))
 
 
@@ -129,22 +130,20 @@ def test_one_sphere():
     order = 8
 
     # parameters of grid
-    bound, number_of_points = 6, 201
-    plane = 'xz'
-    plane_number = int(number_of_points / 2) + 1
+    x_p, z_p = np.meshgrid(np.linspace(-6, 6, 201), np.linspace(-6, 6, 201))
+    y_p = np.full_like(x_p, 0.)
 
-    incident_field = PlaneWave(amplitude=p0,
-                               k_l=k_l,
-                               direction=direction)
+    incident_field = PlaneWave(amplitude=p0, k_l=k_l, direction=direction)
 
-    fluid = Medium(density=ro_fluid,
-                   speed_l=c_fluid)
+    fluid = Medium(density=ro_fluid, speed_l=c_fluid)
 
-    sphere1 = particles.SphericalParticle(position=pos1,
-                                 radius=r_sph,
-                                 density=ro_sph,
-                                 speed_l=c_sph,
-                                 order=order)
+    sphere1 = particles.SphericalParticle(
+        position=pos1,
+        radius=r_sph,
+        density=ro_sph,
+        speed_l=c_sph,
+        order=order
+    )
 
     spheres = np.array([sphere1])
 
@@ -158,22 +157,15 @@ def test_one_sphere():
     )
     sim.run()
 
-    ecs, scs = cs.cross_section(particles=spheres,
-                                medium=fluid,
-                                incident_field=incident_field,
-                                freq=freq,
-                                order=order)
+    ecs, scs = cs.cross_section(
+        particles=spheres,
+        medium=fluid,
+        incident_field=incident_field,
+        freq=freq,
+        order=order
+    )
 
-    span = rendering.build_discretized_span(bound=bound,
-                                            number_of_points=number_of_points)
-
-    x_p, y_p, z_p, span_v, span_h = rendering.build_slice(span=span,
-                                                          plane_number=plane_number,
-                                                          plane=plane)
-
-    actual_field = np.real(fields.compute_total_field(particles=spheres,
-                                                      incident_field=incident_field,
-                                                      x=x_p, y=y_p, z=z_p))
+    actual_field = np.real(fields.compute_scattered_field(particles=spheres, x=x_p, y=y_p, z=z_p))
 
     desired_field = scattered_field_1s(x_p, y_p, z_p, 2 * np.pi * freq / c_sph, r_sph, ro_sph, k_l, ro_fluid, order)
 
@@ -183,8 +175,6 @@ def test_one_sphere():
     desired_field = np.where(r <= sphere1.radius, 0, desired_field)
 
     err = np.abs((actual_field - desired_field))
-    # rendering.slice_plot(err, span_v, span_h, plane=plane)
-    # rendering.plots_for_tests(actual_field, desired_field, span_v, span_h)
 
     desired_scs, desired_ecs = cross_sections_1s(2 * np.pi * freq / c_sph, r_sph, ro_sph, k_l, ro_fluid, order)
 

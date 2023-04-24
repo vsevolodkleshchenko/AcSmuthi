@@ -51,7 +51,7 @@ def regular_wvf(m, n, x, y, z, k):
 
 def regular_wvfs_array(order, x, y, z, k):
     r"""Builds np.array of all regular wave functions with n <= order"""
-    rw_array = np.zeros(((order + 1) ** 2, len(x)), dtype=complex)
+    rw_array = np.zeros(((order + 1) ** 2, *x.shape), dtype=complex)
     i = 0
     for mn in multipoles(order):
         rw_array[i] = regular_wvf(mn[0], mn[1], x, y, z, k)
@@ -67,47 +67,9 @@ def outgoing_wvf(m, n, x, y, z, k):
 
 def outgoing_wvfs_array(order, x, y, z, k):
     r"""Builds np.array of all outgoing wave functions with n <= order"""
-    ow_array = np.zeros(((order + 1) ** 2, len(x)), dtype=complex)
+    ow_array = np.zeros(((order + 1) ** 2, *x.shape), dtype=complex)
     i = 0
     for mn in multipoles(order):
         ow_array[i] = outgoing_wvf(mn[0], mn[1], x, y, z, k)
         i += 1
     return ow_array
-
-
-def regular_separation_coefficient(m, mu, n, nu, k, dist):
-    r"""Coefficient ^S^mmu_nnu(b) of separation matrix"""
-    if abs(n - nu) >= abs(m - mu):
-        q0 = abs(n - nu)
-    if (abs(n - nu) < abs(m - mu)) and ((n + nu + abs(m - mu)) % 2 == 0):
-        q0 = abs(m - mu)
-    if (abs(n - nu) < abs(m - mu)) and ((n + nu + abs(m - mu)) % 2 != 0):
-        q0 = abs(m - mu) + 1
-    q_lim = (n + nu - q0) // 2
-    sum_array = np.zeros(q_lim + 1, dtype=complex)
-    reg_wvf = regular_wvf
-    i = 0
-    for q in range(0, q_lim + 1):
-        sum_array[i] = (-1) ** q * reg_wvf(m - mu, q0 + 2 * q, dist[0], dist[1], dist[2], k) * \
-                       mths.gaunt_coefficient(n, m, nu, -mu, q0 + 2 * q)
-        i += 1
-    return 4 * np.pi * (-1) ** (mu + nu + q_lim) * mths.complex_fsum(sum_array)
-
-
-def outgoing_separation_coefficient(m, mu, n, nu, k, dist):
-    r"""Coefficient S^mmu_nnu(b) of separation matrix"""
-    if abs(n - nu) >= abs(m - mu):
-        q0 = abs(n - nu)
-    if (abs(n - nu) < abs(m - mu)) and ((n + nu + abs(m - mu)) % 2 == 0):
-        q0 = abs(m - mu)
-    if (abs(n - nu) < abs(m - mu)) and ((n + nu + abs(m - mu)) % 2 != 0):
-        q0 = abs(m - mu) + 1
-    q_lim = (n + nu - q0) // 2
-    sum_array = np.zeros(q_lim + 1, dtype=complex)
-    out_wvf = outgoing_wvf
-    i = 0
-    for q in range(0, q_lim + 1):
-        sum_array[i] = (-1) ** q * out_wvf(m - mu, q0 + 2 * q, dist[0], dist[1], dist[2], k) * \
-                       mths.gaunt_coefficient(n, m, nu, -mu, q0 + 2 * q)
-        i += 1
-    return 4 * np.pi * (-1) ** (mu + nu + q_lim) * mths.complex_fsum(sum_array)

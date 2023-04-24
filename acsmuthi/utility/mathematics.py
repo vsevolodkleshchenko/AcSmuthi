@@ -1,6 +1,4 @@
 import numpy as np
-import math
-import pywigxjpf as wig
 import scipy
 import scipy.special as ss
 
@@ -24,62 +22,12 @@ def spherical_jn_der2(n, z):
 
 def dec_to_sph(x, y, z):
     """Transition from cartesian coordinates to spherical coordinates"""
-    e = 1e-16
-    r = np.sqrt(x * x + y * y + z * z)
-    phi = np.zeros(np.size(r))
-    theta = np.zeros(np.size(r))
-    settings = np.seterr(all='ignore')
-    theta = np.where(r >= e, np.arccos(z / r), theta)
-    phi = np.where((np.abs(x) <= e) & (y > e), np.pi / 2, phi)
-    phi = np.where((np.abs(x) <= e) & (y < -e), 3 * np.pi / 2, phi)
-    phi = np.where((np.abs(y) <= e) & (x < -e), np.pi, phi)
-    phi = np.where((x > e) & (y > e), np.arctan(y / x), phi)
-    phi = np.where((x < -e) & (y > e), np.pi - np.arctan(- y / x), phi)
-    phi = np.where((x < -e) & (y < -e), np.pi + np.arctan(y / x), phi)
-    phi = np.where((x > e) & (y < -e), 2 * np.pi - np.arctan(- y / x), phi)
-    np.seterr(**settings)
-    if len(phi) == len(theta) == 1:
-        phi, theta = phi[0], theta[0]
+    r = np.sqrt(x ** 2 + y ** 2 + z ** 2)
+    theta = np.arccos(z / r)
+    phi = np.arctan2(y, x)
+    if phi.shape == ():
+        if phi < 0:
+            phi += 2 * np.pi
+    else:
+        phi[phi < 0] += 2 * np.pi
     return r, phi, theta
-
-
-def gaunt_coefficient(n, m, nu, mu, q):
-    r"""Gaunt coefficient: G(n,m;nu,mu;q)"""
-    s = np.sqrt((2 * n + 1) * (2 * nu + 1) * (2 * q + 1) / 4 / np.pi)
-    wig.wig_table_init(60, 3)  # this needs revision
-    wig.wig_temp_init(60)  # this needs revision
-    return (-1.) ** (m + mu) * s * wig.wig3jj(2*n, 2*nu, 2*q, 0, 0, 0) * \
-           wig.wig3jj(2*n, 2*nu, 2*q, 2*m, 2*mu, - 2*m - 2*mu)
-
-
-def complex_fsum(array):
-    r"""Accurate sum of numpy.array with complex values"""
-    return math.fsum(np.real(array)) + 1j * math.fsum(np.imag(array))
-
-
-def spheres_multipoles_fsum(field_array, length):
-    r"""Accurate sum by spheres and multipoles;
-    the shape of field array: 0 axis - spheres, 1 axis - multipoles, 2 axis - coordinates
-    return: numpy.array with values of field in all coordinates """
-    field = np.zeros(length, dtype=complex)
-    for i in range(length):
-        field[i] = complex_fsum(np.concatenate(field_array[:, :, i]))
-    return field
-
-
-def multipoles_fsum(field_array, length):
-    r"""Accurate sum by multipoles; the shape of field array: 0 axis - multipoles, 1 axis - coordinates
-    return: np.array with values of field in all coordinates """
-    field = np.zeros(length, dtype=complex)
-    for i in range(length):
-        field[i] = complex_fsum(field_array[:, i])
-    return field
-
-
-def spheres_fsum(field_array, length):
-    r"""Accurate sum by multipoles; the shape of field array: 0 axis - spheres, 1 axis - coordinates
-    return: np.array with values of field in all coordinates """
-    field = np.zeros(length, dtype=complex)
-    for i in range(length):
-        field[i] = complex_fsum(field_array[:, i])
-    return field

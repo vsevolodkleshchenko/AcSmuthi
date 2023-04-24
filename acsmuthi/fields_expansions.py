@@ -23,6 +23,63 @@ class FieldExpansion:
         pass
 
 
+class SphericalWaveExpansion(FieldExpansion):
+    def __init__(self, amplitude, k_l, origin, kind, order, inner_r=0, outer_r=np.inf, coefficients=None, k_t=None):
+        FieldExpansion.__init__(self)
+        self.ampl = amplitude
+        self.k_l = k_l
+        self.k_t = k_t
+        self.origin = origin
+        self.kind = kind  # 'regular' or 'outgoing'
+        self.order = order
+        self.inner_r = inner_r
+        self.outer_r = outer_r
+        self.coefficients = coefficients
+
+    def diverging(self, x, y, z):
+        r = np.sqrt((x - self.origin[0]) ** 2 + (y - self.origin[1]) ** 2 + (z - self.origin[2]) ** 2)
+        if self.kind == 'regular':
+            return r >= self.outer_r
+        if self.kind == 'outgoing':
+            return r <= self.inner_r
+        else:
+            return None
+
+    def compute_pressure_field(self, x, y, z):
+        if self.kind == 'regular':
+            wvf = wvfs.regular_wvfs_array
+        elif self.kind == 'outgoing':
+            wvf = wvfs.outgoing_wvfs_array
+        xr, yr, zr = x - self.origin[0], y - self.origin[1], z - self.origin[2]
+        r = np.sqrt(xr ** 2 + yr ** 2 + zr ** 2)
+        wave_functions_array = wvf(self.order, xr, yr, zr, self.k_l)
+        coefficients_array = np.broadcast_to(self.coefficients, wave_functions_array.T.shape).T
+        field_array = coefficients_array * wave_functions_array
+        field = self.ampl * np.sum(field_array, axis=0)
+        return np.where((r >= self.inner_r) & (r <= self.outer_r), field, 0)
+
+    def compatible(self, other):
+        return (type(other).__name__ == "SphericalWaveExpansion"
+                and self.k_l == other.k_l
+                and self.k_t == other.k_t
+                and self.order == other.order
+                and self.kind == other.kind
+                and np.array_equal(self.origin, other.origin))
+
+    def __add__(self, other):
+        if not self.compatible(other):
+            raise ValueError('SphericalWaveExpansions are inconsistent.')
+        swe_sum = SphericalWaveExpansion(amplitude=self.ampl,
+                                         k_l=self.k_l,
+                                         k_t=self.k_t,
+                                         origin=self.origin,
+                                         kind=self.kind,
+                                         inner_r=max(self.inner_r, other.inner_r),
+                                         outer_r=min(self.outer_r, other.outer_r))
+        swe_sum.coefficients = self.coefficients + other.coefficients
+        return swe_sum
+
+
 class PiecewiseFieldExpansion(FieldExpansion):
     def __init__(self):
         FieldExpansion.__init__(self)
@@ -82,68 +139,3 @@ class PiecewiseFieldExpansion(FieldExpansion):
                 pfe_sum.expansion_list.append(other)
 
         return pfe_sum
-
-
-class SphericalWaveExpansion(FieldExpansion):
-    def __init__(self, amplitude, k_l, origin, kind, order,
-                 inner_r=0,
-                 outer_r=np.inf,
-                 coefficients=None,
-                 k_t=None):
-        FieldExpansion.__init__(self)
-        self.ampl = amplitude
-        self.k_l = k_l
-        self.k_t = k_t
-        self.origin = origin
-        self.field = None  # todo - delete this field
-        self.kind = kind  # 'regular' or 'outgoing'
-        self.order = order
-        self.inner_r = inner_r
-        self.outer_r = outer_r
-        self.coefficients = coefficients
-
-    def diverging(self, x, y, z):
-        r = np.sqrt((x - self.origin[0]) ** 2 + (y - self.origin[1]) ** 2
-                    + (z - self.origin[2]) ** 2)
-        if self.kind == 'regular':
-            return r >= self.outer_r
-        if self.kind == 'outgoing':
-            return r <= self.inner_r
-        else:
-            return None
-
-    def compute_pressure_field(self, x, y, z):
-        coefficients_array = np.split(np.repeat(self.coefficients, len(x)), (self.order + 1) ** 2)
-        if self.kind == 'regular':
-            wvf = wvfs.regular_wvfs_array
-        elif self.kind == 'outgoing':
-            wvf = wvfs.outgoing_wvfs_array
-        # xr = x[self.valid(x, y, z)] - self.origin[0]              # todo: it should be like this
-        # yr = y[self.valid(x, y, z)] - self.origin[1]
-        # zr = z[self.valid(x, y, z)] - self.origin[2]
-        # wave_functions_array = wvf(self.order, xr, yr, zr, self.k_l)
-        wave_functions_array = wvf(self.order, x - self.origin[0], y - self.origin[1], z - self.origin[2], self.k_l)
-        field_array = coefficients_array * wave_functions_array
-        self.field = self.ampl * mths.multipoles_fsum(field_array, len(x))
-        return self.field
-
-    def compatible(self, other):
-        return (type(other).__name__ == "SphericalWaveExpansion"
-                and self.k_l == other.k_l
-                and self.k_t == other.k_t
-                and self.order == other.order
-                and self.kind == other.kind
-                and np.array_equal(self.origin, other.origin))
-
-    def __add__(self, other):
-        if not self.compatible(other):
-            raise ValueError('SphericalWaveExpansions are inconsistent.')
-        swe_sum = SphericalWaveExpansion(amplitude=self.ampl,
-                                         k_l=self.k_l,
-                                         k_t=self.k_t,
-                                         origin=self.origin,
-                                         kind=self.kind,
-                                         inner_r=max(self.inner_r, other.inner_r),
-                                         outer_r=min(self.outer_r, other.outer_r))
-        swe_sum.coefficients = self.coefficients + other.coefficients
-        return swe_sum

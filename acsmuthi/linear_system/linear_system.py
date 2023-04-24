@@ -66,6 +66,7 @@ class LinearSystem:
                 k_l=k_l,
                 origin=particle.position,
                 kind='outgoing',
+                inner_r=particle.radius,
                 order=self.order
             )
             if particle.speed_t:
@@ -78,6 +79,7 @@ class LinearSystem:
                 k_l=ksl,
                 origin=particle.position,
                 kind='regular',
+                outer_r=particle.radius,
                 order=self.order,
                 k_t=kst
             )

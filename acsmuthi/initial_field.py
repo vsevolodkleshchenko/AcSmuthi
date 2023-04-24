@@ -26,7 +26,6 @@ class PlaneWave(InitialField):
             self.reference_point = np.array([0, 0, 0])
         else:
             self.reference_point = reference_point
-        self.exact_field = None
 
     def spherical_wave_expansion(self, origin, order):
         reference_coefficients = wvfs.incident_coefficients(self.direction, order)
@@ -45,12 +44,12 @@ class PlaneWave(InitialField):
         )
 
     def compute_exact_field(self, x, y, z):
-        self.exact_field = self.amplitude * np.exp(1j * self.k_l * (
+        exact_field = self.amplitude * np.exp(1j * self.k_l * (
                 self.direction[0] * (x - self.reference_point[0]) +
                 self.direction[1] * (y - self.reference_point[1]) +
                 self.direction[2] * (z - self.reference_point[2])
         ))
-        return self.exact_field
+        return exact_field
 
     def intensity(self, density, sound_speed):
         return self.amplitude ** 2 / (2 * density * sound_speed)
@@ -68,7 +67,6 @@ class StandingWave(InitialField):
             self.reference_point = np.array([0, 0, 0])
         else:
             self.reference_point = reference_point
-        self.exact_field = None
 
     def spherical_wave_expansion(self, origin, order):
         reference_coefficients = wvfs.incident_coefficients(self.direction, order) + \
@@ -88,17 +86,17 @@ class StandingWave(InitialField):
         )
 
     def compute_exact_field(self, x, y, z):
-        self.exact_field = self.amplitude * np.exp(1j * self.k_l * (
+        exact_field = self.amplitude * np.exp(1j * self.k_l * (
                 self.direction[0] * (x - self.reference_point[0]) +
                 self.direction[1] * (y - self.reference_point[1]) +
                 self.direction[2] * (z - self.reference_point[2])
         ))
-        self.exact_field += self.amplitude * np.exp(1j * self.k_l * (
+        exact_field += self.amplitude * np.exp(1j * self.k_l * (
                 -self.direction[0] * (x - self.reference_point[0]) +
                 -self.direction[1] * (y - self.reference_point[1]) +
                 -self.direction[2] * (z - self.reference_point[2])
         ))
-        return self.exact_field
+        return exact_field
 
     def intensity(self, density, sound_speed):
         return self.amplitude ** 2 / (2 * density * sound_speed)

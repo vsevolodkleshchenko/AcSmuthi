@@ -30,9 +30,9 @@ def force_on_sphere(particle, medium, incident_field):
     k = particle.incident_field.k_l
     prefactor1 = 1j * incident_field.amplitude ** 2 / (2 * medium.density * medium.speed_l ** 2) / 2 / k ** 2
     prefactor2 = incident_field.amplitude ** 2 / (2 * medium.density * medium.speed_l ** 2) / k ** 2
-    fxy = prefactor1 * mths.complex_fsum(fxy_array)
+    fxy = prefactor1 * np.sum(fxy_array)
     fx, fy = np.real(fxy), np.imag(fxy)
-    fz = prefactor2 * np.imag(mths.complex_fsum(fz_array))
+    fz = prefactor2 * np.imag(np.sum(fz_array))
     norm = incident_field.intensity(medium.density, medium.speed_l) * np.pi * particle.radius ** 2 / medium.speed_l
     return np.array([fx, fy, fz])  # / norm
 
