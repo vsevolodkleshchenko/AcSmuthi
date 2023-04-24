@@ -28,11 +28,11 @@ pos1 = np.array([-1., 0, 5])  # [m]
 pos2 = np.array([1., 0, -5])  # [m]
 # [m]
 r_sph = 1.  # [m]
-ro_sph = 80  # [kg/m^3]
-c_sph_l = np.sqrt(2 * g * (1 - poisson) / ro_sph / (1 - 2 * poisson))  # [m/s]
-c_sph_t = np.sqrt(g / ro_sph)  # [m/s]
+rho_sph = 80  # [kg/m^3]
+c_sph_l = np.sqrt(2 * g * (1 - poisson) / rho_sph / (1 - 2 * poisson))  # [m/s]
+c_sph_t = np.sqrt(g / rho_sph)  # [m/s]
 
-order = 3
+order = 6
 
 incident_field = PlaneWave(k=k_l, amplitude=p0, direction=direction)
 
@@ -41,7 +41,7 @@ fluid = Medium(density=rho_fluid, pressure_velocity=c_fluid)
 sphere1 = SphericalParticle(
     position=pos1,
     radius=r_sph,
-    density=ro_sph,
+    density=rho_sph,
     pressure_velocity=c_sph_l,
     order=order,
     shear_velocity=c_sph_t
@@ -49,7 +49,7 @@ sphere1 = SphericalParticle(
 sphere2 = SphericalParticle(
     position=pos2,
     radius=r_sph,
-    density=ro_sph,
+    density=rho_sph,
     pressure_velocity=c_sph_l,
     order=order,
     shear_velocity=c_sph_t
@@ -68,7 +68,7 @@ simulation = Simulation(
 
 print("Time:", simulation.run())
 
-ecs = cs.extinction_cs(particles, fluid, incident_field, freq)
+ecs = cs.extinction_cs(particles, fluid, incident_field, freq, by_multipoles=True)
 frcs = forces.all_forces(particles, fluid, incident_field)
 print(ecs, *frcs, sep='\n')
 

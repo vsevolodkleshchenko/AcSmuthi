@@ -27,16 +27,31 @@ def scattering_cs(particles, medium, initial_field, freq, order):
     return sigma_sc / (np.pi * particles[0].radius ** 2)
 
 
-def extinction_cs(particles, medium, initial_field, freq):
+def extinction_cs(particles, medium, initial_field, freq, by_multipoles=False):
     r"""Counts extinction cross section"""
-    sigma_ex_array = np.zeros(len(particles))
-    for s, particle in enumerate(particles):
-        scattered_coefs, incident_coefs = particle.scattered_field.coefficients, particle.incident_field.coefficients
-        sigma_ex_array[s] = math.fsum(np.real(scattered_coefs * np.conj(incident_coefs)))
     omega = 2*np.pi*freq
     dimensional_coef = initial_field.amplitude ** 2 / (2 * omega * medium.density * initial_field.k)
-    sigma_ex = -math.fsum(sigma_ex_array) * dimensional_coef / initial_field.intensity(medium.density, medium.cp)
-    return sigma_ex  # / (np.pi * particles[0].radius ** 2)
+
+    if by_multipoles:
+        block_size = len(particles[0].incident_field.coefficients)
+        order = int(np.sqrt(block_size) - 1)
+        extinction_array = np.zeros((len(particles), block_size))
+        for s, particle in enumerate(particles):
+            scattered_coefs, incident_coefs = particle.scattered_field.coefficients, particle.incident_field.coefficients
+            extinction_array[s] = np.real(scattered_coefs * np.conj(incident_coefs))
+        extinction_poles_array = -np.sum(extinction_array, axis=0)
+        extinction_poles = [extinction_poles_array[0]]
+        for n in range(1, order + 1):
+            extinction_poles.append(np.sum(extinction_poles_array[n ** 2:(n + 1) ** 2]))
+        extinction = np.array(extinction_poles)
+
+    else:
+        extinction_array = np.zeros(len(particles))
+        for s, particle in enumerate(particles):
+            scattered_coefs, incident_coefs = particle.scattered_field.coefficients, particle.incident_field.coefficients
+            extinction_array[s] = math.fsum(np.real(scattered_coefs * np.conj(incident_coefs)))
+        extinction = -np.sum(extinction_array)
+    return extinction * dimensional_coef / initial_field.intensity(medium.density, medium.cp)
 
 
 def cross_section(particles, medium, initial_field, freq, order):
