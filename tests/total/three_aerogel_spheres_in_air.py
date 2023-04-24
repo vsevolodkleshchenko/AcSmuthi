@@ -34,32 +34,18 @@ def test_three_aerogel_spheres_in_air():
 
     order = 10
 
-    incident_field = StandingWave(k_l=k_l,
-                                  amplitude=p0,
-                                  direction=direction)
+    incident_field = StandingWave(k=k_l, amplitude=p0, direction=direction)
 
-    fluid = Medium(density=rho_fluid, speed_l=c_fluid)
+    fluid = Medium(density=rho_fluid, pressure_velocity=c_fluid)
 
-    sphere1 = SphericalParticle(position=pos1,
-                       radius=r_sph1,
-                       density=ro_sph,
-                       speed_l=c_sph_l,
-                       order=order,
-                       speed_t=c_sph_t)
+    sphere1 = SphericalParticle(position=pos1, radius=r_sph1, density=ro_sph, pressure_velocity=c_sph_l, order=order,
+                                shear_velocity=c_sph_t)
 
-    sphere2 = SphericalParticle(position=pos2,
-                       radius=r_sph2,
-                       density=ro_sph,
-                       speed_l=c_sph_l,
-                       order=order,
-                       speed_t=c_sph_t)
+    sphere2 = SphericalParticle(position=pos2, radius=r_sph2, density=ro_sph, pressure_velocity=c_sph_l, order=order,
+                                shear_velocity=c_sph_t)
 
-    sphere3 = SphericalParticle(position=pos3,
-                       radius=r_sph1,
-                       density=ro_sph,
-                       speed_l=c_sph_l,
-                       order=order,
-                       speed_t=c_sph_t)
+    sphere3 = SphericalParticle(position=pos3, radius=r_sph1, density=ro_sph, pressure_velocity=c_sph_l, order=order,
+                                shear_velocity=c_sph_t)
 
     particles = np.array([sphere1, sphere2, sphere3])
     sim = Simulation(
@@ -72,14 +58,9 @@ def test_three_aerogel_spheres_in_air():
     )
     sim.run()
 
-    scs = cs.extinction_cs(particles=particles,
-                           medium=fluid,
-                           incident_field=incident_field,
-                           freq=freq)
+    scs = cs.extinction_cs(particles=particles, medium=fluid, initial_field=incident_field, freq=freq)
 
-    frcs = forces.all_forces(particles_array=particles,
-                             medium=fluid,
-                             incident_field=incident_field)
+    frcs = forces.all_forces(particles_array=particles, medium=fluid, initial_field=incident_field)
 
     comsol_scs = 24.408  # 24.412
     comsol_frcs = np.array([[0, 0, 1.7290E-5], [0, 0, 0], [0, 0, -1.7292E-5]])

@@ -1,6 +1,6 @@
 import numpy as np
 import copy
-from acsmuthi.utility import mathematics as mths, wavefunctions as wvfs
+from acsmuthi.utility import wavefunctions as wvfs
 
 
 class FieldExpansion:
@@ -24,11 +24,10 @@ class FieldExpansion:
 
 
 class SphericalWaveExpansion(FieldExpansion):
-    def __init__(self, amplitude, k_l, origin, kind, order, inner_r=0, outer_r=np.inf, coefficients=None, k_t=None):
+    def __init__(self, amplitude, k, origin, kind, order, inner_r=0, outer_r=np.inf, coefficients=None):
         FieldExpansion.__init__(self)
         self.ampl = amplitude
-        self.k_l = k_l
-        self.k_t = k_t
+        self.k = k
         self.origin = origin
         self.kind = kind  # 'regular' or 'outgoing'
         self.order = order
@@ -52,7 +51,7 @@ class SphericalWaveExpansion(FieldExpansion):
             wvf = wvfs.outgoing_wvfs_array
         xr, yr, zr = x - self.origin[0], y - self.origin[1], z - self.origin[2]
         r = np.sqrt(xr ** 2 + yr ** 2 + zr ** 2)
-        wave_functions_array = wvf(self.order, xr, yr, zr, self.k_l)
+        wave_functions_array = wvf(self.order, xr, yr, zr, self.k)
         coefficients_array = np.broadcast_to(self.coefficients, wave_functions_array.T.shape).T
         field_array = coefficients_array * wave_functions_array
         field = self.ampl * np.sum(field_array, axis=0)
@@ -60,8 +59,7 @@ class SphericalWaveExpansion(FieldExpansion):
 
     def compatible(self, other):
         return (type(other).__name__ == "SphericalWaveExpansion"
-                and self.k_l == other.k_l
-                and self.k_t == other.k_t
+                and self.k == other.k
                 and self.order == other.order
                 and self.kind == other.kind
                 and np.array_equal(self.origin, other.origin))
@@ -69,13 +67,14 @@ class SphericalWaveExpansion(FieldExpansion):
     def __add__(self, other):
         if not self.compatible(other):
             raise ValueError('SphericalWaveExpansions are inconsistent.')
-        swe_sum = SphericalWaveExpansion(amplitude=self.ampl,
-                                         k_l=self.k_l,
-                                         k_t=self.k_t,
-                                         origin=self.origin,
-                                         kind=self.kind,
-                                         inner_r=max(self.inner_r, other.inner_r),
-                                         outer_r=min(self.outer_r, other.outer_r))
+        swe_sum = SphericalWaveExpansion(
+            amplitude=self.ampl,
+            k=self.k,
+            origin=self.origin,
+            kind=self.kind, order=self.order,
+            inner_r=max(self.inner_r, other.inner_r),
+            outer_r=min(self.outer_r, other.outer_r)
+        )
         swe_sum.coefficients = self.coefficients + other.coefficients
         return swe_sum
 

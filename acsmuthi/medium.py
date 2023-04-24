@@ -1,7 +1,9 @@
 class Medium:
-    def __init__(self,
-                 density: float,
-                 speed_l: float):
+    def __init__(
+            self,
+            density: float,
+            pressure_velocity: float
+    ):
         self.density = density
-        self.speed_l = speed_l
+        self.cp = pressure_velocity
 

@@ -72,7 +72,7 @@ def silica_aerogel_spheres_in_plane_wave_ls(order, n_sph):
 
     particles_lst = []
     for pos in poses:
-        particles_lst.append(Particle(pos, r_sph, ro_sph, c_sph_l, order, speed_t=c_sph_t))
+        particles_lst.append(Particle(pos, r_sph, ro_sph, c_sph_l, order))
     particles = np.array(particles_lst)
 
     sim = Simulation(particles, fluid, incident_field, freq, order, True)

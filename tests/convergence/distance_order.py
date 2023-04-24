@@ -31,8 +31,8 @@ def silica_aerogel_sphere_in_standing_wave_ls(order, dist):
     fluid = Medium(ro_fluid, c_fluid)
 
     pos1, pos2 = np.array([-dist/2, 0, 0]), np.array([dist/2, 0, 0])
-    sphere1 = Particle(pos1, r_sph, ro_sph, c_sph_l, order, speed_t=c_sph_t)
-    sphere2 = Particle(pos2, r_sph, ro_sph, c_sph_l, order, speed_t=c_sph_t)
+    sphere1 = Particle(pos1, r_sph, ro_sph, c_sph_l, order)
+    sphere2 = Particle(pos2, r_sph, ro_sph, c_sph_l, order)
     particles = np.array([sphere1, sphere2])
 
     sim = Simulation(particles, fluid, incident_field, freq, order, True)

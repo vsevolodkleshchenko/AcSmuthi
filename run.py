@@ -34,29 +34,25 @@ c_sph_t = np.sqrt(g / ro_sph)  # [m/s]
 
 order = 3
 
-incident_field = PlaneWave(
-    k_l=k_l,
-    amplitude=p0,
-    direction=direction
-)
+incident_field = PlaneWave(k=k_l, amplitude=p0, direction=direction)
 
-fluid = Medium(density=rho_fluid, speed_l=c_fluid)
+fluid = Medium(density=rho_fluid, pressure_velocity=c_fluid)
 
 sphere1 = SphericalParticle(
     position=pos1,
     radius=r_sph,
     density=ro_sph,
-    speed_l=c_sph_l,
+    pressure_velocity=c_sph_l,
     order=order,
-    speed_t=c_sph_t
+    shear_velocity=c_sph_t
 )
 sphere2 = SphericalParticle(
     position=pos2,
     radius=r_sph,
     density=ro_sph,
-    speed_l=c_sph_l,
+    pressure_velocity=c_sph_l,
     order=order,
-    speed_t=c_sph_t
+    shear_velocity=c_sph_t
 )
 
 particles = np.array([sphere1, sphere2])

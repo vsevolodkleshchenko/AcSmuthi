@@ -8,13 +8,13 @@ class Particle:
     def __init__(self,
                  position: np.ndarray[float],
                  density: float,
-                 speed_l: float,
+                 pressure_velocity: float,
                  order: int,
-                 speed_t: float = None):
+                 shear_velocity: float = None):
         self.position = position
         self.density = density
-        self.speed_l = speed_l
-        self.speed_t = speed_t
+        self.cp = pressure_velocity
+        self.cs = shear_velocity
         self.incident_field = None
         self.scattered_field = None
         self.inner_field = None
@@ -31,16 +31,16 @@ class SphericalParticle(Particle):
             position: np.ndarray[float],
             radius: float,
             density: float,
-            speed_l: float,
+            pressure_velocity: float,
             order: int,
-            speed_t: float = None
+            shear_velocity: float = None
     ):
-        super(SphericalParticle, self).__init__(position, density, speed_l, order, speed_t)
+        super(SphericalParticle, self).__init__(position, density, pressure_velocity, order, shear_velocity)
         self.radius = radius
 
     def compute_t_matrix(self, c_medium, rho_medium, freq):
-        t = _compute_sphere_t_matrix(self.order, c_medium, rho_medium, self.speed_l, self.density, self.radius, freq,
-                                     self.speed_t)
+        t = _compute_sphere_t_matrix(self.order, c_medium, rho_medium, self.cp, self.density, self.radius, freq,
+                                     self.cs)
         self.t_matrix = t
         return t
 

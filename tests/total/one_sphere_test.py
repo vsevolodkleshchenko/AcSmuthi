@@ -133,17 +133,12 @@ def test_one_sphere():
     x_p, z_p = np.meshgrid(np.linspace(-6, 6, 201), np.linspace(-6, 6, 201))
     y_p = np.full_like(x_p, 0.)
 
-    incident_field = PlaneWave(amplitude=p0, k_l=k_l, direction=direction)
+    incident_field = PlaneWave(k=k_l, amplitude=p0, direction=direction)
 
-    fluid = Medium(density=ro_fluid, speed_l=c_fluid)
+    fluid = Medium(density=ro_fluid, pressure_velocity=c_fluid)
 
-    sphere1 = particles.SphericalParticle(
-        position=pos1,
-        radius=r_sph,
-        density=ro_sph,
-        speed_l=c_sph,
-        order=order
-    )
+    sphere1 = particles.SphericalParticle(position=pos1, radius=r_sph, density=ro_sph, pressure_velocity=c_sph,
+                                          order=order)
 
     spheres = np.array([sphere1])
 
@@ -157,13 +152,7 @@ def test_one_sphere():
     )
     sim.run()
 
-    ecs, scs = cs.cross_section(
-        particles=spheres,
-        medium=fluid,
-        incident_field=incident_field,
-        freq=freq,
-        order=order
-    )
+    ecs, scs = cs.cross_section(particles=spheres, medium=fluid, initial_field=incident_field, freq=freq, order=order)
 
     actual_field = np.real(fields.compute_scattered_field(particles=spheres, x=x_p, y=y_p, z=z_p))
 

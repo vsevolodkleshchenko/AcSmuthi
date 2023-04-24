@@ -6,8 +6,8 @@ import acsmuthi.linear_system.coupling_matrix as cmt
 
 
 class InitialField:
-    def __init__(self, k_l, amplitude):
-        self.k_l = k_l
+    def __init__(self, k, amplitude):
+        self.k = k
         self.amplitude = amplitude
         self.validity_conditions = []
 
@@ -19,8 +19,8 @@ class InitialField:
 
 
 class PlaneWave(InitialField):
-    def __init__(self, k_l, amplitude, direction, reference_point=None):
-        InitialField.__init__(self, k_l=k_l, amplitude=amplitude)
+    def __init__(self, k, amplitude, direction, reference_point=None):
+        InitialField.__init__(self, k=k, amplitude=amplitude)
         self.direction = direction
         if reference_point is None:
             self.reference_point = np.array([0, 0, 0])
@@ -32,19 +32,13 @@ class PlaneWave(InitialField):
         if np.array_equal(origin, self.reference_point):
             coefficients = reference_coefficients
         else:
-            coefficients = np.exp(1j * self.k_l * self.direction @ (origin - self.reference_point)) * \
+            coefficients = np.exp(1j * self.k * self.direction @ (origin - self.reference_point)) * \
                            reference_coefficients
-        return fldsex.SphericalWaveExpansion(
-            amplitude=self.amplitude,
-            k_l=self.k_l,
-            origin=origin,
-            kind='regular',
-            order=order,
-            coefficients=coefficients
-        )
+        return fldsex.SphericalWaveExpansion(amplitude=self.amplitude, k=self.k, origin=origin, kind='regular',
+                                             order=order, coefficients=coefficients)
 
     def compute_exact_field(self, x, y, z):
-        exact_field = self.amplitude * np.exp(1j * self.k_l * (
+        exact_field = self.amplitude * np.exp(1j * self.k * (
                 self.direction[0] * (x - self.reference_point[0]) +
                 self.direction[1] * (y - self.reference_point[1]) +
                 self.direction[2] * (z - self.reference_point[2])
@@ -56,12 +50,8 @@ class PlaneWave(InitialField):
 
 
 class StandingWave(InitialField):
-    def __init__(self, k_l, amplitude, direction, reference_point=None):
-        InitialField.__init__(
-            self,
-            k_l=k_l,
-            amplitude=amplitude
-        )
+    def __init__(self, k, amplitude, direction, reference_point=None):
+        InitialField.__init__(self, k=k, amplitude=amplitude)
         self.direction = direction
         if reference_point is None:
             self.reference_point = np.array([0, 0, 0])
@@ -74,24 +64,18 @@ class StandingWave(InitialField):
         if np.array_equal(origin, self.reference_point):
             coefficients = reference_coefficients
         else:
-            coefficients = np.exp(1j * self.k_l * self.direction @ (origin - self.reference_point)) * \
+            coefficients = np.exp(1j * self.k * self.direction @ (origin - self.reference_point)) * \
                            reference_coefficients
-        return fldsex.SphericalWaveExpansion(
-            amplitude=self.amplitude,
-            k_l=self.k_l,
-            origin=origin,
-            kind='regular',
-            order=order,
-            coefficients=coefficients
-        )
+        return fldsex.SphericalWaveExpansion(amplitude=self.amplitude, k=self.k, origin=origin, kind='regular',
+                                             order=order, coefficients=coefficients)
 
     def compute_exact_field(self, x, y, z):
-        exact_field = self.amplitude * np.exp(1j * self.k_l * (
+        exact_field = self.amplitude * np.exp(1j * self.k * (
                 self.direction[0] * (x - self.reference_point[0]) +
                 self.direction[1] * (y - self.reference_point[1]) +
                 self.direction[2] * (z - self.reference_point[2])
         ))
-        exact_field += self.amplitude * np.exp(1j * self.k_l * (
+        exact_field += self.amplitude * np.exp(1j * self.k * (
                 -self.direction[0] * (x - self.reference_point[0]) +
                 -self.direction[1] * (y - self.reference_point[1]) +
                 -self.direction[2] * (z - self.reference_point[2])

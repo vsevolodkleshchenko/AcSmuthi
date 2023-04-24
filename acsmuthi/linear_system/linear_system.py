@@ -33,7 +33,7 @@ class LinearSystem:
     def compute_t_matrix(self):
         for sph in range(len(self.particles)):
             self.particles[sph].compute_t_matrix(
-                c_medium=self.medium.speed_l,
+                c_medium=self.medium.cp,
                 rho_medium=self.medium.density,
                 freq=self.freq
             )
@@ -46,7 +46,7 @@ class LinearSystem:
     def compute_coupling_matrix(self):
         self.coupling_matrix = CouplingMatrixExplicit(particles=self.particles,
                                                       order=self.order,
-                                                      k=self.incident_field.k_l)
+                                                      k=self.incident_field.k)
 
     def compute_right_hand_side(self):
         rhs = np.zeros((len(self.particles), (self.order + 1) ** 2), dtype=complex)
@@ -56,32 +56,28 @@ class LinearSystem:
 
     def prepare(self):
         for particle in self.particles:
-            amplitude, k_l = self.incident_field.amplitude, self.incident_field.k_l
+            amplitude, k = self.incident_field.amplitude, self.incident_field.k
+            k_particle = 2 * np.pi * self.freq / particle.cp
+
             particle.incident_field = self.incident_field.spherical_wave_expansion(
                 origin=particle.position,
                 order=self.order
             )
             particle.scattered_field = fldsex.SphericalWaveExpansion(
                 amplitude=amplitude,
-                k_l=k_l,
+                k=k,
                 origin=particle.position,
                 kind='outgoing',
-                inner_r=particle.radius,
-                order=self.order
+                order=self.order,
+                inner_r=particle.radius
             )
-            if particle.speed_t:
-                kst = 2 * np.pi * self.freq / particle.speed_t
-            else:
-                kst = None
-            ksl = 2 * np.pi * self.freq / particle.speed_l
             particle.inner_field = fldsex.SphericalWaveExpansion(
                 amplitude=amplitude,
-                k_l=ksl,
+                k=k_particle,
                 origin=particle.position,
                 kind='regular',
-                outer_r=particle.radius,
                 order=self.order,
-                k_t=kst
+                outer_r=particle.radius
             )
         self.compute_t_matrix()
         self.compute_coupling_matrix()
@@ -94,8 +90,10 @@ class LinearSystem:
         else:
             master_matrix = self.t_matrix.linear_operator.A + self.coupling_matrix.linear_operator.A
             scattered_coefs1d = scipy.linalg.solve(master_matrix, self.rhs)
+
         scattered_coefs = scattered_coefs1d.reshape((len(self.particles), (self.order + 1) ** 2))
         inner_coefs = _inner_coefficients(self.particles, scattered_coefs, self.order)
+
         for s, particle in enumerate(self.particles):
             particle.scattered_field.coefficients = scattered_coefs[s]
             particle.inner_field.coefficients = inner_coefs[s]
@@ -109,8 +107,7 @@ class SystemMatrix:
     ):
         self.particles = particles
         self.order = order
-        self.shape = (len(particles) * (order + 1) ** 2,
-                      len(particles) * (order + 1) ** 2)
+        self.shape = (len(particles) * (order + 1) ** 2, len(particles) * (order + 1) ** 2)
 
     def index_block(self, s):
         return s * (self.order + 1) ** 2
@@ -123,22 +120,22 @@ class TMatrix(SystemMatrix):
             order: int,
             store_t_matrix: bool
     ):
-        SystemMatrix.__init__(
-            self,
-            particles=particles,
-            order=order
-        )
+        SystemMatrix.__init__(self, particles=particles, order=order)
 
         if not store_t_matrix:
             def apply_t_matrix(vector):
                 tv = np.zeros(vector.shape, dtype=complex)
-                for i_s, particle in enumerate(particles):
-                    tv[self.index_block(i_s):self.index_block(i_s + 1)] = particle.t_matrix.dot(
-                        vector[self.index_block(i_s):self.index_block(i_s + 1)])
+                for i_p, particle in enumerate(particles):
+                    tv[self.index_block(i_p):self.index_block(i_p + 1)] = particle.t_matrix.dot(
+                        vector[self.index_block(i_p):self.index_block(i_p + 1)])
                 return tv
 
-            self.linear_operator = scipy.sparse.linalg.LinearOperator(shape=self.shape, matvec=apply_t_matrix,
-                                                                      matmat=apply_t_matrix, dtype=complex)
+            self.linear_operator = scipy.sparse.linalg.LinearOperator(
+                shape=self.shape,
+                matvec=apply_t_matrix,
+                matmat=apply_t_matrix,
+                dtype=complex
+            )
         else:
             t_mat = np.zeros(self.shape, dtype=complex)
 
@@ -156,11 +153,7 @@ class CouplingMatrixExplicit(SystemMatrix):
             order: int,
             k: float
     ):
-        SystemMatrix.__init__(
-            self,
-            particles=particles,
-            order=order
-        )
+        SystemMatrix.__init__(self, particles=particles, order=order)
         coup_mat = np.zeros(self.shape, dtype=complex)
 
         for sph in range(len(self.particles)):
@@ -176,11 +169,11 @@ class CouplingMatrixExplicit(SystemMatrix):
 def _inner_coefficients(particles_array, scattered_coefficients, order):
     r"""Counts coefficients of decompositions fields inside spheres"""
     in_coef = np.zeros_like(scattered_coefficients)
-    for s, particle in enumerate(particles_array):
+    for i_p, particle in enumerate(particles_array):
         for m, n in wvfs.multipoles(order):
             imn = n ** 2 + n + m
-            k, k_s = particle.incident_field.k_l, particle.inner_field.k_l
-            sc_coef = scattered_coefficients[s, imn]
-            in_coef[s, imn] = (ss.spherical_jn(n, k * particle.radius) / particle.t_matrix[imn, imn] +
-                               mths.spherical_h1n(n, k * particle.radius)) * sc_coef / ss.spherical_jn(n, k_s * particle.radius)
+            k = particle.incident_field.k
+            sc_coef = scattered_coefficients[i_p, imn]
+            in_coef[i_p, imn] = (ss.spherical_jn(n, k * particle.radius) / particle.t_matrix[imn, imn] +
+                                 mths.spherical_h1n(n, k * particle.radius)) * sc_coef / ss.spherical_jn(n, k * particle.radius)
     return in_coef
