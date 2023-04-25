@@ -21,14 +21,14 @@ class Simulation:
         self.medium = medium
         self.freq = frequency
         self.order = order
-        self.incident_field = initial_field
+        self.initial_field = initial_field
         self.store_t_matrix = store_t_matrix
 
     def run(self):
         linear_system = LinearSystem(
             particles=self.particles,
             medium=self.medium,
-            initial_field=self.incident_field,
+            initial_field=self.initial_field,
             frequency=self.freq,
             order=self.order,
             store_t_matrix=self.store_t_matrix

@@ -1,53 +1,49 @@
 import numpy as np
 import csv
 
-from acsmuthi.linear_system.linear_system import LinearSystem
+from acsmuthi.simulation import Simulation
 from acsmuthi.postprocessing import cross_sections as cs
 from acsmuthi.postprocessing import forces
 
 from acsmuthi.initial_field import PlaneWave
-from acsmuthi.particles import Particle
+from acsmuthi.particles import SphericalParticle
 from acsmuthi.medium import Medium
 
 
-def silica_aerogel_sphere_in_standing_wave_ls(order, r_sph):
-    ro_fluid = 1.225  # [kg/m^3]
-    c_fluid = 331  # [m/s]
+'''
+Test to check the convergence of scattering cross sections and acoustic forces for a different distances 
+between two spherical particles, depending on the multipole order
+'''
 
-    direction = np.array([0.70711, 0, 0.70711])
-    freq = 140  # [Hz]
-    p0 = 1  # [kg/m/s^2] = [Pa]
-    k_l = 2 * np.pi * freq / c_fluid  # [1/m]
+# Parameters: steel spheres in air in plane wave
+rho_medium, c_medium = 1.225, 331
+rho_sph, cp_sph, cs_sph = 7700, 5740, 3092
+p0, direction = 1, np.array([0.70711, 0, 0.70711])
 
-    poisson = 0.12
-    young = 197920
-    g = 0.5 * young / (1 + poisson)
-    ro_sph = 80  # [kg/m^3]
-    c_sph_l = np.sqrt(2 * g * (1 - poisson) / ro_sph / (1 - 2 * poisson))  # [m/s]
-    c_sph_t = np.sqrt(g / ro_sph)  # [m/s]
-
-    incident_field = PlaneWave(k_l, p0, direction)
-    fluid = Medium(ro_fluid, c_fluid)
-
-    pos1 = np.array([0., 0., 0.])
-    sphere1 = Particle(pos1, r_sph, ro_sph, c_sph_l, order)
-    particles = np.array([sphere1])
-
-    lin_sys = LinearSystem(particles, fluid, incident_field, freq, order, True)
-    lin_sys.prepare()
-    lin_sys.solve()
-    ecs = cs.extinction_cs(particles, fluid, incident_field, freq)
-    all_forces = forces.all_forces(particles, fluid, incident_field)
-    return ecs, np.concatenate(all_forces)
+# Main parameter for changing scattering regime is radius of the sphere
+freq = 50
+k, lda = 2 * np.pi * freq / c_medium, c_medium / freq
 
 
-def main_proc(orders, size):
+def main_proc(orders, ka):
     table = np.zeros((len(orders), 4), dtype=float)
     for i, order in enumerate(orders):
         print("     Order:", i, "of", len(orders))
-        ecs, frcs = silica_aerogel_sphere_in_standing_wave_ls(order, size)
-        table[i, 0] = ecs
-        table[i, 1:] = frcs
+
+        initial_field = PlaneWave(k=k, amplitude=p0, direction=direction)
+        medium = Medium(density=rho_medium, pressure_velocity=c_medium)
+        particles = np.array([SphericalParticle(
+            position=np.array([0., 0, 0]),
+            radius=ka / k,
+            density=rho_sph,
+            pressure_velocity=cp_sph,
+            shear_velocity=cs_sph,
+            order=order
+        )])
+        sim = Simulation(particles, medium, initial_field, freq, order, True)
+        sim.run()
+        table[i, 0] = cs.extinction_cs(sim.particles, sim.medium, sim.initial_field, freq)
+        table[i, 1:] = np.concatenate(forces.all_forces(sim.particles, sim.medium, sim.initial_field))
     return table
 
 
@@ -59,17 +55,16 @@ def write_csv(data, fieldnames, filename):
 
 
 def main():
-    orders = np.arange(5, 17)
-    lda = 331 / 140
-    sizes = np.array([0.01, 0.1, 0.5, 1, 2, 3, 5]) * lda
+    orders = np.arange(1, 15)
+    ka_sizes = np.array([0.01, 0.1, 0.5, 1, 2, 5, 10])
     header = ["ord", "ecs", "f1x", "f1y", "f1z"]
     tot_table = np.zeros((len(orders), len(header)))
     tot_table[:, 0] = orders[:]
 
-    for i, r in enumerate(sizes):
-        print(i, "size of", len(sizes)-1)
-        tot_table[:, 1:] = main_proc(orders, r)
-        write_csv(tot_table, header, "Dl_"+str(np.round(2 * r / lda, 2)))
+    for i, ka in enumerate(ka_sizes):
+        print(i, "size of", len(ka_sizes) - 1)
+        tot_table[:, 1:] = main_proc(orders, ka)
+        write_csv(tot_table, header, f"ka{ka}")
 
 
-main()
+# main()

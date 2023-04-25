@@ -6,63 +6,61 @@ from acsmuthi.postprocessing import cross_sections as cs
 from acsmuthi.postprocessing import forces
 
 from acsmuthi.initial_field import PlaneWave
-from acsmuthi.particles import Particle
+from acsmuthi.particles import SphericalParticle
 from acsmuthi.medium import Medium
 
 
-def silica_aerogel_sphere_in_standing_wave_ls(order, dist):
-    ro_fluid = 1.225  # [kg/m^3]
-    c_fluid = 331  # [m/s]
+'''
+Test to check the convergence of scattering cross sections and acoustic forces for a different sizes of 
+spherical particle, depending on the multipole order
+'''
 
-    direction = np.array([0, 0, 1])
-    freq = 18.8  #
-    p0 = 1  # [kg/m/s^2] = [Pa]
-    k_l = 2 * np.pi * freq / c_fluid  # [1/m]
+# Parameters: steel spheres in air in plane wave
+rho_medium, c_medium = 1.225, 331
+rho_sph, cp_sph, cs_sph = 7700, 5740, 3092
+r_sph = 1
+p0, direction = 1, np.array([0.70711, 0, 0.70711])
 
-    poisson = 0.12
-    young = 197920
-    g = 0.5 * young / (1 + poisson)
-    ro_sph = 80  # [kg/m^3]
-    r_sph = 1
-    c_sph_l = np.sqrt(2 * g * (1 - poisson) / ro_sph / (1 - 2 * poisson))  # [m/s]
-    c_sph_t = np.sqrt(g / ro_sph)  # [m/s]
-
-    incident_field = PlaneWave(k_l, p0, direction)
-    fluid = Medium(ro_fluid, c_fluid)
-
-    pos1, pos2 = np.array([-dist/2, 0, 0]), np.array([dist/2, 0, 0])
-    sphere1 = Particle(pos1, r_sph, ro_sph, c_sph_l, order)
-    sphere2 = Particle(pos2, r_sph, ro_sph, c_sph_l, order)
-    particles = np.array([sphere1, sphere2])
-
-    sim = Simulation(particles, fluid, incident_field, freq, order, True)
-    sim.run()
-    ecs = cs.extinction_cs(particles, fluid, incident_field, freq)
-    all_forces = forces.all_forces(particles, fluid, incident_field)
-    return ecs, np.concatenate(all_forces)
+# Main parameter for changing scattering regime is frequency
+freq = 5
+k, lda = 2 * np.pi * freq / c_medium, c_medium / freq
 
 
 def main_proc(orders, distance):
     table = np.zeros((len(orders), 7), dtype=float)
     for i, order in enumerate(orders):
         print("     Order:", i, "of", len(orders))
-        ecs, frcs = silica_aerogel_sphere_in_standing_wave_ls(order, distance)
+
+        incident_field = PlaneWave(k, p0, direction)
+        medium = Medium(rho_medium, c_medium)
+
+        pos1, pos2 = np.array([distance / 2, 0, 0]), np.array([-distance / 2, 0, 0])
+        sphere1 = SphericalParticle(pos1, r_sph, rho_sph, cp_sph, order, cs_sph)
+        sphere2 = SphericalParticle(pos2, r_sph, rho_sph, cp_sph, order, cs_sph)
+        particles = np.array([sphere1, sphere2])
+
+        sim = Simulation(particles, medium, incident_field, freq, order, True)
+        sim.run()
+        ecs = cs.extinction_cs(particles, medium, incident_field, freq)
+        all_forces = forces.all_forces(particles, medium, incident_field)
+
         table[i, 0] = ecs
-        table[i, 1:] = frcs
+        table[i, 1:] = np.concatenate(all_forces)
     return table
 
 
 def write_csv(data, fieldnames, filename):
-    with open(".\\distance_order_csv\\Dl0_11\\" + filename + ".csv", mode="w", encoding='utf-8') as w_file:
+    with open(f".\\distance_order_csv\\freq{freq}\\" + filename + ".csv", mode="w", encoding='utf-8') as w_file:
         file_writer = csv.writer(w_file, delimiter=",", lineterminator="\r")
         file_writer.writerow(fieldnames)
         file_writer.writerows(data)
 
 
 def main():
-    orders = np.arange(1, 14)
-    lda = 331 / 18.8
-    distances = np.linspace(2.2, 4 * lda, 31)
+    orders = np.arange(1, 11)
+    dl = np.array([0.001, 0.01, 0.1, 1, 5, 10, 15, 20])
+    distances = 2 * r_sph + dl * lda
+
     header = ["ord", "ecs", "f1x", "f1y", "f1z", "f2x", "f2y", "f2z"]
     tot_table = np.zeros((len(orders), len(header)))
     tot_table[:, 0] = orders[:]
@@ -70,7 +68,7 @@ def main():
     for i, d in enumerate(distances):
         print(i, "distance of", len(distances)-1)
         tot_table[:, 1:] = main_proc(orders, d)
-        write_csv(tot_table, header, "2sph_dl_"+str(np.round(d / lda, 2)))
+        write_csv(tot_table, header, f"dl{dl[i]}")
 
 
-main()
+# main()
