@@ -90,6 +90,8 @@ class LinearSystem:
         else:
             master_matrix = self.t_matrix.linear_operator.A + self.coupling_matrix.linear_operator.A
             scattered_coefs1d = scipy.linalg.solve(master_matrix, self.rhs)
+        # if store_total_matrix:
+        #     self.total_t_matrix = scipy.sparse.linalg.aslinearoperator(np.linalg.inv(master_matrix))
 
         scattered_coefs = scattered_coefs1d.reshape((len(self.particles), (self.order + 1) ** 2))
         inner_coefs = _inner_coefficients(self.particles, scattered_coefs, self.order)
@@ -170,10 +172,11 @@ def _inner_coefficients(particles_array, scattered_coefficients, order):
     r"""Counts coefficients of decompositions fields inside spheres"""
     in_coef = np.zeros_like(scattered_coefficients)
     for i_p, particle in enumerate(particles_array):
+        k, k_p = particle.incident_field.k, particle.inner_field.k
         for m, n in wvfs.multipoles(order):
             imn = n ** 2 + n + m
-            k = particle.incident_field.k
             sc_coef = scattered_coefficients[i_p, imn]
             in_coef[i_p, imn] = (ss.spherical_jn(n, k * particle.radius) / particle.t_matrix[imn, imn] +
-                                 mths.spherical_h1n(n, k * particle.radius)) * sc_coef / ss.spherical_jn(n, k * particle.radius)
+                                 mths.spherical_h1n(n, k * particle.radius)) * \
+                                sc_coef / ss.spherical_jn(n, k_p * particle.radius)
     return in_coef
