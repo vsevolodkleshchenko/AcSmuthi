@@ -3,7 +3,7 @@ from acsmuthi.particles import SphericalParticle
 from acsmuthi.medium import Medium
 from acsmuthi.initial_field import PlaneWave
 from acsmuthi.postprocessing import cross_sections as cs, forces
-# from acsmuthi.postprocessing import rendering
+from acsmuthi.postprocessing import rendering
 
 import numpy as np
 
@@ -51,8 +51,8 @@ simulation = Simulation(
 
 print("Time:", simulation.run())
 
-ecs = cs.extinction_cs(particles, medium, incident_field, freq, by_multipoles=True)
-frcs = forces.all_forces(particles, medium, incident_field)
+ecs = cs.extinction_cs(simulation, by_multipoles=False)
+frcs = forces.all_forces(simulation)
 print(ecs, *frcs, sep='\n')
 
 # rendering.show_pressure_field(simulation, -6, 6, 0, 0, -6, 6, 151, 'total')

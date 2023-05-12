@@ -58,9 +58,9 @@ def test_three_aerogel_spheres_in_air():
     )
     sim.run()
 
-    scs = cs.extinction_cs(particles=particles, medium=fluid, initial_field=incident_field, freq=freq)
+    scs = cs.extinction_cs(simulation=sim)
 
-    frcs = forces.all_forces(particles_array=particles, medium=fluid, initial_field=incident_field)
+    frcs = forces.all_forces(sim)
 
     comsol_scs = 24.408  # 24.412
     comsol_frcs = np.array([[0, 0, 1.7290E-5], [0, 0, 0], [0, 0, -1.7292E-5]])

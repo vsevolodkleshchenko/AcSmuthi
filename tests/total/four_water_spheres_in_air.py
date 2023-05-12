@@ -53,9 +53,9 @@ def test_four_water_spheres_in_air():
     )
     sim.run()
 
-    scs = cs.extinction_cs(particles=particles, medium=fluid, initial_field=incident_field, freq=freq)
+    scs = cs.extinction_cs(simulation=sim)
 
-    frcs = forces.all_forces(particles_array=particles, medium=fluid, initial_field=incident_field)
+    frcs = forces.all_forces(sim)
 
     comsol_scs = 8.0687	 # 8.0799
     comsol_frcs = np.array([[4.2871E-6,	6.8757E-6, -3.4738E-6],	[6.3812E-6,	5.9692E-6, -4.8634E-6],

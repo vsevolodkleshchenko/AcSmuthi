@@ -41,8 +41,8 @@ def main_proc(orders, distance):
 
         sim = Simulation(particles, medium, incident_field, freq, order, True)
         sim.run()
-        ecs = cs.extinction_cs(particles, medium, incident_field, freq)
-        all_forces = forces.all_forces(particles, medium, incident_field)
+        ecs = cs.extinction_cs(sim)
+        all_forces = forces.all_forces_old(particles, medium, incident_field)
 
         table[i, 0] = ecs
         table[i, 1:] = np.concatenate(all_forces)

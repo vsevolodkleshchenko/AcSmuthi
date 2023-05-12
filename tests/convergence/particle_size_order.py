@@ -42,8 +42,8 @@ def main_proc(orders, ka):
         )])
         sim = Simulation(particles, medium, initial_field, freq, order, True)
         sim.run()
-        table[i, 0] = cs.extinction_cs(sim.particles, sim.medium, sim.initial_field, freq)
-        table[i, 1:] = np.concatenate(forces.all_forces(sim.particles, sim.medium, sim.initial_field))
+        table[i, 0] = cs.extinction_cs(sim)
+        table[i, 1:] = np.concatenate(forces.all_forces_old(sim.particles, sim.medium, sim.initial_field))
     return table
 
 

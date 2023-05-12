@@ -24,8 +24,9 @@ def test_one_sphere():
     spheres = np.array([particles.SphericalParticle(position, r_sph, rho_sph, c_sph, order)])
     sim = Simulation(spheres, fluid, incident_field, freq, order, True)
     sim.run()
-    scs, ecs = cs.cross_section(spheres, fluid, incident_field, freq, order)
-    frc = forces.all_forces(spheres, fluid, incident_field)[0][2]
+    scs, ecs = cs.cross_section(sim)
+    frc = forces.all_forces(sim)[0][2]
+
     actual_field = fields.compute_inner_field(xx, yy, zz, spheres) + fields.compute_scattered_field(xx, yy, zz, spheres)
 
     sim_one_sphere = OneSphericalParticleSimulation(freq, rho_sph, c_sph, r_sph, rho_fluid, c_fluid, p0, order)

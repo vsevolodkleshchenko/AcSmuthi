@@ -109,9 +109,9 @@ def main_proc(orders, n_sph):
         sim = Simulation(particles, medium, initial_field, freq, order, True)
         t_prep, t_sol = sim.run()
         t_so = time.time()
-        ecs = cs.extinction_cs(sim.particles, sim.medium, sim.initial_field, freq)
+        ecs = cs.extinction_cs(sim)
         t_cs = time.time()
-        all_forces = forces.all_forces(sim.particles, sim.medium, sim.initial_field)
+        all_forces = forces.all_forces_old(sim.particles, sim.medium, sim.initial_field)
         t_fr = time.time()
 
         table[i, 0] = ecs
