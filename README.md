@@ -31,4 +31,5 @@ simulation.run(cross_sections_flag=True, forces_flag=True, plot_flag=True)
 ## What realized now?
 * Plane wave scattering on spherical fluid and elastic particles in fluid medium
 
-
+## Acknowledgements
+This work is supported by the Russian Science Foundation # 20-72-10141
