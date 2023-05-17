@@ -6,6 +6,7 @@ import seaborn as sns
 plt.rcdefaults()  # reset to default
 # plt.rcParams['text.usetex'] = True
 plt.style.use('https://raw.githubusercontent.com/toftul/plt-styles-phys/main/phys-plots-sans.mplstyle')
+matplotlib.rcParams['lines.linewidth'] = 2.8
 plt.rcParams['axes.formatter.min_exponent'] = 1
 
 
@@ -67,18 +68,20 @@ def dist_2_ord():
 
 
 def timing():
-    sol, frc, ecs = [], [], []
+    pre, sol, frc, ecs = [], [], [], []
     for i in range(1, 9):
-        table = np.loadtxt(f"n_particles_order_csv/freq150/{i}sph.csv", delimiter=",", dtype=str)
+        table = np.loadtxt(f"n_particles_order_csv/freq5/{i}sph.csv", delimiter=",", dtype=str)
         orders = table[1:, 0].astype(float)
+        pre.append(table[1:, -4].astype(float))
         sol.append(table[1:, -3].astype(float))
         ecs.append(table[1:, -2].astype(float))
         frc.append(table[1:, -1].astype(float))
 
-    sol1, frc1, ecs1 = [], [], []
+    pre1, sol1, frc1, ecs1 = [], [], [], []
     for i in np.arange(3, 8) ** 2:
-        table = np.loadtxt(f"n_particles_order_csv/freq150/{i}sph.csv", delimiter=",", dtype=str)
+        table = np.loadtxt(f"n_particles_order_csv/freq5/{i}sph.csv", delimiter=",", dtype=str)
         orders1 = table[1:, 0].astype(float)
+        pre1.append(table[1:, -4].astype(float))
         sol1.append(table[1:, -3].astype(float))
         ecs1.append(table[1:, -2].astype(float))
         frc1.append(table[1:, -1].astype(float))
@@ -87,16 +90,16 @@ def timing():
     colors = sns.color_palette("crest", 6)
     for i in range(1, 9):
         if i != 4: continue
-        ax[0].loglog(orders[:-1], sol[i-1][:-1], marker='.', color=colors[0])
+        ax[0].loglog(orders[:-1], sol[i-1][:-1] + pre[i-1][:-1], marker='.', color=colors[0])
         # ax[0].plot(orders, ecs[i-1], marker='.', label=f"{i}")
         ax[1].loglog(orders[:-1], frc[i-1][:-1], marker='.', label=f"{i}", color=colors[0])
 
     for i, s in enumerate(np.arange(3, 8) ** 2):
-        ax[0].loglog(orders1[:-1], sol1[i][:-1], marker='.', color=colors[i+1])
+        ax[0].loglog(orders1[:-1], sol1[i][:-1] + pre1[i-1][:-1], marker='.', color=colors[i+1])
         # ax[0].plot(orders1, ecs1[i], marker='.', label={i})
         ax[1].loglog(orders1[:-1], frc1[i][:-1], marker='.', label=f"{s}", color=colors[i+1])
     ax[0].loglog(orders[:-1], orders[:-1] ** 4, linestyle='--', color='k')
-    ax[1].loglog(orders[:-1], 0.01 * orders[:-1] ** 2, linestyle='--', color='k')
+    ax[1].loglog(orders[:-1], 0.002 * orders[:-1] ** 2, linestyle='--', color='k')
 
     ax[0].set_xticks(orders[:-1])
     ax[1].set_xticks(orders[:-1])
@@ -108,7 +111,7 @@ def timing():
     colors = sns.color_palette("crest", 6)
     n_particles = np.concatenate((np.arange(1, 9), np.arange(3, 8) ** 2))
     for i, order in enumerate([2, 4, 6, 8]):
-        sol_time = np.concatenate((np.array(sol)[:, order], np.array(sol1)[:, order]))
+        sol_time = np.concatenate((np.add(sol, pre)[:, order], np.add(sol1, pre1)[:, order]))
         ax.loglog(n_particles, sol_time, marker='.', label='        '+str(order), color=colors[i])
     ax.legend()
     ax.loglog(n_particles, n_particles ** 2, linestyle='--', color='k')
@@ -140,6 +143,6 @@ def regime():
 
 
 # dist_2_ord()
-# timing()
+timing()
 # orders_spheres()
 # regime()

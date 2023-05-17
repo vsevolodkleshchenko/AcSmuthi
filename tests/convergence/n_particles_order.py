@@ -25,7 +25,7 @@ r_sph = 1
 p0, direction = 1, np.array([0.70711, 0, 0.70711])
 
 # Main parameter for changing scattering regime is frequency
-freq = 150
+freq = 5
 k, lda = 2 * np.pi * freq / c_medium, c_medium / freq
 char_dist = lda
 
@@ -93,7 +93,7 @@ def create_positions(n_sph):
 
 
 def main_proc(orders, n_sph):
-    tab_len = 1 + 3 * n_sph + 3
+    tab_len = 1 + 3 * n_sph + 4
     table = np.zeros((len(orders), tab_len), dtype=float)
     positions = create_positions(n_sph)
     for i, order in enumerate(orders):
@@ -111,12 +111,12 @@ def main_proc(orders, n_sph):
         t_so = time.time()
         ecs = cs.extinction_cs(sim)
         t_cs = time.time()
-        all_forces = forces.all_forces_old(sim.particles, sim.medium, sim.initial_field)
+        all_forces = forces.all_forces(sim)
         t_fr = time.time()
 
         table[i, 0] = ecs
-        table[i, 1:tab_len-3] = np.concatenate(all_forces)
-        table[i, tab_len-3:] = [t_prep+t_sol, t_cs-t_so, t_fr-t_cs]
+        table[i, 1:tab_len-4] = np.concatenate(all_forces)
+        table[i, tab_len-4:] = [t_prep, t_sol, t_cs-t_so, t_fr-t_cs]
     return table
 
 
@@ -132,7 +132,7 @@ def write_header(n):
     for s in range(1, n + 1):
         for ax in ("x", "y", "z"):
             forces_header.append(f"f{s}"+ax)
-    return ["order", "ecs"] + forces_header + ["t_s", "t_cs", "t_f"]
+    return ["order", "ecs"] + forces_header + ["t_p", "t_s", "t_cs", "t_f"]
 
 
 def main():
@@ -155,4 +155,4 @@ def main():
         write_csv(tot_table, header, f"{n_s}sph")
 
 
-# main()
+main()

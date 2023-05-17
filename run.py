@@ -33,7 +33,7 @@ sphere2 = SphericalParticle(
     order=order
 )
 sphere3 = SphericalParticle(
-    position=np.array([0., 0, 0]),
+    position=np.array([0., 0, -1]),
     radius=r_sph,
     density=rho_sph,
     pressure_velocity=c_sph,
@@ -45,8 +45,7 @@ simulation = Simulation(
     medium=medium,
     initial_field=incident_field,
     frequency=freq,
-    order=order,
-    store_t_matrix=True
+    order=order
 )
 
 print("Time:", simulation.run())
@@ -55,4 +54,4 @@ ecs = cs.extinction_cs(simulation, by_multipoles=False)
 frcs = forces.all_forces(simulation)
 print(ecs, *frcs, sep='\n')
 
-# rendering.show_pressure_field(simulation, -6, 6, 0, 0, -6, 6, 151, 'total')
+rendering.show_pressure_field(simulation, -6, 6, 0, 0, -6, 6, 151, 'total')

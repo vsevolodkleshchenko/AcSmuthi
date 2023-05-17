@@ -35,7 +35,7 @@ def show_pressure_field(simulation, x_min, x_max, y_min, y_max, z_min, z_max, nu
         p_field = fields.compute_incident_field(xx, yy, zz, simulation.particles, simulation.initial_field)
 
     fig, ax = plt.subplots()
-    im = ax.imshow(p_field, origin='lower', extent=extent, cmap=sns.color_palette("cividis", as_cmap=True))
+    im = ax.imshow(p_field, origin='lower', extent=extent, cmap=cmap)
     plt.colorbar(im)
     draw_particles(simulation)
     plt.show()
