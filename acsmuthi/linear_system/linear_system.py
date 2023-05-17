@@ -44,15 +44,17 @@ class LinearSystem:
         )
 
     def compute_coupling_matrix(self):
-        self.coupling_matrix = CouplingMatrixExplicit(particles=self.particles,
-                                                      order=self.order,
-                                                      k=self.incident_field.k)
+        self.coupling_matrix = CouplingMatrixExplicit(
+            particles=self.particles,
+            order=self.order,
+            k=self.incident_field.k
+        )
 
     def compute_right_hand_side(self):
         rhs = np.zeros((len(self.particles), (self.order + 1) ** 2), dtype=complex)
         for i_p, particle in enumerate(self.particles):
             rhs[i_p] = particle.incident_field.coefficients
-        self.rhs = np.concatenate(rhs)
+        self.rhs = self.t_matrix.linear_operator.matvec(np.concatenate(rhs))
 
     def prepare(self):
         for particle in self.particles:
@@ -84,12 +86,14 @@ class LinearSystem:
         self.compute_right_hand_side()
 
     def solve(self):
+        master_matrix = MasterMatrix(self.t_matrix, self.coupling_matrix)
         if not self.store_t_matrix:
-            master_matrix = self.t_matrix.linear_operator + self.coupling_matrix.linear_operator
-            scattered_coefs1d, _ = scipy.sparse.linalg.gmres(master_matrix, self.rhs)
+            scattered_coefs1d, _ = scipy.sparse.linalg.gmres(master_matrix.linear_operator, self.rhs)
         else:
-            master_matrix = self.t_matrix.linear_operator.A + self.coupling_matrix.linear_operator.A
-            scattered_coefs1d = scipy.linalg.solve(master_matrix, self.rhs)
+            scattered_coefs1d = scipy.linalg.solve(master_matrix.linear_operator.A, self.rhs)
+
+        # if store_total_matrix:
+        #     self.total_t_matrix = ...
 
         scattered_coefs = scattered_coefs1d.reshape((len(self.particles), (self.order + 1) ** 2))
         inner_coefs = _inner_coefficients(self.particles, scattered_coefs, self.order)
@@ -141,7 +145,7 @@ class TMatrix(SystemMatrix):
 
             for i_s, particle in enumerate(particles):
                 t_mat[self.index_block(i_s):self.index_block(i_s + 1),
-                      self.index_block(i_s):self.index_block(i_s + 1)] = np.linalg.inv(particle.t_matrix)
+                      self.index_block(i_s):self.index_block(i_s + 1)] = particle.t_matrix
 
             self.linear_operator = scipy.sparse.linalg.aslinearoperator(t_mat)
 
@@ -166,14 +170,28 @@ class CouplingMatrixExplicit(SystemMatrix):
         self.linear_operator = scipy.sparse.linalg.aslinearoperator(coup_mat)
 
 
+class MasterMatrix(SystemMatrix):
+    def __init__(
+            self,
+            t_matrix: TMatrix,
+            coupling_matrix: CouplingMatrixExplicit
+    ):
+        SystemMatrix.__init__(self, particles=t_matrix.particles, order=t_matrix.order)
+
+        m_mat = np.eye(coupling_matrix.shape[0]) + t_matrix.linear_operator.matmat(coupling_matrix.linear_operator.A)
+
+        self.linear_operator = scipy.sparse.linalg.aslinearoperator(m_mat)
+
+
 def _inner_coefficients(particles_array, scattered_coefficients, order):
     r"""Counts coefficients of decompositions fields inside spheres"""
     in_coef = np.zeros_like(scattered_coefficients)
     for i_p, particle in enumerate(particles_array):
+        k, k_p = particle.incident_field.k, particle.inner_field.k
         for m, n in wvfs.multipoles(order):
             imn = n ** 2 + n + m
-            k = particle.incident_field.k
             sc_coef = scattered_coefficients[i_p, imn]
             in_coef[i_p, imn] = (ss.spherical_jn(n, k * particle.radius) / particle.t_matrix[imn, imn] +
-                                 mths.spherical_h1n(n, k * particle.radius)) * sc_coef / ss.spherical_jn(n, k * particle.radius)
+                                 mths.spherical_h1n(n, k * particle.radius)) * \
+                                sc_coef / ss.spherical_jn(n, k_p * particle.radius)
     return in_coef

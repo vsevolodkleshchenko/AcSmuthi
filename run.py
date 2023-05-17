@@ -1,86 +1,57 @@
-import matplotlib.pyplot as plt
-
 from acsmuthi.simulation import Simulation
 from acsmuthi.particles import SphericalParticle
 from acsmuthi.medium import Medium
 from acsmuthi.initial_field import PlaneWave
-from acsmuthi.postprocessing import fields
 from acsmuthi.postprocessing import cross_sections as cs, forces
+from acsmuthi.postprocessing import rendering
 
 import numpy as np
 
 
-# parameters of medium
-rho_fluid = 1.225  # [kg/m^3]
-c_fluid = 331  # [m/s]
+rho_fluid, c_fluid = 1.225, 331
+p0, freq = 1, 82
+direction = np.array([0.70711, 0, 0.70711])
+k = 2 * np.pi * freq / c_fluid
+r_sph, rho_sph, c_sph = 1., 997, 1403
 
-# parameters of incident field
-direction = np.array([1, 0, 0])
-freq = 18.11  # [Hz]
-p0 = 1  # [kg/m/s^2] = [Pa]
-k_l = 2 * np.pi * freq / c_fluid  # [1/m]
+order = 8
 
-# parameters of the spheres
-poisson = 0.12
-young = 197920
-g = 0.5 * young / (1 + poisson)
-pos1 = np.array([-1., 0, 5])  # [m]
-pos2 = np.array([1., 0, -5])  # [m]
-# [m]
-r_sph = 1.  # [m]
-rho_sph = 80  # [kg/m^3]
-c_sph_l = np.sqrt(2 * g * (1 - poisson) / rho_sph / (1 - 2 * poisson))  # [m/s]
-c_sph_t = np.sqrt(g / rho_sph)  # [m/s]
-
-order = 6
-
-incident_field = PlaneWave(k=k_l, amplitude=p0, direction=direction)
-
-fluid = Medium(density=rho_fluid, pressure_velocity=c_fluid)
-
+incident_field = PlaneWave(k=k, amplitude=p0, direction=direction)
+medium = Medium(density=rho_fluid, pressure_velocity=c_fluid)
 sphere1 = SphericalParticle(
-    position=pos1,
+    position=np.array([-2., 0, 3]),
     radius=r_sph,
     density=rho_sph,
-    pressure_velocity=c_sph_l,
-    order=order,
-    shear_velocity=c_sph_t
+    pressure_velocity=c_sph,
+    order=order
 )
 sphere2 = SphericalParticle(
-    position=pos2,
+    position=np.array([3., 0, -1]),
     radius=r_sph,
     density=rho_sph,
-    pressure_velocity=c_sph_l,
-    order=order,
-    shear_velocity=c_sph_t
+    pressure_velocity=c_sph,
+    order=order
 )
-
-particles = np.array([sphere1, sphere2])
-
+sphere3 = SphericalParticle(
+    position=np.array([0., 0, -1]),
+    radius=r_sph,
+    density=rho_sph,
+    pressure_velocity=c_sph,
+    order=order
+)
+particles = np.array([sphere1, sphere2, sphere3])
 simulation = Simulation(
     particles=particles,
-    medium=fluid,
+    medium=medium,
     initial_field=incident_field,
     frequency=freq,
-    order=order,
-    store_t_matrix=True
+    order=order
 )
 
 print("Time:", simulation.run())
 
-ecs = cs.extinction_cs(particles, fluid, incident_field, freq, by_multipoles=True)
-frcs = forces.all_forces(particles, fluid, incident_field)
+ecs = cs.extinction_cs(simulation, by_multipoles=False)
+frcs = forces.all_forces(simulation)
 print(ecs, *frcs, sep='\n')
 
-xx, zz = np.meshgrid(np.linspace(-16, 16, 251), np.linspace(-16, 16, 251))
-yy = np.full_like(xx, 0.)
-
-p_field = np.real(
-    fields.compute_scattered_field(
-        x=xx, y=yy, z=zz,
-        particles=particles
-    )
-)
-
-plt.imshow(p_field, origin='lower')
-plt.show()
+rendering.show_pressure_field(simulation, -6, 6, 0, 0, -6, 6, 151, 'total')

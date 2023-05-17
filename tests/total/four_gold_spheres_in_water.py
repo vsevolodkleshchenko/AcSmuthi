@@ -58,9 +58,9 @@ def test_four_gold_spheres_in_water():
     )
     sim.run()
 
-    scs = cs.extinction_cs(particles=particles, medium=fluid, initial_field=incident_field, freq=freq)
+    scs = cs.extinction_cs(simulation=sim)
 
-    frcs = forces.all_forces(particles_array=particles, medium=fluid, initial_field=incident_field)
+    frcs = forces.all_forces(sim)
 
     comsol_scs = 5.2806  # 5.2753
     comsol_frcs = np.array([[2.0505E-10, 3.0999E-10, -1.7603E-10], [3.9687E-10, 3.6124E-10,	-3.3042E-10],

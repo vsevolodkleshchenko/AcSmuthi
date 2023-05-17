@@ -50,14 +50,14 @@ def test_two_steel_spheres_in_water():
     )
     sim.run()
 
-    scs = cs.extinction_cs(particles=particles, medium=fluid, initial_field=incident_field, freq=freq)
+    scs = cs.extinction_cs(simulation=sim)
 
-    frcs = forces.all_forces(particles_array=particles, medium=fluid, initial_field=incident_field)
+    frcs = forces.all_forces(sim)
 
     # comsol_scs = 6.868E-4  # 6.9386E-4
     # comsol_frcs = np.array([[4.5201E-14, 0, 5.1318E-14], [5.1488E-14, 0, 5.9230E-14]])
     comsol_scs = 6.9092E-4  # 6.8824E-4
     comsol_frcs = np.array([[4.5198E-14, 0, 5.1185E-14], [5.1514E-14, 0, 5.9213E-14]])
 
-    np.testing.assert_allclose(np.where(np.abs(frcs) <= 1e-14, 0, frcs), comsol_frcs, rtol=5e-1)
+    np.testing.assert_allclose(np.where(np.abs(frcs) <= 1e-14, 0, frcs), comsol_frcs, rtol=1e-1)
     assert np.round(scs, 4) == np.round(comsol_scs, 4)

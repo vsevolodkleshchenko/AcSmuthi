@@ -21,22 +21,23 @@ class Simulation:
         self.medium = medium
         self.freq = frequency
         self.order = order
-        self.incident_field = initial_field
+        self.initial_field = initial_field
         self.store_t_matrix = store_t_matrix
+        self.linear_system = None
 
     def run(self):
-        linear_system = LinearSystem(
+        self.linear_system = LinearSystem(
             particles=self.particles,
             medium=self.medium,
-            initial_field=self.incident_field,
+            initial_field=self.initial_field,
             frequency=self.freq,
             order=self.order,
             store_t_matrix=self.store_t_matrix
         )
         t_start = time.time()
-        linear_system.prepare()
+        self.linear_system.prepare()
         t_preparation = time.time() - t_start
         t_start_solving = time.time()
-        linear_system.solve()
+        self.linear_system.solve()
         t_solution = time.time() - t_start_solving
         return t_preparation, t_solution
