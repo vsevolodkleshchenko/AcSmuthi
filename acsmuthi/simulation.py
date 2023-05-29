@@ -15,25 +15,20 @@ class Simulation:
             initial_field: InitialField,
             frequency: float,
             order: int,
-            store_t_matrix: bool = True
+            solver: str = 'LU'
     ):
         self.particles = particles
         self.medium = medium
         self.freq = frequency
         self.order = order
         self.initial_field = initial_field
-        self.store_t_matrix = store_t_matrix
+        self.solver = solver
         self.linear_system = None
 
     def run(self):
-        self.linear_system = LinearSystem(
-            particles=self.particles,
-            medium=self.medium,
-            initial_field=self.initial_field,
-            frequency=self.freq,
-            order=self.order,
-            store_t_matrix=self.store_t_matrix
-        )
+        self.linear_system = LinearSystem(particles=self.particles, medium=self.medium,
+                                          initial_field=self.initial_field, frequency=self.freq, order=self.order,
+                                          solver=self.solver)
         t_start = time.time()
         self.linear_system.prepare()
         t_preparation = time.time() - t_start

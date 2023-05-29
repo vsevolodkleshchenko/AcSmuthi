@@ -55,7 +55,7 @@ class SphericalWaveExpansion(FieldExpansion):
         coefficients_array = np.broadcast_to(self.coefficients, wave_functions_array.T.shape).T
         field_array = coefficients_array * wave_functions_array
         field = self.ampl * np.sum(field_array, axis=0)
-        return np.where((r >= self.inner_r) & (r <= self.outer_r), field, 0)
+        return np.where((r >= self.inner_r) & (r < self.outer_r), field, 0)
 
     def compatible(self, other):
         return (type(other).__name__ == "SphericalWaveExpansion"

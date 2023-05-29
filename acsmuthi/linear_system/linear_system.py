@@ -18,7 +18,7 @@ class LinearSystem:
             initial_field: InitialField,
             frequency: float,
             order: int,
-            store_t_matrix: bool
+            solver: str
     ):
         self.order = order
         self.rhs = None
@@ -28,7 +28,7 @@ class LinearSystem:
         self.medium = medium
         self.freq = frequency
         self.incident_field = initial_field
-        self.store_t_matrix = store_t_matrix
+        self.solver = solver
 
     def compute_t_matrix(self):
         for sph in range(len(self.particles)):
@@ -40,7 +40,7 @@ class LinearSystem:
         self.t_matrix = TMatrix(
             particles=self.particles,
             order=self.order,
-            store_t_matrix=self.store_t_matrix
+            store_t_matrix=False if self.solver == "GMRES" else True
         )
 
     def compute_coupling_matrix(self):
@@ -87,7 +87,7 @@ class LinearSystem:
 
     def solve(self):
         master_matrix = MasterMatrix(self.t_matrix, self.coupling_matrix)
-        if not self.store_t_matrix:
+        if self.solver == 'GMRES':
             scattered_coefs1d, _ = scipy.sparse.linalg.gmres(master_matrix.linear_operator, self.rhs)
         else:
             scattered_coefs1d = scipy.linalg.solve(master_matrix.linear_operator.A, self.rhs)

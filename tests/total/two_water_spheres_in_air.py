@@ -38,14 +38,7 @@ def test_two_water_spheres_in_air():
     sphere2 = SphericalParticle(position=pos2, radius=r_sph, density=ro_sph, pressure_velocity=c_sph_l, order=order)
 
     particles = np.array([sphere1, sphere2])
-    sim = Simulation(
-        particles=particles,
-        medium=fluid,
-        initial_field=incident_field,
-        frequency=freq,
-        order=order,
-        store_t_matrix=True
-    )
+    sim = Simulation(particles=particles, medium=fluid, initial_field=incident_field, frequency=freq, order=order)
     sim.run()
 
     scs = cs.extinction_cs(simulation=sim)

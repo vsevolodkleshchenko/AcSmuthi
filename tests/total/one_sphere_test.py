@@ -22,12 +22,12 @@ def test_one_sphere():
     incident_field = PlaneWave(k_l, p0, direction)
     fluid = Medium(rho_fluid, c_fluid)
     spheres = np.array([particles.SphericalParticle(position, r_sph, rho_sph, c_sph, order)])
-    sim = Simulation(spheres, fluid, incident_field, freq, order, True)
+    sim = Simulation(spheres, fluid, incident_field, freq, order)
     sim.run()
     scs, ecs = cs.cross_section(sim)
     frc = forces.all_forces(sim)[0][2]
 
-    actual_field = fields.compute_inner_field(xx, yy, zz, spheres) + fields.compute_scattered_field(xx, yy, zz, spheres)
+    actual_field = fields.compute_inner_field(xx, yy, zz, sim) + fields.compute_scattered_field(xx, yy, zz, sim)
 
     sim_one_sphere = OneSphericalParticleSimulation(freq, rho_sph, c_sph, r_sph, rho_fluid, c_fluid, p0, order)
     sim_one_sphere.evaluate_solution()
