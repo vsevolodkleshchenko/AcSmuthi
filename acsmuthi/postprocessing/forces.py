@@ -3,7 +3,6 @@ import numpy as np
 
 
 def force_on_sphere(particle, medium, initial_field):
-    r"""Cartesian components of force on sphere[sph]"""
     ef_inc_coef = np.linalg.inv(particle.t_matrix) @ particle.scattered_field.coefficients
     scale = particle.t_matrix
     fxy_array = np.zeros((particle.order + 1) ** 2, dtype=complex)
@@ -29,7 +28,6 @@ def force_on_sphere(particle, medium, initial_field):
 
 
 def all_forces_old(particles_array, medium, initial_field):
-    r"""Cartesian components of force for all spheres"""
     forces_array = np.zeros((len(particles_array), 3), dtype=float)
     for s, particle in enumerate(particles_array):
         forces_array[s] = force_on_sphere(particle, medium, initial_field)
@@ -37,13 +35,12 @@ def all_forces_old(particles_array, medium, initial_field):
 
 
 def all_forces(simulation):
-    r"""Cartesian components of force on sphere[sph]"""
     particles, medium, initial_field = simulation.particles, simulation.medium, simulation.initial_field
     forces_array = np.zeros((len(particles), 3), dtype=float)
     scattered_coefficients = np.concatenate([particle.scattered_field.coefficients for particle in particles])
     all_ef_inc_coef = np.split(simulation.linear_system.coupling_matrix.linear_operator.A @ scattered_coefficients, len(particles))
     for s, particle in enumerate(particles):
-        ef_inc_coef = - all_ef_inc_coef[s] + particle.incident_field.coefficients
+        ef_inc_coef = all_ef_inc_coef[s] + particle.incident_field.coefficients
         scale = particle.t_matrix
         fxy_array = np.zeros((particle.order + 1) ** 2, dtype=complex)
         fz_array = np.zeros((particle.order + 1) ** 2, dtype=complex)

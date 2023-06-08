@@ -15,7 +15,7 @@ class Simulation:
             initial_field: InitialField,
             frequency: float,
             order: int,
-            solver: str = 'LU'
+            solver: str = 'LU' # 'LU' or 'GMRES'
     ):
         self.particles = particles
         self.medium = medium
@@ -26,9 +26,14 @@ class Simulation:
         self.linear_system = None
 
     def run(self):
-        self.linear_system = LinearSystem(particles=self.particles, medium=self.medium,
-                                          initial_field=self.initial_field, frequency=self.freq, order=self.order,
-                                          solver=self.solver)
+        self.linear_system = LinearSystem(
+            particles=self.particles,
+            medium=self.medium,
+            initial_field=self.initial_field,
+            frequency=self.freq,
+            order=self.order,
+            solver=self.solver
+        )
         t_start = time.time()
         self.linear_system.prepare()
         t_preparation = time.time() - t_start

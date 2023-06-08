@@ -5,12 +5,14 @@ import acsmuthi.utility.memoizing as memo
 
 
 class Particle:
-    def __init__(self,
-                 position: np.ndarray[float],
-                 density: float,
-                 pressure_velocity: float,
-                 order: int,
-                 shear_velocity: float = None):
+    def __init__(
+            self,
+            position: np.ndarray[float],
+            density: float,
+            pressure_velocity: float,
+            order: int,
+            shear_velocity: float = None
+    ):
         self.position = position
         self.density = density
         self.cp = pressure_velocity

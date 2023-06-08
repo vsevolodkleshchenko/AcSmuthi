@@ -94,7 +94,7 @@ cdef double complex[:, :] _coupling_block(double[:] particle_pos, double[:] othe
             for nu in range(order + 1):
                 for mu in range(-nu, nu + 1):
                     imunu = nu ** 2 + nu + mu
-                    block[imn, imunu] = - outgoing_separation_coefficient(mu, m, nu, n, k_medium, distance)
+                    block[imn, imunu] = outgoing_separation_coefficient(mu, m, nu, n, k_medium, distance)
     return block
 
 

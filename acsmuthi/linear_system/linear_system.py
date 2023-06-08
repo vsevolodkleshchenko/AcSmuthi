@@ -92,11 +92,8 @@ class LinearSystem:
         else:
             scattered_coefs1d = scipy.linalg.solve(master_matrix.linear_operator.A, self.rhs)
 
-        # if store_total_matrix:
-        #     self.total_t_matrix = ...
-
         scattered_coefs = scattered_coefs1d.reshape((len(self.particles), (self.order + 1) ** 2))
-        inner_coefs = _inner_coefficients(self.particles, scattered_coefs, self.order)
+        inner_coefs = _inner_coefficients(self.coupling_matrix, self.particles, scattered_coefs, self.order)
 
         for s, particle in enumerate(self.particles):
             particle.scattered_field.coefficients = scattered_coefs[s]
@@ -178,20 +175,22 @@ class MasterMatrix(SystemMatrix):
     ):
         SystemMatrix.__init__(self, particles=t_matrix.particles, order=t_matrix.order)
 
-        m_mat = np.eye(coupling_matrix.shape[0]) + t_matrix.linear_operator.matmat(coupling_matrix.linear_operator.A)
+        m_mat = np.eye(coupling_matrix.shape[0]) - t_matrix.linear_operator.matmat(coupling_matrix.linear_operator.A)
 
         self.linear_operator = scipy.sparse.linalg.aslinearoperator(m_mat)
 
 
-def _inner_coefficients(particles_array, scattered_coefficients, order):
-    r"""Counts coefficients of decompositions fields inside spheres"""
+def _inner_coefficients(coupling_matrix, particles_array, scattered_coefficients, order):
+    """Counts coefficients of decompositions fields inside spheres"""
+    all_ef_inc_coef = np.split(coupling_matrix.linear_operator.A @ np.concatenate(scattered_coefficients), len(particles_array))
     in_coef = np.zeros_like(scattered_coefficients)
     for i_p, particle in enumerate(particles_array):
         k, k_p = particle.incident_field.k, particle.inner_field.k
         for m, n in wvfs.multipoles(order):
             imn = n ** 2 + n + m
             sc_coef = scattered_coefficients[i_p, imn]
-            in_coef[i_p, imn] = (ss.spherical_jn(n, k * particle.radius) / particle.t_matrix[imn, imn] +
-                                 mths.spherical_h1n(n, k * particle.radius)) * \
-                                sc_coef / ss.spherical_jn(n, k_p * particle.radius)
+            ef_inc_coef = all_ef_inc_coef[i_p][imn] + particle.incident_field.coefficients[imn]
+            in_coef[i_p, imn] = (ss.spherical_jn(n, k * particle.radius) * ef_inc_coef +
+                                 mths.spherical_h1n(n, k * particle.radius) * sc_coef) / \
+                                 ss.spherical_jn(n, k_p * particle.radius)
     return in_coef

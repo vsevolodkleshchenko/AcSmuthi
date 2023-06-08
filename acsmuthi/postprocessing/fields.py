@@ -12,7 +12,6 @@ def compute_incident_field(x, y, z, simulation):
 
 
 def compute_scattered_field(x, y, z, simulation):
-    r"""Counts scattered field on mesh x, y, z"""
     particles = simulation.particles
     scattered_field_array = np.zeros((len(particles), *x.shape), dtype=complex)
     for s, particle in enumerate(particles):
@@ -22,7 +21,6 @@ def compute_scattered_field(x, y, z, simulation):
 
 
 def compute_inner_field(x, y, z, simulation):
-    r"""Counts inner field in every sphere on mesh x, y, z"""
     particles = simulation.particles
     inner_fields_array = np.zeros((len(particles), *x.shape), dtype=complex)
     for s, particle in enumerate(particles):

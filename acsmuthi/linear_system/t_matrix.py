@@ -5,8 +5,7 @@ import acsmuthi.utility.mathematics as mths
 import acsmuthi.utility.wavefunctions as wvfs
 
 
-def scaled_coefficient(n, c_medium, rho_medium, c_l, rho, r, freq):
-    r"""Scaled coefficient of particle"""
+def t_element(n, c_medium, rho_medium, c_l, rho, r, freq):
     k_medium = 2 * np.pi * freq / c_medium
     k_l = 2 * np.pi * freq / c_l
 
@@ -27,7 +26,7 @@ def scaled_coefficient(n, c_medium, rho_medium, c_l, rho, r, freq):
     return np.linalg.det(s1) / np.linalg.det(s2)
 
 
-def elastic_scaled_coefficient(n, c_medium, rho_medium, c_l, c_t, rho, r, freq):
+def t_element_elastic(n, c_medium, rho_medium, c_l, c_t, rho, r, freq):
     k_l = 2 * np.pi * freq / c_l
     k_t = 2 * np.pi * freq / c_t
     k_medium = 2 * np.pi * freq / c_medium
@@ -55,8 +54,7 @@ def t_matrix_sphere(order, c_medium, rho_medium, c_sphere_l, rho_sphere, r_spher
     for m, n in wvfs.multipoles(order):
         i = n ** 2 + n + m
         if c_sphere_t is not None:
-            t[i, i] = elastic_scaled_coefficient(n, c_medium, rho_medium, c_sphere_l, c_sphere_t,
-                                                 rho_sphere, r_sphere, freq)
+            t[i, i] = t_element_elastic(n, c_medium, rho_medium, c_sphere_l, c_sphere_t, rho_sphere, r_sphere, freq)
         else:
-            t[i, i] = scaled_coefficient(n, c_medium, rho_medium, c_sphere_l, rho_sphere, r_sphere, freq)
+            t[i, i] = t_element(n, c_medium, rho_medium, c_sphere_l, rho_sphere, r_sphere, freq)
     return t

@@ -4,7 +4,6 @@ import numpy as np
 
 
 def scattering_cs(simulation):
-    r"""Counts scattering cross section"""
     particles, medium, initial_field = simulation.particles, simulation.medium, simulation.initial_field
     freq, order = simulation.freq, simulation.order
     sigma_sc1 = np.zeros(len(particles))
@@ -30,7 +29,6 @@ def scattering_cs(simulation):
 
 
 def extinction_cs(simulation, by_multipoles=False):
-    r"""Counts extinction cross section"""
     particles, medium, initial_field, freq = simulation.particles, simulation.medium, simulation.initial_field, simulation.freq
     omega = 2*np.pi*freq
     dimensional_coef = initial_field.amplitude ** 2 / (2 * omega * medium.density * initial_field.k)
@@ -58,7 +56,6 @@ def extinction_cs(simulation, by_multipoles=False):
 
 
 def cross_section(simulation):
-    r"""Counts scattering and extinction cross sections"""
     sigma_sc = scattering_cs(simulation)
     sigma_ex = extinction_cs(simulation)
     return sigma_sc, sigma_ex
