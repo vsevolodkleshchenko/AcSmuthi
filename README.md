@@ -8,7 +8,7 @@ T-matrix method and calculates all the variables using these coefficients.
 ## Installation
 Now, package is not published on pypi, but can be installed via
 ```commandline
-pip install acsmuthi-0.1.3-py3-none-any.whl
+pip install acsmuthi-0.1.4-py3-none-any.whl
 ```
 This file can be downloaded from the `dist` folder of this project.
 

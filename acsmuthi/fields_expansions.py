@@ -1,5 +1,6 @@
 import numpy as np
 import copy
+from typing import Literal
 from acsmuthi.utility import wavefunctions as wvfs
 
 
@@ -24,12 +25,12 @@ class FieldExpansion:
 
 
 class SphericalWaveExpansion(FieldExpansion):
-    def __init__(self, amplitude, k, origin, kind, order, inner_r=0, outer_r=np.inf, coefficients=None):
+    def __init__(self, amplitude, k, origin, kind: Literal['regular', 'outgoing'], order, inner_r=0, outer_r=np.inf, coefficients=None):
         FieldExpansion.__init__(self)
         self.ampl = amplitude
         self.k = k
         self.origin = origin
-        self.kind = kind  # 'regular' or 'outgoing'
+        self.kind = kind
         self.order = order
         self.inner_r = inner_r
         self.outer_r = outer_r

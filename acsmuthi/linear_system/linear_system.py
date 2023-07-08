@@ -1,9 +1,9 @@
 import numpy as np
+import scipy.special as ss
+import scipy.sparse.linalg
 
 from acsmuthi import fields_expansions as fldsex
 import acsmuthi.linear_system.coupling_matrix as cmt
-import scipy.special as ss
-import scipy.sparse.linalg
 from acsmuthi.utility import mathematics as mths, wavefunctions as wvfs
 from acsmuthi.particles import Particle
 from acsmuthi.medium import Medium

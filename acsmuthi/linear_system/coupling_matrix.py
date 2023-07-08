@@ -26,7 +26,7 @@ except Exception as e:
             for mu, nu in wvfs.multipoles(order):
                 imunu = nu ** 2 + nu + mu
                 distance = particle_pos - other_particle_pos
-                block[imn, imunu] = - seps.outgoing_separation_coefficient(mu, m, nu, n, k_medium, distance)
+                block[imn, imunu] = seps.outgoing_separation_coefficient(mu, m, nu, n, k_medium, distance)
         return block
 
 

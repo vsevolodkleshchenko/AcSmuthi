@@ -71,7 +71,9 @@ rendering.show_pressure_field(
     simulation=simulation,
     x_min=-6, x_max=6, y_min=0, y_max=0, z_min=-6, z_max=6, num=201,
     field_type='total',
-    cmap='viridis'
+    cmap='viridis',
+    particle_color='white',
+    particle_linewidth=2
 )
 
 

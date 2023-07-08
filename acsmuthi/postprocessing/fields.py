@@ -17,6 +17,10 @@ def compute_scattered_field(x, y, z, simulation):
     for s, particle in enumerate(particles):
         scattered_field_array[s] = particle.scattered_field.compute_pressure_field(x, y, z)
     scattered_field = np.sum(scattered_field_array, axis=0)
+    for s, particle in enumerate(particles):
+        xr, yr, zr = x - particle.position[0], y - particle.position[1], z - particle.position[2]
+        r = np.sqrt(xr ** 2 + yr ** 2 + zr ** 2)
+        scattered_field = np.where(r >= particle.radius, scattered_field, 0)
     return np.real(scattered_field)
 
 
