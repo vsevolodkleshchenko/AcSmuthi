@@ -1,9 +1,10 @@
 import numpy as np
+import scipy.special as ss
+import scipy.sparse.linalg
 
 from acsmuthi import fields_expansions as fldsex
 import acsmuthi.linear_system.coupling_matrix as cmt
-import scipy.special as ss
-import scipy.sparse.linalg
+from acsmuthi.linear_system import reflection
 from acsmuthi.utility import mathematics as mths, wavefunctions as wvfs
 from acsmuthi.particles import Particle
 from acsmuthi.medium import Medium
@@ -46,6 +47,7 @@ class LinearSystem:
     def compute_coupling_matrix(self):
         self.coupling_matrix = CouplingMatrixExplicit(
             particles=self.particles,
+            medium=self.medium,
             order=self.order,
             k=self.incident_field.k
         )
@@ -151,6 +153,7 @@ class CouplingMatrixExplicit(SystemMatrix):
     def __init__(
             self,
             particles: np.ndarray[Particle],
+            medium: Medium,
             order: int,
             k: float
     ):
@@ -158,11 +161,16 @@ class CouplingMatrixExplicit(SystemMatrix):
         coup_mat = np.zeros(self.shape, dtype=complex)
 
         for sph in range(len(self.particles)):
-            other_spheres = np.where(np.arange(len(self.particles)) != sph)[0]
-            for osph in other_spheres:
-                coup_mat[self.index_block(sph):self.index_block(sph + 1),
-                         self.index_block(osph):self.index_block(osph + 1)] = cmt.coupling_block(
-                             self.particles[sph].position, self.particles[osph].position, k, self.order)
+            for osph in range(len(self.particles)):
+                if sph == osph:
+                    if medium.is_substrate:
+                        coup_mat[self.index_block(sph):self.index_block(sph + 1),
+                            self.index_block(sph):self.index_block(sph + 1)] = reflection.reflection_block(
+                                particles[sph].position, k, order)
+                else:
+                    coup_mat[self.index_block(sph):self.index_block(sph + 1),
+                        self.index_block(osph):self.index_block(osph + 1)] = cmt.coupling_block(
+                            self.particles[sph].position, self.particles[osph].position, k, self.order)
 
         self.linear_operator = scipy.sparse.linalg.aslinearoperator(coup_mat)
 

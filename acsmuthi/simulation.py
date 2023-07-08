@@ -15,7 +15,7 @@ class Simulation:
             initial_field: InitialField,
             frequency: float,
             order: int,
-            solver: str = 'LU' # 'LU' or 'GMRES'
+            solver: str = 'LU'  # 'LU' or 'GMRES'
     ):
         self.particles = particles
         self.medium = medium
