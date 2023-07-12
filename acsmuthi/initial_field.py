@@ -59,13 +59,15 @@ class StandingWave(InitialField):
             self.reference_point = reference_point
 
     def spherical_wave_expansion(self, origin, order):
-        reference_coefficients = wvfs.incident_coefficients(self.direction, order) + \
-                                 wvfs.incident_coefficients(-self.direction, order)
+        reference_coefficients_forward = wvfs.incident_coefficients(self.direction, order)
+        reference_coefficients_backward = wvfs.incident_coefficients(-self.direction, order)
         if np.array_equal(origin, self.reference_point):
-            coefficients = reference_coefficients
+            coefficients = reference_coefficients_forward + reference_coefficients_backward
         else:
-            coefficients = np.exp(1j * self.k * self.direction @ (origin - self.reference_point)) * \
-                           reference_coefficients
+            phase_forward = np.exp(1j * self.k * self.direction @ (origin - self.reference_point))
+            phase_backward = np.exp(-1j * self.k * self.direction @ (origin - self.reference_point))
+            coefficients = phase_forward * reference_coefficients_forward + \
+                           phase_backward * reference_coefficients_backward
         return fldsex.SphericalWaveExpansion(amplitude=self.amplitude, k=self.k, origin=origin, kind='regular',
                                              order=order, coefficients=coefficients)
 
