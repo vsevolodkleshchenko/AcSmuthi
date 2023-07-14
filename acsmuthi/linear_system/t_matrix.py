@@ -49,6 +49,49 @@ def t_element_elastic(n, c_medium, rho_medium, c_l, c_t, rho, r, freq):
     return scale
 
 
+def t_element_elastic1(n, c_medium, rho_medium, c_l, c_t, rho, r, freq):
+    omega = 2 * np.pi * freq
+    k_l = omega / c_l
+    k_s = omega / c_t
+    k_medium = omega / c_medium
+
+    e1 = 1j * (k_medium * r) * ss.spherical_jn(n, k_medium * r, derivative=True)
+    e2 = -1j * (rho_medium / rho) * k_s ** 2 * r ** 2 * ss.spherical_jn(n, k_medium * r)
+    d11 = -1j * (k_medium * r) * mths.spherical_h1n(n, k_medium * r, derivative=True)
+    d12 = k_l * r * ss.spherical_jn(n, k_l * r, derivative=True)
+    d13 = n * (n + 1) * ss.spherical_jn(n, k_s * r)
+    d21 = 1j * (rho_medium / rho) * k_s ** 2 * r ** 2 * mths.spherical_h1n(n, k_medium * r)
+    d22 = -4 * k_l * r * ss.spherical_jn(n, k_l * r) + \
+        (2 * n * (n + 1) - k_s ** 2 * r ** 2) * ss.spherical_jn(n, k_l * r)
+    d23 = 2 * n * (n + 1) * (k_s * r * ss.spherical_jn(n, k_s * r) - ss.spherical_jn(n, k_s * r))
+    d32 = 2 * (ss.spherical_jn(n, k_l * r) - k_l * r * ss.spherical_jn(n, k_l * r, derivative=True))
+    d33 = 2 * k_s * r * ss.spherical_jn(n, k_s * r, derivative=True) + \
+        (k_s ** 2 * r ** 2 - 2 * n * (n + 1) + 2) * ss.spherical_jn(n, k_s * r)
+
+    numerator_matrix = np.zeros((3, 3), dtype=complex)
+    denominator_matrix = np.zeros((3, 3), dtype=complex)
+
+    numerator_matrix[0, 0] = e1
+    numerator_matrix[1, 0] = e2
+    numerator_matrix[0, 1] = d12
+    numerator_matrix[1, 1] = d22
+    numerator_matrix[2, 1] = d32
+    numerator_matrix[0, 2] = d13
+    numerator_matrix[1, 2] = d23
+    numerator_matrix[2, 2] = d33
+
+    denominator_matrix[0, 0] = d11
+    denominator_matrix[1, 0] = d21
+    denominator_matrix[0, 1] = d12
+    denominator_matrix[1, 1] = d22
+    denominator_matrix[2, 1] = d32
+    denominator_matrix[0, 2] = d13
+    denominator_matrix[1, 2] = d23
+    denominator_matrix[2, 2] = d33
+
+    return np.linalg.det(numerator_matrix) / np.linalg.det(denominator_matrix)
+
+
 def t_matrix_sphere(order, c_medium, rho_medium, c_sphere_l, rho_sphere, r_sphere, freq, c_sphere_t=None):
     t = np.zeros(((order+1)**2, (order+1)**2), dtype=complex)
     for m, n in wvfs.multipoles(order):
