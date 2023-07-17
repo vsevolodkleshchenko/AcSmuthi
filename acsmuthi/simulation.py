@@ -1,5 +1,6 @@
 import numpy as np
 import time
+from typing import Literal
 
 from acsmuthi.linear_system.linear_system import LinearSystem
 from acsmuthi.particles import Particle
@@ -15,7 +16,7 @@ class Simulation:
             initial_field: InitialField,
             frequency: float,
             order: int,
-            solver: str = 'LU'  # 'LU' or 'GMRES'
+            solver: Literal['LU', 'GMRES'] = 'LU'
     ):
         self.particles = particles
         self.medium = medium
