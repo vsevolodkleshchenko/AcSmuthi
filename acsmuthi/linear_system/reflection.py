@@ -13,34 +13,46 @@ def fresnel_r(k_rho):
     return 1
 
 
-def reflection_element(m, n, mu, nu, k, emitter_pos, receiver_pos):
+def k_contour(
+        k_start_deflection=0.5,
+        k_stop_deflection=1.5,
+        dk_imag_deflection=0.1,
+        k_finish=5,
+        dk=0.01
+):
+    path_pieces = []
+
+    if k_start_deflection != 0:
+        start_path = np.arange(0, k_start_deflection, dk) + 0j
+        path_pieces.append(start_path)
+
+    if k_stop_deflection is not None:
+        deflected_path = np.arange(k_start_deflection, k_stop_deflection, dk) - 1j * dk_imag_deflection
+        deflection_stop_path = k_stop_deflection + 1j * np.arange(-dk_imag_deflection, 0, dk)
+        finish_path = np.arange(k_stop_deflection, k_finish, dk) + 0j
+        path_pieces.extend([deflected_path, deflection_stop_path, finish_path])
+    else:
+        deflected_path = np.arange(k_start_deflection, k_finish, dk) - 1j * dk_imag_deflection
+        path_pieces.append(deflected_path)
+
+    return np.concatenate(path_pieces)
+
+
+def reflection_element(m, n, mu, nu, k, emitter_pos, receiver_pos, k_parallel=k_contour()):
     dist = emitter_pos - receiver_pos
     d_rho, d_phi, dz = np.sqrt(dist[0] ** 2 + dist[1] ** 2), np.arctan2(dist[0], dist[1]), dist[2]
 
-    def integrand(k_rho):
+    def f_integrand(k_rho):
         gamma = np.emath.sqrt(k ** 2 - k_rho ** 2)
         return fresnel_r(k_rho) * np.exp(2j * gamma * emitter_pos[2]) * k_rho / gamma * \
             np.conj(legendre_normalized(m, n, gamma / k)) * legendre_normalized(mu, nu, - gamma / k) * \
             np.exp(1j * gamma * dz) * ss.jn(np.abs(m - mu), k_rho * d_rho)
 
-    def subtracted_function(k_rho):
-        gamma = np.emath.sqrt(k ** 2 - k_rho ** 2)
-        return 1 / gamma + 1j / np.sqrt(k_rho ** 2 + k ** 2)
-
-    subtracted_integral = \
-        -1j * ss.iv(np.abs(m - mu) / 2, -1j * k * d_rho / 2) * ss.kv(np.abs(m - mu) / 2, -1j * k * d_rho / 2) + \
-        1j * ss.iv(np.abs(m - mu) / 2, k * d_rho / 2) * ss.kv(np.abs(m - mu) / 2, k * d_rho / 2)
-
-    singularity_coefficient = fresnel_r(k) * k * np.conj(legendre_normalized(m, n, 0)) * legendre_normalized(mu, nu, -0)
-
-    min_limit, max_limit, step = 0, 3, 0.0001
-    x = np.arange(min_limit, max_limit, step)
-    y = [integrand(xi) for xi in x]
-    ym = [subtracted_function(xi) * singularity_coefficient for xi in x]
-    integral = si.trapz(y, x) + singularity_coefficient * subtracted_integral
+    integrand = [f_integrand(ki) for ki in k_parallel]
+    integral = si.trapz(integrand, k_parallel)
 
     coef = 4 * np.pi * (-1j) ** n * 1j ** (nu + np.abs(m - mu))
-    return coef * np.exp(1j * (m - mu) * d_phi) / k * integral, (x, y, ym)
+    return coef * np.exp(1j * (m - mu) * d_phi) / k * integral
 
 
 def reflection_block(emitter_pos, receiver_pos, k, order):
@@ -55,17 +67,27 @@ def reflection_block(emitter_pos, receiver_pos, k, order):
     return block
 
 
-def plot_integrand():
+def test_integrator():
     m, n, mu, nu = 0, 1, 0, 1
     k, pos1, pos2 = 1.1, np.array([-1, 1, 2]), np.array([3, 4, 3])
 
+    k_waypoint = np.linspace(k-0.5, k-0.01, 40)
+    els = []
+    for k_tested in k_waypoint:
+        k_parallel = k_contour(
+            k_start_deflection=k_tested,
+            k_stop_deflection=k + 0.1,
+            dk_imag_deflection=0.01,
+            k_finish=6,
+            dk=0.01
+        )
+        els.append(reflection_element(m, n, mu, nu, k, pos1, pos2, k_parallel))
+
     import matplotlib.pyplot as plt
-    _, (x, y, ym) = reflection_element(m, n, mu, nu, k, pos1, pos2)
-    plt.plot(x, np.real(y))
-    plt.plot(x, np.imag(y))
-    plt.plot(x, np.real(ym), linestyle='--')
-    plt.plot(x, np.imag(ym), linestyle='--')
+
+    # plt.plot(k_waypoint, np.real(els))
+    plt.plot(k_waypoint, np.imag(els))
     plt.show()
 
 
-# plot_integrand()
+# test_integrator()
