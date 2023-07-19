@@ -76,11 +76,22 @@ rendering.show_pressure_field(
     particle_linewidth=2
 )
 
-
 # but also it is possible to compute field and draw it manually:
 # xx, zz = np.meshgrid(np.linspace(-6, 6, 151), np.linspace(-6, 6, 151))
 # yy = np.full_like(xx, 0)
 # total_field = fields.compute_total_field(xx, yy, zz, simulation)
 # import matplotlib.pyplot as plt
 # plt.imshow(total_field)
+
+# far field pattern
+rendering.show_far_field(
+    simulation=simulation,
+    reference_point=np.array([0., 0., 0.]),
+    angular_resolution=np.pi / 360,
+    cmap='inferno'
+)
+rendering.show_polar_ff(
+    simulation=simulation
+)
+
 

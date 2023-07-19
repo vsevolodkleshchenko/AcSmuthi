@@ -2,8 +2,11 @@ import matplotlib.pyplot as plt
 from matplotlib import colors
 import seaborn as sns
 import numpy as np
-from typing import Literal
+from typing import Literal, Union
+
 from acsmuthi.postprocessing import fields
+from acsmuthi.postprocessing import far_field
+from acsmuthi.simulation import Simulation
 
 
 def draw_particles(simulation, x_label, y_label, color='black', linewidth=1):
@@ -73,4 +76,63 @@ def show_pressure_field(
     ax.set_title('Pressure field at ' + title + ', Па')
     plt.colorbar(im)
     draw_particles(simulation, x_label, y_label, color=particle_color, linewidth=particle_linewidth)
+    plt.show()
+
+
+def show_far_field(
+        simulation: Simulation,
+        reference_point: np.ndarray = np.array([0., 0., 0.]),
+        azimuthal_angles: Union[np.ndarray, Literal['default']] = 'default',
+        polar_angles: Union[np.ndarray, Literal['default']] = 'default',
+        angular_resolution: float = np.pi / 360,
+        cmap='inferno'
+):
+    far_field_pattern = far_field.far_field_pattern(
+        simulation=simulation,
+        reference_point=reference_point,
+        azimuthal_angles=azimuthal_angles,
+        polar_angles=polar_angles,
+        angular_resolution=angular_resolution
+    )
+
+    fig, ax = plt.subplots()
+    im = ax.imshow(
+        np.real(far_field_pattern),
+        origin='lower',
+        extent=[0, 2 * np.pi, 0, np.pi],
+        norm=colors.CenteredNorm(),
+        cmap=cmap
+    )
+
+    ax.set_xlabel('azimuthal angle')
+    ax.set_ylabel('polar angle')
+    ax.set_title('Far field pattern')
+    plt.colorbar(im)
+    plt.show()
+
+
+def show_polar_ff(
+        simulation: Simulation,
+        reference_point: np.ndarray = np.array([0., 0., 0.]),
+        azimuthal_angles: Union[np.ndarray, Literal['default']] = 'default',
+        polar_angles: Union[np.ndarray, Literal['default']] = 'default',
+        angular_resolution: float = np.pi / 360
+):
+    if azimuthal_angles == 'default' or polar_angles == 'default':
+        phi = np.arange(0, 2 * np.pi + 0.5 * angular_resolution, angular_resolution, dtype=float),
+        theta = np.pi / 2
+        azimuthal_angles, polar_angles = np.meshgrid(phi, theta)
+
+    far_field_pattern = far_field.far_field_pattern(
+        simulation=simulation,
+        reference_point=reference_point,
+        azimuthal_angles=azimuthal_angles,
+        polar_angles=polar_angles,
+        angular_resolution=angular_resolution
+    )
+
+    fig, ax = plt.subplots(subplot_kw={'projection': 'polar'})
+    ax.plot(*azimuthal_angles, *np.abs(far_field_pattern))
+
+    ax.set_title("Far field", va='bottom')
     plt.show()
