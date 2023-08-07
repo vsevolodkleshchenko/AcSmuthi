@@ -14,7 +14,7 @@ class InitialField:
     def piecewice_field_expansion(self, particle, medium):
         pass
 
-    def spherical_wave_expansion(self, origin, order):
+    def spherical_wave_expansion(self, origin, medium, order):
         pass
 
 
@@ -27,13 +27,24 @@ class PlaneWave(InitialField):
         else:
             self.reference_point = reference_point
 
-    def spherical_wave_expansion(self, origin, order):
+    def spherical_wave_expansion(self, origin, medium, order):
         reference_coefficients = wvfs.incident_coefficients(self.direction, order)
+
         if np.array_equal(origin, self.reference_point):
             coefficients = reference_coefficients
         else:
             coefficients = np.exp(1j * self.k * self.direction @ (origin - self.reference_point)) * \
                            reference_coefficients
+
+        if medium.is_substrate and self.direction[2] < 0:
+            reflection_phase = np.exp(-2j * self.direction[2] * self.k * self.reference_point[2])
+            reflected_direction = np.array([self.direction[0], self.direction[1], -self.direction[2]])
+            reflected_coefficients = 1 * reflection_phase * wvfs.incident_coefficients(reflected_direction, order)
+            if not np.array_equal(origin, self.reference_point):
+                reflected_coefficients *= np.exp(1j * self.k * reflected_direction @ (origin - self.reference_point))
+
+            coefficients += reflected_coefficients
+
         return fldsex.SphericalWaveExpansion(amplitude=self.amplitude, k=self.k, origin=origin, kind='regular',
                                              order=order, coefficients=coefficients)
 
@@ -43,6 +54,12 @@ class PlaneWave(InitialField):
                 self.direction[1] * (y - self.reference_point[1]) +
                 self.direction[2] * (z - self.reference_point[2])
         ))
+        if True:
+            exact_field += self.amplitude * np.exp(1j * self.k * (
+                self.direction[0] * (x - self.reference_point[0]) +
+                self.direction[1] * (y - self.reference_point[1]) -
+                self.direction[2] * (z - self.reference_point[2])
+        )) * np.exp(-2j * self.direction[2] * self.k * self.reference_point[2])
         return exact_field
 
     def intensity(self, density, sound_speed):
@@ -58,7 +75,7 @@ class StandingWave(InitialField):
         else:
             self.reference_point = reference_point
 
-    def spherical_wave_expansion(self, origin, order):
+    def spherical_wave_expansion(self, origin, medium, order):
         reference_coefficients_forward = wvfs.incident_coefficients(self.direction, order)
         reference_coefficients_backward = wvfs.incident_coefficients(-self.direction, order)
         if np.array_equal(origin, self.reference_point):

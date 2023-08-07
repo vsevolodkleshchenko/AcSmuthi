@@ -1,6 +1,5 @@
 import numpy as np
 import scipy.special as ss
-import matplotlib.pyplot as plt
 
 
 def dec_to_cyl(x, y, z):
@@ -16,11 +15,11 @@ def dec_to_cyl(x, y, z):
 
 def legendre_normalized(m, n, x):
     coefficient = np.sqrt((2 * n + 1) / 4 / np.pi * ss.factorial(n - m) / ss.factorial(n + m))
-    return coefficient * ss.clpmn(m, n, x, type=3)[0][-1][-1]
+    return coefficient * ss.clpmn(m, n, x, type=2)[0][-1][-1]
 
 
 def fresnel_r(k_rho):
-    return 1
+    return -1
 
 
 def k_contour(

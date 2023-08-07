@@ -4,7 +4,7 @@ import scipy.sparse.linalg
 
 from acsmuthi import fields_expansions as fldsex
 import acsmuthi.linear_system.coupling_matrix as cmt
-from acsmuthi.linear_system import reflection
+import acsmuthi.linear_system.substrate_coupling_matrix as scmt
 from acsmuthi.utility import mathematics as mths, wavefunctions as wvfs
 from acsmuthi.particles import Particle
 from acsmuthi.medium import Medium
@@ -65,6 +65,7 @@ class LinearSystem:
 
             particle.incident_field = self.incident_field.spherical_wave_expansion(
                 origin=particle.position,
+                medium=self.medium,
                 order=self.order
             )
             particle.scattered_field = fldsex.SphericalWaveExpansion(
@@ -161,16 +162,23 @@ class CouplingMatrixExplicit(SystemMatrix):
         coup_mat = np.zeros(self.shape, dtype=complex)
 
         for sph in range(len(self.particles)):
+            if medium.is_substrate:
+                coup_mat[self.index_block(sph):self.index_block(sph + 1),
+                self.index_block(sph):self.index_block(sph + 1)] = scmt.substrate_coupling_block(
+                    particles[sph].position, particles[sph].position, k, order)
+
             for osph in range(len(self.particles)):
                 if sph == osph:
-                    if medium.is_substrate:
-                        coup_mat[self.index_block(sph):self.index_block(sph + 1),
-                            self.index_block(sph):self.index_block(sph + 1)] = reflection.reflection_block(
-                                particles[sph].position, k, order)
-                else:
+                    continue
+
+                coup_mat[self.index_block(sph):self.index_block(sph + 1),
+                    self.index_block(osph):self.index_block(osph + 1)] = cmt.coupling_block(
+                        self.particles[sph].position, self.particles[osph].position, k, self.order)
+
+                if medium.is_substrate:
                     coup_mat[self.index_block(sph):self.index_block(sph + 1),
-                        self.index_block(osph):self.index_block(osph + 1)] = cmt.coupling_block(
-                            self.particles[sph].position, self.particles[osph].position, k, self.order)
+                        self.index_block(osph):self.index_block(osph + 1)] += scmt.substrate_coupling_block(
+                            particles[sph].position, particles[osph].position, k, order)
 
         self.linear_operator = scipy.sparse.linalg.aslinearoperator(coup_mat)
 
