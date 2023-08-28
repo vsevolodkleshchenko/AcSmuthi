@@ -1,6 +1,10 @@
 import numpy as np
 import seaborn as sns
-import matplotlib.pyplot as plt
+import matplotlib, matplotlib.pyplot as plt
+
+plt.rcdefaults()
+matplotlib.rc('pdf', fonttype=42)
+plt.rcParams['axes.formatter.min_exponent'] = 1
 
 
 def dist_substrate_ord():
