@@ -3,7 +3,7 @@ import numpy as np
 
 def compute_incident_field(x, y, z, simulation):
     particles, initial_field = simulation.particles, simulation.initial_field
-    incident_field = initial_field.compute_exact_field(x, y, z)
+    incident_field = initial_field.compute_exact_field(x, y, z, simulation.medium)
     for s, particle in enumerate(particles):
         xr, yr, zr = x - particle.position[0], y - particle.position[1], z - particle.position[2]
         r = np.sqrt(xr ** 2 + yr ** 2 + zr ** 2)
@@ -21,6 +21,8 @@ def compute_scattered_field(x, y, z, simulation):
         xr, yr, zr = x - particle.position[0], y - particle.position[1], z - particle.position[2]
         r = np.sqrt(xr ** 2 + yr ** 2 + zr ** 2)
         scattered_field = np.where(r >= particle.radius, scattered_field, 0)
+    if simulation.medium.is_substrate:
+        scattered_field = np.where(z >= 0, scattered_field, 0)
     return np.real(scattered_field)
 
 

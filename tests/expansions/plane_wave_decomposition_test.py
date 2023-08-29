@@ -3,6 +3,7 @@ import numpy as np
 from acsmuthi.utility import wavefunctions as wvfs
 from acsmuthi.initial_field import PlaneWave
 from acsmuthi.fields_expansions import SphericalWaveExpansion
+from acsmuthi.medium import Medium
 
 
 freq = 82  # [Hz]
@@ -20,7 +21,7 @@ order = 17
 
 def test_incident_field_decomposition():
     incident_field = PlaneWave(k, 1, direction)
-    desired_field = incident_field.compute_exact_field(x_p, y_p, z_p)
+    desired_field = incident_field.compute_exact_field(x_p, y_p, z_p, Medium(1, c))
     incident_swe = SphericalWaveExpansion(1, k, np.array([0, 0, 0]), 'regular', order,
                                           coefficients=wvfs.incident_coefficients(direction, order))
     actual_field = incident_swe.compute_pressure_field(x_p, y_p, z_p)

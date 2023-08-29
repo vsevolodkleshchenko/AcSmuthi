@@ -42,6 +42,11 @@ cdef double gaunt_coefficient(long n, long m, long nu, long mu, long q):
            wig3jj(2*n, 2*nu, 2*q, 2*m, 2*mu, - 2*m - 2*mu)
 
 
+###########################
+### Free space coupling ###
+###########################
+
+
 @cython.boundscheck(False)
 @cython.wraparound(False)
 cdef double complex regular_separation_coefficient(long m, long mu, long n, long nu, double k, double[:] dist):
@@ -119,3 +124,56 @@ def coupling_block(double[:] particle_pos, double[:] other_particle_pos, double 
 
 def translation_block(long order, double k_medium, double[:] distance):
     return _translation_block(order, k_medium, distance)
+
+
+###########################
+### Substrate coupling ####
+###########################
+
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cdef double complex substrate_coupling_element(long m, long n, long mu, long nu, double k, double[:] emitter_pos, double[:] receiver_pos):
+    cdef long q0, q_lim, q, i
+    cdef double ds, dx, dy, dz
+
+    ds = np.abs(emitter_pos[2])
+    dx, dy, dz = receiver_pos[0] - emitter_pos[0], receiver_pos[1] - emitter_pos[1], receiver_pos[2] - emitter_pos[2] + 2 * ds
+
+    if abs(n - nu) >= abs(m - mu):
+        q0 = abs(n - nu)
+    if (abs(n - nu) < abs(m - mu)) and ((n + nu + abs(m - mu)) % 2 == 0):
+        q0 = abs(m - mu)
+    if (abs(n - nu) < abs(m - mu)) and ((n + nu + abs(m - mu)) % 2 != 0):
+        q0 = abs(m - mu) + 1
+    q_lim = (n + nu - q0) // 2
+
+    cdef double complex[:] sum_array = np.zeros(q_lim + 1, dtype=np.complex128)
+
+    i = 0
+    for q in range(0, q_lim + 1):
+        sum_array[i] = 1j ** (q0 + 2 * q) * outgoing_wvf(m - mu, q0 + 2 * q, dx, dy, dz, k) * \
+                       gaunt_coefficient(n, m, nu, -mu, q0 + 2 * q)
+        i += 1
+
+    return 4 * np.pi * 1j ** (nu - n) * (-1.) ** (n + m + mu) * np.sum(sum_array)
+
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cdef double complex[:, :] _substrate_coupling_block(double[:] receiver_pos, double[:] emitter_pos, double k, long order):
+    cdef double complex[:, :] block = np.zeros(((order + 1) ** 2, (order + 1) ** 2), dtype=complex)
+    cdef long m, n, mu, nu, imn, imunu
+
+    for n in range(order + 1):
+        for m in range(-n, n + 1):
+            imn = n ** 2 + n + m
+            for nu in range(order + 1):
+                for mu in range(-nu, nu + 1):
+                    imunu = nu ** 2 + nu + mu
+                    block[imn, imunu] = substrate_coupling_element(mu, nu, m, n, k, emitter_pos, receiver_pos)
+    return block
+
+
+def substrate_coupling_block(double[:] receiver_pos, double[:] emitter_pos, double k, long order):
+    return _substrate_coupling_block(receiver_pos, emitter_pos, k, order)

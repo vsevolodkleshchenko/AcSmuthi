@@ -19,7 +19,7 @@ the substrate of spherical particle, depending on the multipole order
 rho_medium, c_medium = 1.225, 331
 rho_sph, cp_sph = 997, 1403
 r_sph = 1
-p0, direction = 1, np.array([0.70711, 0, 0.70711])
+p0, direction = 1, np.array([0.70711, 0, -0.70711])
 
 freq = 8
 k = 2 * np.pi * freq / c_medium

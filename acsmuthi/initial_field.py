@@ -48,18 +48,20 @@ class PlaneWave(InitialField):
         return fldsex.SphericalWaveExpansion(amplitude=self.amplitude, k=self.k, origin=origin, kind='regular',
                                              order=order, coefficients=coefficients)
 
-    def compute_exact_field(self, x, y, z):
+    def compute_exact_field(self, x, y, z, medium):
         exact_field = self.amplitude * np.exp(1j * self.k * (
                 self.direction[0] * (x - self.reference_point[0]) +
                 self.direction[1] * (y - self.reference_point[1]) +
                 self.direction[2] * (z - self.reference_point[2])
         ))
-        if True:
-            exact_field += self.amplitude * np.exp(1j * self.k * (
-                self.direction[0] * (x - self.reference_point[0]) +
-                self.direction[1] * (y - self.reference_point[1]) -
-                self.direction[2] * (z - self.reference_point[2])
-        )) * np.exp(-2j * self.direction[2] * self.k * self.reference_point[2])
+        if medium.is_substrate:
+            if self.direction[2] < 0:
+                exact_field += self.amplitude * np.exp(1j * self.k * (
+                    self.direction[0] * (x - self.reference_point[0]) +
+                    self.direction[1] * (y - self.reference_point[1]) -
+                    self.direction[2] * (z - self.reference_point[2])
+                )) * np.exp(-2j * self.direction[2] * self.k * self.reference_point[2])
+            exact_field = np.where(z >= 0, exact_field, 0)
         return exact_field
 
     def intensity(self, density, sound_speed):

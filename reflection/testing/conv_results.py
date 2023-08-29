@@ -14,7 +14,7 @@ def dist_substrate_ord():
     for i, d in enumerate(kd):
         table = np.loadtxt(f"subs_distance_order_csv/freq82/kd{d}"+".csv", delimiter=",", dtype=str)
         orders = table[1:, 0].astype(float)
-        ecs, f = table[1:, 1].astype(float), table[1:, 2].astype(float)
+        ecs, f = table[1:, 1].astype(float), table[1:, 4].astype(float)
         ecs_err, f_err = np.abs((ecs[:-1] - ecs[-1]) / ecs[-1]), np.abs((f[:-1] - f[-1]) / f[-1])
 
         ax[0].semilogy(orders[:-1], ecs_err, marker='.', color=colors[i])
