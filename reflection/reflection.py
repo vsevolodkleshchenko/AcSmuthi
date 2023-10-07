@@ -28,7 +28,7 @@ def reflection_element_i(m, n, mu, nu, k, emitter_pos, receiver_pos, k_parallel=
 def compute_reflection_integrand_angled(beta, k, d_rho, dz, ds, m, n, mu, nu):
     cos_b, sin_b = np.cos(beta), np.sin(beta)
     return fresnel_r(beta) * np.exp(-1j * k * cos_b * (2 * ds + dz)) * ss.jn(m - mu, k * sin_b * d_rho) * \
-        legendre_normalized(mu, nu, cos_b) * legendre_normalized(m, n, cos_b) * sin_b
+        legendre_normalized(mu, nu, -cos_b) * legendre_normalized(m, n, cos_b) * sin_b
 
 
 def reflection_element_i_angled(m, n, mu, nu, k, emitter_pos, receiver_pos, beta_max=0.5, d_beta=0.05):

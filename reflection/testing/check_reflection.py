@@ -13,57 +13,38 @@ plt.rcParams['axes.formatter.min_exponent'] = 1
 
 
 def check_integrator():
-    m, n, mu, nu = 0, 1, 0, 1
+    m, n, mu, nu = 1, 2, 0, 1
     k, pos1, pos2 = 1, np.array([-1, 1, 2]), np.array([3, 4, 3])
 
-    k_waypoint = np.linspace(1.5, 6, 70)
-    els = []
-    for k_tested in k_waypoint:
-        k_parallel = k_contour(k_start_deflection=0, dk_imag_deflection=0.005, k_stop_deflection=None, k_finish=k_tested)
+    k_waypoint = np.linspace(0.0005, 0.01, 30)
 
+    els, els1, els2 = [], [], []
+    for k_tested in k_waypoint:
+        k_parallel = k_contour(k_start_deflection=k - 0.2, k_stop_deflection=k+0.2, dk_imag_deflection=0.0001, k_finish=10, dk=k_tested)
         els.append(reflection_element_i(m, n, mu, nu, k, pos1, pos2, k_parallel))
-    show_contour(k_parallel)
-
-    els1 = []
-    for k_tested in k_waypoint:
-        k_parallel = k_contour(
-            k_start_deflection=0,
-            k_stop_deflection=None,
-            dk_imag_deflection=0.05,
-            k_finish=k_tested,
-            dk=0.01
-        )
+        k_parallel = k_contour(k_start_deflection=k - 0.2, k_stop_deflection=k+0.2, dk_imag_deflection=0.01, k_finish=10, dk=k_tested)
         els1.append(reflection_element_i(m, n, mu, nu, k, pos1, pos2, k_parallel))
-    show_contour(k_parallel)
-
-    els2 = []
-    for k_tested in k_waypoint:
-        k_parallel = k_contour(
-            k_start_deflection=k-0.2,
-            k_stop_deflection=k+0.2,
-            dk_imag_deflection=0.04,
-            k_finish=k_tested,
-            dk=0.01
-        )
+        k_parallel = k_contour(k_start_deflection=k - 0.2, k_stop_deflection=k+0.2, dk_imag_deflection=0.000001, k_finish=10, dk=k_tested)
         els2.append(reflection_element_i(m, n, mu, nu, k, pos1, pos2, k_parallel))
-    show_contour(k_parallel)
+    # show_contour(k_parallel)
 
+    true_el = substrate_coupling_element(m, n, mu, nu, k, pos1, pos2)
+    err, err1, err2 = np.abs(np.array(els) - true_el), np.abs(np.array(els1) - true_el), np.abs(np.array(els2) - true_el)
     fig, ax = plt.subplots(figsize=(5, 4))
-    ax.plot(k_waypoint, np.real(els), linewidth=3)
-    ax.plot(k_waypoint, np.real(els1), linewidth=3)
-    ax.plot(k_waypoint, np.real(els2), linewidth=3)
-    ax.plot(k_waypoint, np.full_like(k_waypoint, substrate_coupling_element(m, n, mu, nu, k, pos1, pos2)), linewidth=3)
+    ax.loglog(k_waypoint, err, linewidth=3)
+    ax.loglog(k_waypoint, err1, linewidth=3, linestyle='-.')
+    ax.loglog(k_waypoint, err2, linewidth=3, linestyle='--')
     plt.show()
 
 
-# check_integrator()
+check_integrator()
 
 
 def check_integrand():
-    m, n, mu, nu = 0, 2, 0, 2
+    m, n, mu, nu = 0, 0, 1, 1
     k, pos1, pos2 = 1, np.array([-1, 1, 2]), np.array([3, 4, 3])
 
-    show_integrand(0., 4, -1, 1, 300, 'ref_a', k, pos1, pos2, m, n, mu, nu)
+    show_integrand(0., 4, -1, 1, 300, 'ref', k, pos1, pos2, m, n, mu, nu)
     plt.show()
 
 
@@ -93,7 +74,6 @@ def check_integrator_angled():
     ax.loglog(k_waypoint, rel_err1, linewidth=3, label='1')
     ax.loglog(k_waypoint, rel_err2, linewidth=3, label='2')
     ax.loglog(k_waypoint, rel_err3, linewidth=3, linestyle='--', label='5')
-    # ax.plot(k_waypoint, np.full_like(k_waypoint, exact), linewidth=3, linestyle='--')
     ax.legend()
     plt.show()
 
