@@ -31,3 +31,14 @@ def dec_to_sph(x, y, z):
     else:
         phi[phi < 0] += 2 * np.pi
     return r, phi, theta
+
+
+def dec_to_cyl(x, y, z):
+    rho = np.sqrt(x ** 2 + y ** 2)
+    phi = np.arctan2(y, x)
+    if phi.shape == ():
+        if phi < 0:
+            phi += 2 * np.pi
+    else:
+        phi[phi < 0] += 2 * np.pi
+    return rho, phi, z

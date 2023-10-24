@@ -67,14 +67,14 @@ frcs = forces.all_forces(simulation)
 print("Extinction cross-section:", ecs, "Forces:", *frcs, sep='\n')
 
 # easy way to draw total field (also it's possible to show only 'scattered' or 'incident' field) - may take time
-rendering.show_pressure_field(
-    simulation=simulation,
-    x_min=-6, x_max=6, y_min=0, y_max=0, z_min=-3, z_max=9, num=201,
-    field_type='total',
-    cmap='RdBu_r',
-    particle_color='gold',
-    particle_linewidth=1.5
-)
+# rendering.show_pressure_field(
+#     simulation=simulation,
+#     x_min=-6, x_max=6, y_min=0, y_max=0, z_min=-3, z_max=9, num=201,
+#     field_type='total',
+#     cmap='RdBu_r',
+#     particle_color='gold',
+#     particle_linewidth=1.5
+# )
 
 
 # but also it is possible to compute field and draw it manually:
