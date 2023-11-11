@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib, matplotlib.pyplot as plt
 
-from reflection.basics import k_contour
+from reflection.basics import k_contour_old
 from reflection.transformation import wvf_transform_cartesian
 from testing_plots import show_contour, show_field, show_integrand
 from acsmuthi.utility.wavefunctions import outgoing_wvf
@@ -32,7 +32,7 @@ def check_transformation():
     # show_contour(k_parallel)
     # exact_wvf = wvf_transform_cartesian(m, n, xx, yy, zz, k, k_parallel=k_parallel)
 
-    k_parallel = k_contour(k_start_deflection=0, dk_imag_deflection=0.005, k_stop_deflection=None)
+    k_parallel = k_contour_old(k_start_deflection=0, k_stop_deflection=None, dk_imag_deflection=0.005)
     transformed_wvf = wvf_transform_cartesian(m, n, xx, yy, zz, k, k_parallel=k_parallel)
 
     show_contour(k_parallel)

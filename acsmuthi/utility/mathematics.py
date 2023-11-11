@@ -42,3 +42,13 @@ def dec_to_cyl(x, y, z):
     else:
         phi[phi < 0] += 2 * np.pi
     return rho, phi, z
+
+
+def legendres_table(z, order):
+    legs_positive_m = np.array([ss.clpmn(order, order, zi, type=2)[0] for zi in z])
+    legs_negative_m = np.array([ss.clpmn(-order, order, zi, type=2)[0] for zi in z])
+    return np.moveaxis(legs_positive_m, 0, -1), np.moveaxis(legs_negative_m, 0, -1)
+
+
+def legendre_prefactor(m, n):
+    return np.sqrt((2 * n + 1) / 4 / np.pi * ss.factorial(n - m) / ss.factorial(n + m))

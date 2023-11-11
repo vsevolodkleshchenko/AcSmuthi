@@ -2,7 +2,6 @@ import numpy as np
 
 import acsmuthi.fields_expansions as fldsex
 import acsmuthi.utility.wavefunctions as wvfs
-import acsmuthi.linear_system.coupling_matrix as cmt
 
 
 class InitialField:

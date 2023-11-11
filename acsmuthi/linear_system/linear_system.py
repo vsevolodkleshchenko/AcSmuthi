@@ -3,9 +3,9 @@ import scipy.special as ss
 import scipy.sparse.linalg
 
 from acsmuthi import fields_expansions as fldsex
-import acsmuthi.linear_system.coupling_matrix as cmt
-import acsmuthi.linear_system.substrate_coupling_matrix as scmt
-from acsmuthi.utility import mathematics as mths, wavefunctions as wvfs, legendres
+import acsmuthi.linear_system.coupling.coupling_matrix as cmt
+import acsmuthi.linear_system.coupling.substrate_coupling_matrix as scmt
+from acsmuthi.utility import mathematics as mths, wavefunctions as wvfs
 from acsmuthi.particles import Particle
 from acsmuthi.medium import Medium
 from acsmuthi.initial_field import InitialField
@@ -19,7 +19,8 @@ class LinearSystem:
             initial_field: InitialField,
             frequency: float,
             order: int,
-            solver: str
+            solver: str,
+            use_integration: bool = False
     ):
         self.order = order
         self.rhs = None
@@ -30,6 +31,7 @@ class LinearSystem:
         self.freq = frequency
         self.incident_field = initial_field
         self.solver = solver
+        self.use_integration = use_integration
 
     def compute_t_matrix(self):
         for sph in range(len(self.particles)):
@@ -45,12 +47,20 @@ class LinearSystem:
         )
 
     def compute_coupling_matrix(self):
-        self.coupling_matrix = CouplingMatrixExplicit(
-            particles=self.particles,
-            medium=self.medium,
-            order=self.order,
-            k=self.incident_field.k
-        )
+        if not self.use_integration:
+            self.coupling_matrix = CouplingMatrixExplicit(
+                particles=self.particles,
+                medium=self.medium,
+                order=self.order,
+                k=self.incident_field.k
+            )
+        else:
+            self.coupling_matrix = CouplingMatrixSommerfeld(
+                particles=self.particles,
+                medium=self.medium,
+                order=self.order,
+                k=self.incident_field.k
+            )
 
     def compute_right_hand_side(self):
         rhs = np.zeros((len(self.particles), (self.order + 1) ** 2), dtype=complex)
@@ -156,17 +166,50 @@ class CouplingMatrixExplicit(SystemMatrix):
             particles: np.ndarray[Particle],
             medium: Medium,
             order: int,
+            k: float
+    ):
+        SystemMatrix.__init__(self, particles=particles, order=order)
+        self.medium = medium
+        self.k = k
+
+        self.linear_operator = scipy.sparse.linalg.aslinearoperator(self.compute_matrix())
+
+    def compute_matrix(self):
+        coup_mat = np.zeros(self.shape, dtype=complex)
+
+        for sph in range(len(self.particles)):
+            for osph in range(len(self.particles)):
+
+                if self.medium.is_substrate:
+                    substrate_coupling_block = scmt.substrate_coupling_block(
+                        self.particles[sph].position, self.particles[osph].position, self.k, self.order)
+                    coup_mat[self.index_block(sph):self.index_block(sph + 1),
+                             self.index_block(osph):self.index_block(osph + 1)] += substrate_coupling_block
+
+                if sph == osph:
+                    continue
+                coup_mat[self.index_block(sph):self.index_block(sph + 1),
+                         self.index_block(osph):self.index_block(osph + 1)] += cmt.coupling_block(
+                    self.particles[sph].position, self.particles[osph].position, self.k, self.order)
+
+        return coup_mat
+
+
+class CouplingMatrixSommerfeld(SystemMatrix):
+    def __init__(
+            self,
+            particles: np.ndarray[Particle],
+            medium: Medium,
+            order: int,
             k: float,
-            use_integration: bool = False,
             k_parallel: np.ndarray | None = None
     ):
         SystemMatrix.__init__(self, particles=particles, order=order)
         self.medium = medium
-        self.use_integration = use_integration
         self.k = k
         self.k_parallel = k_parallel
 
-        if medium.is_substrate and self.use_integration:
+        if medium.is_substrate:
             self.legendres = self.precompute_legendres(k_parallel)
 
         self.linear_operator = scipy.sparse.linalg.aslinearoperator(self.compute_matrix())
@@ -175,50 +218,31 @@ class CouplingMatrixExplicit(SystemMatrix):
         coup_mat = np.zeros(self.shape, dtype=complex)
 
         for sph in range(len(self.particles)):
-            if self.medium.is_substrate:
-                if self.use_integration:
-                    substrate_coupling_block = scmt.substrate_coupling_block_integrate(
-                        self.particles[sph].position, self.particles[sph].position, self.k, self.order, self.k_parallel,
-                        self.legendres)
-                else:
-                    substrate_coupling_block = scmt.substrate_coupling_block(
-                        self.particles[sph].position, self.particles[sph].position, self.k, self.order)
-                coup_mat[self.index_block(sph):self.index_block(sph + 1),
-                         self.index_block(sph):self.index_block(sph + 1)] = substrate_coupling_block
-
             for osph in range(len(self.particles)):
+
+                if self.medium.is_substrate:
+                    substrate_coupling_block = scmt.substrate_coupling_block_integrate(
+                        self.particles[sph].position, self.particles[osph].position, self.k, self.order,
+                        self.k_parallel, self.legendres)
+                    coup_mat[self.index_block(sph):self.index_block(sph + 1),
+                             self.index_block(osph):self.index_block(osph + 1)] += substrate_coupling_block
+
                 if sph == osph:
                     continue
                 coup_mat[self.index_block(sph):self.index_block(sph + 1),
-                         self.index_block(osph):self.index_block(osph + 1)] = cmt.coupling_block(
+                         self.index_block(osph):self.index_block(osph + 1)] += cmt.coupling_block(
                     self.particles[sph].position, self.particles[osph].position, self.k, self.order)
-
-                if self.medium.is_substrate:
-                    if self.use_integration:
-                        substrate_coupling_block = scmt.substrate_coupling_block_integrate(
-                            self.particles[sph].position, self.particles[osph].position, self.k, self.order,
-                            self.k_parallel, self.legendres)
-                    else:
-                        substrate_coupling_block = scmt.substrate_coupling_block(
-                            self.particles[sph].position, self.particles[osph].position, self.k, self.order)
-                    coup_mat[self.index_block(sph):self.index_block(sph + 1),
-                             self.index_block(osph):self.index_block(osph + 1)] += substrate_coupling_block
 
         return coup_mat
 
     def precompute_legendres(self, k_parallel: str | np.ndarray):
         if k_parallel is None:
-            k_p = scmt.k_contour(
-                k_start_deflection=self.k - 0.1,
-                k_stop_deflection=self.k + 0.1,
-                dk_imag_deflection=0.001,
-                dk=0.0005,
-                k_finish=10
-            )
+            k_p = scmt.k_contour(k_start_deflection=self.k - 0.1, k_stop_deflection=self.k + 0.1,
+                                 dk_imag_deflection=1e-2, k_finish=5, dk=1e-2)
         else:
             k_p = k_parallel
         k_z = np.emath.sqrt(self.k ** 2 - k_p ** 2)
-        return legendres.legendres_table(k_z / self.k, self.order)
+        return mths.legendres_table(k_z / self.k, self.order)
 
 
 class MasterMatrix(SystemMatrix):

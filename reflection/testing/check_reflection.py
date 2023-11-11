@@ -1,12 +1,11 @@
 import numpy as np
 import matplotlib, matplotlib.pyplot as plt
-import scipy.special
 
 from reflection.reflection import reflection_element_i, reflection_element_i_angled
-from acsmuthi.linear_system.substrate_coupling_matrix import substrate_coupling_element
+from acsmuthi.linear_system.coupling.substrate_coupling_matrix import substrate_coupling_element
 from reflection.basics import k_contour
 
-from testing_plots import show_contour, show_integrand
+from testing_plots import show_integrand
 
 plt.rcdefaults()
 matplotlib.rc('pdf', fonttype=42)
@@ -17,24 +16,32 @@ def check_integrator():
     m, n, mu, nu = 3, 3, 3, 3
     k, pos1, pos2 = 1, np.array([-2, 0, 2]), np.array([-2, 2, 4])
 
-    k_waypoint = np.linspace(0.00005, 0.01, 30)
+    k_waypoint = 5 * np.logspace(-5, -2, 30, endpoint=True)
 
-    els, els1, els2 = [], [], []
-    for k_tested in k_waypoint:
-        k_parallel = k_contour(k_start_deflection=k - 0.1, k_stop_deflection=k+0.1, dk_imag_deflection=0.0001, k_finish=10, dk=k_tested)
-        els.append(reflection_element_i(m, n, mu, nu, k, pos1, pos2, k_parallel))
-        k_parallel = k_contour(k_start_deflection=k - 0.1, k_stop_deflection=k+0.1, dk_imag_deflection=0.01, k_finish=10, dk=k_tested)
-        els1.append(reflection_element_i(m, n, mu, nu, k, pos1, pos2, k_parallel))
-        k_parallel = k_contour(k_start_deflection=k - 0.1, k_stop_deflection=k+0.1, dk_imag_deflection=0.001, k_finish=10, dk=k_tested)
-        els2.append(reflection_element_i(m, n, mu, nu, k, pos1, pos2, k_parallel))
+    els = np.zeros((5, *k_waypoint.shape), dtype=complex)
+    for i, k_tested in enumerate(k_waypoint):
+        k_parallel = k_contour(k_start_deflection=k - 0.1, k_stop_deflection=k + 0.1, dk_imag_deflection=0.0001,
+                               k_finish=5, dk=k_tested)
+        els[0, i] = reflection_element_i(m, n, mu, nu, k, pos1, pos2, k_parallel)
+        k_parallel = k_contour(k_start_deflection=k - 0.1, k_stop_deflection=k + 0.1, dk_imag_deflection=0.0005,
+                               k_finish=5, dk=k_tested)
+        els[1, i] = reflection_element_i(m, n, mu, nu, k, pos1, pos2, k_parallel)
+        k_parallel = k_contour(k_start_deflection=k - 0.1, k_stop_deflection=k + 0.1, dk_imag_deflection=0.001,
+                               k_finish=5, dk=k_tested)
+        els[2, i] = reflection_element_i(m, n, mu, nu, k, pos1, pos2, k_parallel)
+        k_parallel = k_contour(k_start_deflection=k - 0.1, k_stop_deflection=k + 0.1, dk_imag_deflection=0.005,
+                               k_finish=5, dk=k_tested)
+        els[3, i] = reflection_element_i(m, n, mu, nu, k, pos1, pos2, k_parallel)
+        k_parallel = k_contour(k_start_deflection=k - 0.1, k_stop_deflection=k + 0.1, dk_imag_deflection=0.01,
+                               k_finish=5, dk=k_tested)
+        els[4, i] = reflection_element_i(m, n, mu, nu, k, pos1, pos2, k_parallel)
     # show_contour(k_parallel)
 
     true_el = substrate_coupling_element(m, n, mu, nu, k, pos1, pos2)
-    err, err1, err2 = np.abs(np.array(els) - true_el), np.abs(np.array(els1) - true_el), np.abs(np.array(els2) - true_el)
     fig, ax = plt.subplots(figsize=(5, 4))
-    ax.loglog(k_waypoint, err, linewidth=3)
-    ax.loglog(k_waypoint, err1, linewidth=3, linestyle='-.')
-    ax.loglog(k_waypoint, err2, linewidth=3, linestyle='--')
+    for el in els:
+        err = np.abs((np.array(el) - true_el) / true_el)
+        ax.loglog(k_waypoint, err, linewidth=3)
     plt.show()
 
 
