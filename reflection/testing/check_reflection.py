@@ -14,26 +14,26 @@ plt.rcParams['axes.formatter.min_exponent'] = 1
 
 def check_integrator():
     m, n, mu, nu = 3, 3, 3, 3
-    k, pos1, pos2 = 1, np.array([-2, 0, 2]), np.array([-2, 2, 4])
+    k, pos1, pos2 = 2.5, np.array([-2, 0, 2]), np.array([-2, 2, 4])
 
     k_waypoint = 5 * np.logspace(-5, -2, 30, endpoint=True)
 
     els = np.zeros((5, *k_waypoint.shape), dtype=complex)
     for i, k_tested in enumerate(k_waypoint):
-        k_parallel = k_contour(k_start_deflection=k - 0.1, k_stop_deflection=k + 0.1, dk_imag_deflection=0.0001,
-                               k_finish=5, dk=k_tested)
+        k_parallel = k_contour(k_start_deflection=0.9, k_stop_deflection=1.1, dk_imag_deflection=0.0001,
+                               k_finish=2, dk=k_tested) * k
         els[0, i] = reflection_element_i(m, n, mu, nu, k, pos1, pos2, k_parallel)
-        k_parallel = k_contour(k_start_deflection=k - 0.1, k_stop_deflection=k + 0.1, dk_imag_deflection=0.0005,
-                               k_finish=5, dk=k_tested)
+        k_parallel = k_contour(k_start_deflection=0.9, k_stop_deflection=1.1, dk_imag_deflection=0.0005,
+                               k_finish=2, dk=k_tested) * k
         els[1, i] = reflection_element_i(m, n, mu, nu, k, pos1, pos2, k_parallel)
-        k_parallel = k_contour(k_start_deflection=k - 0.1, k_stop_deflection=k + 0.1, dk_imag_deflection=0.001,
-                               k_finish=5, dk=k_tested)
+        k_parallel = k_contour(k_start_deflection=0.9, k_stop_deflection=1.1, dk_imag_deflection=0.001,
+                               k_finish=2, dk=k_tested) * k
         els[2, i] = reflection_element_i(m, n, mu, nu, k, pos1, pos2, k_parallel)
-        k_parallel = k_contour(k_start_deflection=k - 0.1, k_stop_deflection=k + 0.1, dk_imag_deflection=0.005,
-                               k_finish=5, dk=k_tested)
+        k_parallel = k_contour(k_start_deflection=0.9, k_stop_deflection=1.1, dk_imag_deflection=0.005,
+                               k_finish=2, dk=k_tested) * k
         els[3, i] = reflection_element_i(m, n, mu, nu, k, pos1, pos2, k_parallel)
-        k_parallel = k_contour(k_start_deflection=k - 0.1, k_stop_deflection=k + 0.1, dk_imag_deflection=0.01,
-                               k_finish=5, dk=k_tested)
+        k_parallel = k_contour(k_start_deflection=0.9, k_stop_deflection=1.1, dk_imag_deflection=0.01,
+                               k_finish=2, dk=k_tested) * k
         els[4, i] = reflection_element_i(m, n, mu, nu, k, pos1, pos2, k_parallel)
     # show_contour(k_parallel)
 

@@ -61,12 +61,12 @@ def substrate_coupling_block_integrate(receiver_pos, emitter_pos, k, order, k_pa
 
     if k_parallel is None:
         k_p = k_contour(
-            k_start_deflection=k - 0.1,
-            k_stop_deflection=k + 0.1,
+            k_start_deflection=0.9,
+            k_stop_deflection=1.1,
             dk_imag_deflection=1e-2,
-            k_finish=5,
+            k_finish=3,
             dk=1e-2
-        )
+        ) * k
     else:
         k_p = k_parallel
     k_z = np.emath.sqrt(k ** 2 - k_p ** 2)
@@ -81,10 +81,11 @@ def substrate_coupling_block_integrate(receiver_pos, emitter_pos, k, order, k_pa
         for mu, nu in wvfs.multipoles(order):
             i_munu = nu ** 2 + nu + mu
             leg_norm_munu = (legendres[0][mu, nu] if mu >= 0 else legendres[1][-mu, nu]) * legendre_prefactor(mu, nu)
+            leg_norm_munu = leg_norm_munu if (nu + mu) % 2 == 0 else - leg_norm_munu
 
             integrand = fresnel_r(k_p) * np.exp(1j * k_z * (2 * ds + d_z)) * k_p / k_z * \
                 ss.jn(mu - m, k_p * d_rho) * leg_norm_mn * leg_norm_munu
-            integral = si.trapz(integrand, k_p)
+            integral = si.trapz(integrand, k_p / k)
 
-            block[i_mn, i_munu] = 4 * np.pi * 1j ** (n - nu + mu - m) / k * np.exp(1j * (mu - m) * d_phi) * integral
+            block[i_mn, i_munu] = 4 * np.pi * 1j ** (n - nu + mu - m) * np.exp(1j * (mu - m) * d_phi) * integral
     return block

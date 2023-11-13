@@ -52,7 +52,7 @@ particles = np.array([sphere1, sphere2, sphere3])
 
 # creating simulation object
 simulation = Simulation(particles=particles, medium=medium, initial_field=incident_field, frequency=freq, order=order,
-                        use_integration=False)
+                        use_integration=True)
 # by default - solver is LU, but it is possible to use GMRES:
 # simulation = Simulation(..., solver='GMRES')
 

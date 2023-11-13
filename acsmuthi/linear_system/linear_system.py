@@ -237,8 +237,8 @@ class CouplingMatrixSommerfeld(SystemMatrix):
 
     def precompute_legendres(self, k_parallel: str | np.ndarray):
         if k_parallel is None:
-            k_p = scmt.k_contour(k_start_deflection=self.k - 0.1, k_stop_deflection=self.k + 0.1,
-                                 dk_imag_deflection=1e-2, k_finish=5, dk=1e-2)
+            k_p = scmt.k_contour(k_start_deflection=0.9, k_stop_deflection=1.1,
+                                 dk_imag_deflection=1e-2, k_finish=3, dk=1e-2) * self.k
         else:
             k_p = k_parallel
         k_z = np.emath.sqrt(self.k ** 2 - k_p ** 2)

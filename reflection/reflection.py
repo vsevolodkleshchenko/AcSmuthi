@@ -10,7 +10,7 @@ def compute_reflection_integrand(kp, k, d_rho, dz, ds, m, n, mu, nu):
         legendre_normalized(mu, nu, kz / k) * legendre_normalized(m, n, - kz / k)
 
 
-def reflection_element_i(m, n, mu, nu, k, emitter_pos, receiver_pos, k_parallel=k_contour()):
+def reflection_element_i(m, n, mu, nu, k, emitter_pos, receiver_pos, k_parallel):
     dist = receiver_pos - emitter_pos
     d_rho, d_phi, dz = dec_to_cyl(dist[0], dist[1], dist[2])
     ds = np.abs(emitter_pos[2])
@@ -19,9 +19,9 @@ def reflection_element_i(m, n, mu, nu, k, emitter_pos, receiver_pos, k_parallel=
         return compute_reflection_integrand(k_rho, k, d_rho, dz, ds, m, n, mu, nu)
 
     integrand = [f_integrand(kp) for kp in k_parallel]
-    integral = si.trapz(integrand, k_parallel)
+    integral = si.trapz(integrand, k_parallel / k)
 
-    coef = 4 * np.pi * 1j ** (nu - n + m - mu) / k
+    coef = 4 * np.pi * 1j ** (nu - n + m - mu)
     return coef * np.exp(1j * (m - mu) * d_phi) * integral
 
 

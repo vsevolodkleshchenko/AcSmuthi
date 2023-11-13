@@ -4,7 +4,7 @@ from acsmuthi.simulation import Simulation
 from acsmuthi.particles import SphericalParticle
 from acsmuthi.medium import Medium
 from acsmuthi.initial_field import PlaneWave
-from acsmuthi.postprocessing import forces, rendering, cross_sections as cs
+from acsmuthi.postprocessing import forces, cross_sections as cs
 import numpy as np
 import csv
 import seaborn as sns
@@ -33,7 +33,7 @@ def two_golden_spheres_in_water(ka):
     sphere1 = SphericalParticle(position=np.array([-1.5, 0, 1.7]), radius=r_sph, density=rho_sph, pressure_velocity=c_sph, order=order)
     sphere2 = SphericalParticle(position=np.array([1.7, 0., 1.6]), radius=r_sph, density=rho_sph, pressure_velocity=c_sph, order=order)
     particles = np.array([sphere1, sphere2])
-    sim = Simulation(particles, fluid, incident_field, freq, order)
+    sim = Simulation(particles, fluid, incident_field, freq, order, use_integration=True)
     return sim
 
 
@@ -51,15 +51,19 @@ def count_spectrum(sim_func, name):
     write_csv(spectrum_table, header, name)
 
 
-# count_spectrum(two_golden_spheres_in_water, "two_water_in_air_spec")
+# count_spectrum(two_golden_spheres_in_water, "two_water_in_air_spec_integration")
 
 def draw_spectrum(name):
     colors = sns.color_palette("dark:salmon_r", 4)
     table = np.genfromtxt("spectrums_csv/"+name+".csv", skip_header=1, delimiter=",", dtype=float)
+    table_int = np.genfromtxt("spectrums_csv/"+name+"_integration.csv", skip_header=1, delimiter=",", dtype=float)
     table_comsol = np.genfromtxt("spectrums_csv/"+name+"_comsol.csv", skip_header=5, delimiter=",", dtype=float)
 
     ka, ecs = table[:, 0], table[:, 1]
     fx, fz = table[:, 2], table[:, 4]
+
+    ka_int, ecs_int = table_int[:, 0], table_int[:, 1]
+    fx_int, fz_int = table_int[:, 2], table_int[:, 4]
 
     ka_comsol = 2 * np.pi * table_comsol[:, 0] / 331
     scs_comsol, ecs_comsol = table_comsol[:, 7], table_comsol[:, 8]
@@ -67,9 +71,11 @@ def draw_spectrum(name):
 
     fig, ax = plt.subplots(1, 2, figsize=(9, 3))
     ax[0].plot(ka, ecs, color=colors[0])
+    ax[0].plot(ka_int, ecs_int, color=colors[1], linestyle='--')
     ax[0].scatter(ka_comsol, ecs_comsol, marker='x', color=colors[3])
 
     ax[1].plot(ka, fz, color=colors[0])
+    ax[1].plot(ka_int, fz_int, color=colors[1], linestyle='--')
     ax[1].scatter(ka_comsol, fz_comsol, marker='x', color=colors[3])
     plt.show()
 
