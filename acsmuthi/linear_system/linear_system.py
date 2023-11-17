@@ -20,7 +20,7 @@ class LinearSystem:
             frequency: float,
             order: int,
             solver: str,
-            use_integration: bool = False
+            use_integration: bool | None = None
     ):
         self.order = order
         self.rhs = None
@@ -31,7 +31,14 @@ class LinearSystem:
         self.freq = frequency
         self.incident_field = initial_field
         self.solver = solver
-        self.use_integration = use_integration
+
+        if use_integration is None:
+            if medium.is_substrate and not medium.hard_substrate:
+                self._use_integration = True
+            else:
+                self._use_integration = False
+        else:
+            self._use_integration = use_integration
 
     def compute_t_matrix(self):
         for sph in range(len(self.particles)):
@@ -47,7 +54,7 @@ class LinearSystem:
         )
 
     def compute_coupling_matrix(self):
-        if not self.use_integration:
+        if not self._use_integration:
             self.coupling_matrix = CouplingMatrixExplicit(
                 particles=self.particles,
                 medium=self.medium,
@@ -179,7 +186,6 @@ class CouplingMatrixExplicit(SystemMatrix):
 
         for sph in range(len(self.particles)):
             for osph in range(len(self.particles)):
-
                 if self.medium.is_substrate:
                     substrate_coupling_block = scmt.substrate_coupling_block(
                         self.particles[sph].position, self.particles[osph].position, self.k, self.order)
@@ -209,8 +215,7 @@ class CouplingMatrixSommerfeld(SystemMatrix):
         self.k = k
         self.k_parallel = k_parallel
 
-        if medium.is_substrate:
-            self.legendres = self.precompute_legendres(k_parallel)
+        self.legendres = self.precompute_legendres(k_parallel)
 
         self.linear_operator = scipy.sparse.linalg.aslinearoperator(self.compute_matrix())
 
@@ -219,13 +224,11 @@ class CouplingMatrixSommerfeld(SystemMatrix):
 
         for sph in range(len(self.particles)):
             for osph in range(len(self.particles)):
-
-                if self.medium.is_substrate:
-                    substrate_coupling_block = scmt.substrate_coupling_block_integrate(
-                        self.particles[sph].position, self.particles[osph].position, self.k, self.order,
-                        self.k_parallel, self.legendres)
-                    coup_mat[self.index_block(sph):self.index_block(sph + 1),
-                             self.index_block(osph):self.index_block(osph + 1)] += substrate_coupling_block
+                substrate_coupling_block = scmt.substrate_coupling_block_integrate(
+                    self.particles[sph].position, self.particles[osph].position, self.k, self.order,
+                    self.k_parallel, self.legendres, self.medium)
+                coup_mat[self.index_block(sph):self.index_block(sph + 1),
+                         self.index_block(osph):self.index_block(osph + 1)] += substrate_coupling_block
 
                 if sph == osph:
                     continue
@@ -237,8 +240,7 @@ class CouplingMatrixSommerfeld(SystemMatrix):
 
     def precompute_legendres(self, k_parallel: str | np.ndarray):
         if k_parallel is None:
-            k_p = scmt.k_contour(k_start_deflection=0.9, k_stop_deflection=1.1,
-                                 dk_imag_deflection=1e-2, k_finish=3, dk=1e-2) * self.k
+            k_p = scmt.k_contour(imag_deflection=1e-2, finish=3, step=1e-2) * self.k
         else:
             k_p = k_parallel
         k_z = np.emath.sqrt(self.k ** 2 - k_p ** 2)

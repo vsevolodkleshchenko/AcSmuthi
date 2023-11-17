@@ -34,7 +34,7 @@ def two_water_spheres_above_hard_substrate(order):
 
     incident_field = PlaneWave(k=k_l, amplitude=p0, direction=direction)
 
-    fluid = Medium(density=rho_fluid, pressure_velocity=c_fluid, is_substrate=True)
+    fluid = Medium(density=rho_fluid, pressure_velocity=c_fluid, hard_substrate=True)
 
     sphere1 = SphericalParticle(position=pos1, radius=r_sph, density=ro_sph, pressure_velocity=c_sph, order=order)
     sphere2 = SphericalParticle(position=pos2, radius=r_sph, density=ro_sph, pressure_velocity=c_sph, order=order)

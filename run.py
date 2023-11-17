@@ -24,7 +24,7 @@ order = 3
 incident_field = PlaneWave(k=k, amplitude=p0, direction=direction)
 
 # creating surrounded medium
-medium = Medium(density=rho_fluid, pressure_velocity=c_fluid, is_substrate=True)
+medium = Medium(density=rho_fluid, pressure_velocity=c_fluid, hard_substrate=True)
 
 # creating 3 spherical particles
 sphere1 = SphericalParticle(
@@ -85,3 +85,29 @@ rendering.show_pressure_field(
 # import matplotlib.pyplot as plt
 # plt.imshow(total_field)
 
+# order = 6
+# p0, rho_fluid, c_fluid = 1, 825, 1290
+# direction = np.array([0., 0., -1])
+# r_sph, rho_sph, c_sph = 1, 1000, 1480
+# freq = 320
+# k = 2 * np.pi * freq / c_fluid
+# incident_field = PlaneWave(k=k, amplitude=p0, direction=direction)
+# fluid = Medium(density=rho_fluid, pressure_velocity=c_fluid, substrate_density=rho_sph, substrate_velocity=c_sph)
+# sphere1 = SphericalParticle(position=np.array([-1.7, 0, 2.3]), radius=r_sph, density=rho_sph, pressure_velocity=c_sph,
+#                             order=order)
+# sphere2 = SphericalParticle(position=np.array([1.8, 0., 2.5]), radius=r_sph, density=rho_sph, pressure_velocity=c_sph,
+#                             order=order)
+# particles = np.array([sphere1, sphere2])
+# sim = Simulation(particles, fluid, incident_field, freq, order)
+# sim.run()
+# ecs = cs.extinction_cs(sim, by_multipoles=False)
+# frcs = forces.all_forces(sim)
+# print("Extinction cross-section:", ecs, "Forces:", *frcs, sep='\n')
+# rendering.show_pressure_field(
+#     simulation=sim,
+#     x_min=-6, x_max=6, y_min=0, y_max=0, z_min=-3, z_max=9, num=201,
+#     field_type='total',
+#     cmap='RdBu_r',
+#     particle_color='gold',
+#     particle_linewidth=1.5
+# )

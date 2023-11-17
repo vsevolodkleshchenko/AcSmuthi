@@ -29,7 +29,22 @@ def two_golden_spheres_in_water(ka):
     r_sph, rho_sph, c_sph = 1, 997, 1403
     freq = (ka / r_sph * c_fluid) / (2 * np.pi)
     incident_field = PlaneWave(k=ka / r_sph, amplitude=p0, direction=direction)
-    fluid = Medium(density=rho_fluid, pressure_velocity=c_fluid, is_substrate=True)
+    fluid = Medium(density=rho_fluid, pressure_velocity=c_fluid, hard_substrate=True)
+    sphere1 = SphericalParticle(position=np.array([-1.5, 0, 1.7]), radius=r_sph, density=rho_sph, pressure_velocity=c_sph, order=order)
+    sphere2 = SphericalParticle(position=np.array([1.7, 0., 1.6]), radius=r_sph, density=rho_sph, pressure_velocity=c_sph, order=order)
+    particles = np.array([sphere1, sphere2])
+    sim = Simulation(particles, fluid, incident_field, freq, order, use_integration=True)
+    return sim
+
+
+def two_water_spheres_in_oil(ka):
+    order = 6
+    p0, rho_fluid, c_fluid = 1, 1000, 1480
+    direction = np.array([0.70711, 0., -0.70711])
+    r_sph, rho_sph, c_sph = 1, 825, 1290
+    freq = (ka / r_sph * c_fluid) / (2 * np.pi)
+    incident_field = PlaneWave(k=ka / r_sph, amplitude=p0, direction=direction)
+    fluid = Medium(density=rho_fluid, pressure_velocity=c_fluid, substrate_density=rho_sph, substrate_velocity=c_sph)
     sphere1 = SphericalParticle(position=np.array([-1.5, 0, 1.7]), radius=r_sph, density=rho_sph, pressure_velocity=c_sph, order=order)
     sphere2 = SphericalParticle(position=np.array([1.7, 0., 1.6]), radius=r_sph, density=rho_sph, pressure_velocity=c_sph, order=order)
     particles = np.array([sphere1, sphere2])
@@ -51,7 +66,8 @@ def count_spectrum(sim_func, name):
     write_csv(spectrum_table, header, name)
 
 
-# count_spectrum(two_golden_spheres_in_water, "two_water_in_air_spec_integration")
+# count_spectrum(two_water_spheres_in_oil, "two_water_oil_spec_integration")
+
 
 def draw_spectrum(name):
     colors = sns.color_palette("dark:salmon_r", 4)
@@ -59,24 +75,27 @@ def draw_spectrum(name):
     table_int = np.genfromtxt("spectrums_csv/"+name+"_integration.csv", skip_header=1, delimiter=",", dtype=float)
     table_comsol = np.genfromtxt("spectrums_csv/"+name+"_comsol.csv", skip_header=5, delimiter=",", dtype=float)
 
-    ka, ecs = table[:, 0], table[:, 1]
-    fx, fz = table[:, 2], table[:, 4]
+    ka, ecs = table[:120, 0], table[:120, 1]
+    fx, fz = table[:120, 2], table[:120, 4]
 
-    ka_int, ecs_int = table_int[:, 0], table_int[:, 1]
-    fx_int, fz_int = table_int[:, 2], table_int[:, 4]
+    ka_int, ecs_int = table_int[:120, 0], table_int[:120, 1]
+    fx_int, fz_int = table_int[:120, 2], table_int[:120, 4]
 
     ka_comsol = 2 * np.pi * table_comsol[:, 0] / 331
     scs_comsol, ecs_comsol = table_comsol[:, 7], table_comsol[:, 8]
     fx_comsol, fz_comsol = table_comsol[:, 1], table_comsol[:, 3]
 
     fig, ax = plt.subplots(1, 2, figsize=(9, 3))
-    ax[0].plot(ka, ecs, color=colors[0])
-    ax[0].plot(ka_int, ecs_int, color=colors[1], linestyle='--')
+    ax[0].plot(ka, ecs, color='r', linewidth=2)
+    ax[0].plot(ka_int, ecs_int, '--k', linewidth=2)
     ax[0].scatter(ka_comsol, ecs_comsol, marker='x', color=colors[3])
 
-    ax[1].plot(ka, fz, color=colors[0])
-    ax[1].plot(ka_int, fz_int, color=colors[1], linestyle='--')
+    ax[1].plot(ka, fz, color='r', linewidth=2)
+    ax[1].plot(ka_int, fz_int, '--k', linewidth=2)
     ax[1].scatter(ka_comsol, fz_comsol, marker='x', color=colors[3])
+    ax[1].plot(ka, fx, color='r', linewidth=2)
+    ax[1].plot(ka_int, fx_int, '--k', linewidth=2)
+    ax[1].scatter(ka_comsol, fx_comsol, marker='x', color=colors[3])
     plt.show()
 
 

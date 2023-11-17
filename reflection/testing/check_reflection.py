@@ -13,7 +13,7 @@ plt.rcParams['axes.formatter.min_exponent'] = 1
 
 
 def check_integrator():
-    m, n, mu, nu = 3, 3, 3, 3
+    m, n, mu, nu = 2, 2, 2, 2
     k, pos1, pos2 = 2.5, np.array([-2, 0, 2]), np.array([-2, 2, 4])
 
     k_waypoint = 5 * np.logspace(-5, -2, 30, endpoint=True)
@@ -38,10 +38,16 @@ def check_integrator():
     # show_contour(k_parallel)
 
     true_el = substrate_coupling_element(m, n, mu, nu, k, pos1, pos2)
-    fig, ax = plt.subplots(figsize=(5, 4))
+    fig, ax = plt.subplots(figsize=(6, 4))
     for el in els:
         err = np.abs((np.array(el) - true_el) / true_el)
         ax.loglog(k_waypoint, err, linewidth=3)
+    ax.loglog(k_waypoint, np.full_like(k_waypoint, 1e-2), '--r')
+    ax.loglog(k_waypoint, np.full_like(k_waypoint, 1e-3), '--b')
+    ax.set_xlabel("integration step size")
+    ax.set_ylabel("relative error")
+    plt.legend(["dk_imag = 1e-4", "dk_imag = 5e-4", "dk_imag = 1e-3", "dk_imag = 5e-3", "dk_imag = 1e-2"])
+    plt.tight_layout()
     plt.show()
 
 
@@ -49,10 +55,10 @@ def check_integrator():
 
 
 def check_integrand():
-    m, n, mu, nu = 0, 0, 1, 1
+    m, n, mu, nu = 1, 2, -1, 1
     k, pos1, pos2 = 1, np.array([-1, 1, 2]), np.array([3, 4, 3])
 
-    show_integrand(0., 4, -1, 1, 300, 'ref', k, pos1, pos2, m, n, mu, nu)
+    show_integrand(0., 4, -1, 1, 100, 'ref', k, pos1, pos2, m, n, mu, nu)
     plt.show()
 
 

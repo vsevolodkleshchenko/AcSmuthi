@@ -65,10 +65,10 @@ def show_integrand(re_kp_min, re_kp_max, im_kp_min, im_kp_max, num_points, integ
     integrand_2d = func_2d(re_kp_grid, im_kp_grid, *args)
 
     extent = [re_kp_min, re_kp_max, im_kp_min, im_kp_max]
-    im = ax[0].imshow(np.abs(np.real(integrand_2d)), origin='lower', extent=extent, norm=colors.LogNorm(), cmap='RdBu_r')
+    im = ax[0].imshow(np.abs(np.real(integrand_2d)), origin='lower', extent=extent, norm=colors.LogNorm(), cmap='RdBu_r', aspect='equal')
     plt.colorbar(im, shrink=0.5)
 
-    im = ax[1].imshow(np.abs(np.imag(integrand_2d)), origin='lower', extent=extent, norm=colors.LogNorm(), cmap='RdBu_r')
+    im = ax[1].imshow(np.abs(np.imag(integrand_2d)), origin='lower', extent=extent, norm=colors.LogNorm(), cmap='RdBu_r', aspect='equal')
     plt.colorbar(im, shrink=0.5)
 
     plt.tight_layout()

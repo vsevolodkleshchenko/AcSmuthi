@@ -1,4 +1,5 @@
 try:
+    raise Exception
     from acsmuthi.utility.cython_opt import cython_speedups as cysp
 
     def substrate_coupling_block(receiver_pos, emitter_pos, k, order):
@@ -49,10 +50,10 @@ import scipy.special as ss
 import scipy.integrate as si
 import acsmuthi.utility.wavefunctions as wvfs
 from acsmuthi.utility.mathematics import dec_to_cyl, legendres_table, legendre_prefactor
-from acsmuthi.linear_system.coupling.coupling_basics import k_contour, fresnel_r
+from acsmuthi.linear_system.coupling.coupling_basics import k_contour, fresnel_r_hard, fresnel_r
 
 
-def substrate_coupling_block_integrate(receiver_pos, emitter_pos, k, order, k_parallel=None, legendres=None):
+def substrate_coupling_block_integrate(receiver_pos, emitter_pos, k, order, k_parallel=None, legendres=None, medium=None):
     block = np.zeros(((order + 1) ** 2, (order + 1) ** 2), dtype=complex)
 
     dist = receiver_pos - emitter_pos
@@ -60,19 +61,19 @@ def substrate_coupling_block_integrate(receiver_pos, emitter_pos, k, order, k_pa
     ds = np.abs(emitter_pos[2])
 
     if k_parallel is None:
-        k_p = k_contour(
-            k_start_deflection=0.9,
-            k_stop_deflection=1.1,
-            dk_imag_deflection=1e-2,
-            k_finish=3,
-            dk=1e-2
-        ) * k
+        k_p = k_contour(imag_deflection=1e-2, finish=3, step=1e-2) * k
     else:
         k_p = k_parallel
     k_z = np.emath.sqrt(k ** 2 - k_p ** 2)
 
     if legendres is None:
         legendres = legendres_table(k_z / k, order)
+
+    if medium.hard_substrate:
+        fresnel = fresnel_r_hard()
+    else:
+        k_substrate = k * medium.cp / medium.cp_sub
+        fresnel = fresnel_r(k_p, k, k_substrate, medium.density, medium.density_sub)
 
     for m, n in wvfs.multipoles(order):
         i_mn = n ** 2 + n + m
@@ -83,7 +84,7 @@ def substrate_coupling_block_integrate(receiver_pos, emitter_pos, k, order, k_pa
             leg_norm_munu = (legendres[0][mu, nu] if mu >= 0 else legendres[1][-mu, nu]) * legendre_prefactor(mu, nu)
             leg_norm_munu = leg_norm_munu if (nu + mu) % 2 == 0 else - leg_norm_munu
 
-            integrand = fresnel_r(k_p) * np.exp(1j * k_z * (2 * ds + d_z)) * k_p / k_z * \
+            integrand = fresnel * np.exp(1j * k_z * (2 * ds + d_z)) * k_p / k_z * \
                 ss.jn(mu - m, k_p * d_rho) * leg_norm_mn * leg_norm_munu
             integral = si.trapz(integrand, k_p / k)
 

@@ -51,4 +51,3 @@ def test_two_water_spheres_in_air():
 
     np.testing.assert_allclose(np.where(np.abs(frcs) <= 1e-14, 0, frcs), comsol_frcs, rtol=1e-2)
     assert np.round(scs, 2) == np.round(comsol_scs, 2)
-
