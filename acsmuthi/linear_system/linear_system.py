@@ -213,9 +213,13 @@ class CouplingMatrixSommerfeld(SystemMatrix):
         SystemMatrix.__init__(self, particles=particles, order=order)
         self.medium = medium
         self.k = k
-        self.k_parallel = k_parallel
 
-        self.legendres = self.precompute_legendres(k_parallel)
+        if k_parallel is None:
+            self.k_parallel = scmt.create_default_k_parallel(self.k, self.medium)
+        else:
+            self.k_parallel = k_parallel
+
+        self.legendres = self.precompute_legendres(self.k_parallel)
 
         self.linear_operator = scipy.sparse.linalg.aslinearoperator(self.compute_matrix())
 
@@ -238,12 +242,8 @@ class CouplingMatrixSommerfeld(SystemMatrix):
 
         return coup_mat
 
-    def precompute_legendres(self, k_parallel: str | np.ndarray):
-        if k_parallel is None:
-            k_p = scmt.k_contour(imag_deflection=1e-2, finish=3, step=1e-2) * self.k
-        else:
-            k_p = k_parallel
-        k_z = np.emath.sqrt(self.k ** 2 - k_p ** 2)
+    def precompute_legendres(self, k_parallel: np.ndarray):
+        k_z = np.emath.sqrt(self.k ** 2 - k_parallel ** 2)
         return mths.legendres_table(k_z / self.k, self.order)
 
 

@@ -49,31 +49,25 @@ import numpy as np
 import scipy.special as ss
 import scipy.integrate as si
 import acsmuthi.utility.wavefunctions as wvfs
-from acsmuthi.utility.mathematics import dec_to_cyl, legendres_table, legendre_prefactor
-from acsmuthi.linear_system.coupling.coupling_basics import k_contour, fresnel_r_hard, fresnel_r
+from acsmuthi.utility.mathematics import dec_to_cyl, legendre_prefactor
+from acsmuthi.linear_system.coupling.coupling_basics import fresnel_r_hard, fresnel_r, fresnel_elastic, k_contour
 
 
-def substrate_coupling_block_integrate(receiver_pos, emitter_pos, k, order, k_parallel=None, legendres=None, medium=None):
+def substrate_coupling_block_integrate(receiver_pos, emitter_pos, k, order, k_parallel, legendres, medium):
     block = np.zeros(((order + 1) ** 2, (order + 1) ** 2), dtype=complex)
 
     dist = receiver_pos - emitter_pos
     d_rho, d_phi, d_z = dec_to_cyl(dist[0], dist[1], dist[2])
     ds = np.abs(emitter_pos[2])
 
-    if k_parallel is None:
-        k_p = k_contour(imag_deflection=1e-2, finish=3, step=1e-2) * k
-    else:
-        k_p = k_parallel
-    k_z = np.emath.sqrt(k ** 2 - k_p ** 2)
-
-    if legendres is None:
-        legendres = legendres_table(k_z / k, order)
+    k_z = np.emath.sqrt(k ** 2 - k_parallel ** 2)
 
     if medium.hard_substrate:
         fresnel = fresnel_r_hard()
+    elif medium.cs_sub is None:
+        fresnel = fresnel_r(k_parallel, k, medium.cp, medium.cp_sub, medium.density, medium.density_sub)
     else:
-        k_substrate = k * medium.cp / medium.cp_sub
-        fresnel = fresnel_r(k_p, k, k_substrate, medium.density, medium.density_sub)
+        fresnel = fresnel_elastic(k_parallel, k, medium.cp, medium.cp_sub, medium.cs_sub, medium.density, medium.density_sub)
 
     for m, n in wvfs.multipoles(order):
         i_mn = n ** 2 + n + m
@@ -84,9 +78,18 @@ def substrate_coupling_block_integrate(receiver_pos, emitter_pos, k, order, k_pa
             leg_norm_munu = (legendres[0][mu, nu] if mu >= 0 else legendres[1][-mu, nu]) * legendre_prefactor(mu, nu)
             leg_norm_munu = leg_norm_munu if (nu + mu) % 2 == 0 else - leg_norm_munu
 
-            integrand = fresnel * np.exp(1j * k_z * (2 * ds + d_z)) * k_p / k_z * \
-                ss.jn(mu - m, k_p * d_rho) * leg_norm_mn * leg_norm_munu
-            integral = si.trapz(integrand, k_p / k)
+            integrand = fresnel * np.exp(1j * k_z * (2 * ds + d_z)) * k_parallel / k_z * \
+                ss.jn(mu - m, k_parallel * d_rho) * leg_norm_mn * leg_norm_munu
+            integral = si.trapz(integrand, k_parallel / k)
 
             block[i_mn, i_munu] = 4 * np.pi * 1j ** (n - nu + mu - m) * np.exp(1j * (mu - m) * d_phi) * integral
     return block
+
+
+def create_default_k_parallel(k_medium, medium):
+    k_substrate = medium.k_substrate(k_medium)
+    if k_substrate is not None:
+        branch_points = k_substrate / k_medium
+    else:
+        branch_points = None
+    return k_contour(imag_deflection=1e-2, step=1e-2, problems=branch_points) * k_medium
