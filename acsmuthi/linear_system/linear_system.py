@@ -20,7 +20,8 @@ class LinearSystem:
             frequency: float,
             order: int,
             solver: str,
-            use_integration: bool | None = None
+            use_integration: bool | None = None,
+            k_parallel: np.ndarray = None
     ):
         self.order = order
         self.rhs = None
@@ -31,6 +32,7 @@ class LinearSystem:
         self.freq = frequency
         self.incident_field = initial_field
         self.solver = solver
+        self.k_parallel = k_parallel
 
         if use_integration is None:
             if medium.is_substrate and not medium.hard_substrate:
@@ -66,7 +68,8 @@ class LinearSystem:
                 particles=self.particles,
                 medium=self.medium,
                 order=self.order,
-                k=self.incident_field.k
+                k=self.incident_field.k,
+                k_parallel=self.k_parallel
             )
 
     def compute_right_hand_side(self):

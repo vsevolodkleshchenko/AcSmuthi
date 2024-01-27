@@ -17,7 +17,8 @@ class Simulation:
             frequency: float,
             order: int,
             solver: Literal['LU', 'GMRES'] = 'LU',
-            use_integration: bool | None = None
+            use_integration: bool | None = None,
+            k_parallel: np.ndarray = None
     ):
         self.particles = particles
         self.medium = medium
@@ -27,6 +28,7 @@ class Simulation:
         self.solver = solver
         self.linear_system = None
         self._use_integration = use_integration
+        self.k_parallel = k_parallel
 
     def run(self):
         self.linear_system = LinearSystem(
