@@ -42,7 +42,7 @@ def two_water_spheres_in_oil(ka):
 
 
 def count_spectrum(sim_func, name):
-    ka_frequencies = np.linspace(0.35, 2.3, 150, dtype=float)
+    ka_frequencies = np.linspace(0.5, 1.5, 150, dtype=float)
     spectrum_table = np.zeros((len(ka_frequencies), 8))
     spectrum_table[:, 0] = ka_frequencies
     for i, ka in enumerate(ka_frequencies):
@@ -59,7 +59,7 @@ def count_spectrum(sim_func, name):
 
 
 def draw_spectrum(name):
-    colors = sns.color_palette("dark:salmon_r", 4)
+    colors = sns.color_palette("RdBu_r", 6)
     table = np.genfromtxt("spectrums_csv/"+name+".csv", skip_header=1, delimiter=",", dtype=float)
     table_comsol = np.genfromtxt("spectrums_csv/"+name+"_comsol.csv", skip_header=5, delimiter=",", dtype=float)
 
@@ -71,22 +71,26 @@ def draw_spectrum(name):
     fx_comsol, fz_comsol = table_comsol[:, 1], table_comsol[:, 3]
 
     fig, ax = plt.subplots(1, 2, figsize=(9, 3))
-    ax[0].plot(ka, ecs, color='r', linewidth=2)
-    ax[0].scatter(ka_comsol, ecs_comsol, marker='x', color=colors[3])
+    ax[0].plot(ka, ecs / np.pi, color=colors[4], linewidth=2, label='T-matrices')
+    ax[0].scatter(ka_comsol, ecs_comsol / np.pi, marker='x', color='grey', label='COMSOL')
 
-    ax[1].plot(ka, fz, color='r', linewidth=2)
-    ax[1].scatter(ka_comsol, fz_comsol, marker='x', color=colors[3])
-    ax[1].plot(ka, fx, color='r', linewidth=2)
-    ax[1].scatter(ka_comsol, fx_comsol, marker='x', color=colors[3])
-    plt.show()
+    f_norm = 0.5 * 1**2 / 1000 / 1480**2 * np.pi * 1**2  # 1
+    ax[1].plot(ka, fz / f_norm, color=colors[0], linewidth=2, label='Fz')
+    ax[1].scatter(ka_comsol, fz_comsol / f_norm, marker='x', color='grey')
+    ax[1].plot(ka, fx / f_norm, color=colors[5], linewidth=2, label='Fx')
+    ax[1].scatter(ka_comsol, fx_comsol / f_norm, marker='x', color='grey')
+
+    ax[0].set(xlabel='Size parameter, ka', ylabel='Scattered cross section $\\sigma_{sc}/\\sigma_0$')
+    ax[1].set(xlabel='Size parameter, ka', ylabel='Force components $F/F_0$')
+    ax[0].legend(), ax[1].legend(), plt.tight_layout(), plt.show()
 
 
-def two_hg_spheres_under_ice(ka):
+def two_hg_spheres_on_quartz(ka):
     order = 6
     p0, rho_fluid, c_fluid = 1, 1000, 1480
-    direction = np.array([0.587785, 0., -0.809017])
+    direction = np.array([0., 0., -1.])
     r_sph, rho_sph, c_sph = 1, 19300, 1420
-    rho_s, cp_s, cs_s = 917, 1980, 3990
+    rho_s, cp_s, cs_s = 2650, 5900, 3400
     freq = (ka / r_sph * c_fluid) / (2 * np.pi)
     incident_field = PlaneWave(k=ka / r_sph, amplitude=p0, direction=direction)
     fluid = Medium(density=rho_fluid, pressure_velocity=c_fluid, substrate_density=rho_s, substrate_velocity=cp_s,
@@ -100,5 +104,5 @@ def two_hg_spheres_under_ice(ka):
     return sim
 
 
-# count_spectrum(two_hg_spheres_under_ice, "two_hg_water_ice_spec")
-draw_spectrum("two_hg_water_ice_spec")
+# count_spectrum(two_hg_spheres_on_quartz, "two_hg_water_quartz_spec")
+draw_spectrum("two_hg_water_quartz_spec")
