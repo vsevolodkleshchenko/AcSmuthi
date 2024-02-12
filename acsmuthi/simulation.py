@@ -38,7 +38,8 @@ class Simulation:
             frequency=self.freq,
             order=self.order,
             solver=self.solver,
-            use_integration=self._use_integration
+            use_integration=self._use_integration,
+            k_parallel=self.k_parallel
         )
         t_start = time.time()
         self.linear_system.prepare()

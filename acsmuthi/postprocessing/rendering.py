@@ -1,14 +1,13 @@
-import matplotlib.pyplot as plt
-from matplotlib import colors
-import seaborn as sns
 import numpy as np
 from typing import Literal
+import matplotlib.pyplot as plt
+from matplotlib import colors
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+
 from acsmuthi.postprocessing import fields
 
 
-def draw_particles(simulation, x_label, y_label, color='black', linewidth=1):
-    fig = plt.gcf()
-    ax = fig.gca()
+def draw_particles(simulation, x_label, y_label, ax, color='black', linewidth=1):
     if x_label == 'x' and y_label == 'z':
         x_index, y_index = 0, 2
     elif x_label == 'y' and y_label == 'z':
@@ -32,7 +31,8 @@ def show_pressure_field(
         field_type: Literal['total', 'scattered', 'incident', 'scattered', 'incident', 'scattered+inner', 'incident+scattered', 'incident+inner'] ='total',
         cmap='RdBu_r',
         particle_color='black',
-        particle_linewidth=1
+        particle_linewidth=1,
+        ax=None, figsize=None
 ):
     if x_min == x_max:
         yy, zz = np.meshgrid(np.linspace(y_min, y_max, num), np.linspace(z_min, z_max, num))
@@ -66,11 +66,13 @@ def show_pressure_field(
         p_field = fields.compute_incident_field(xx, yy, zz, simulation) + \
                   fields.compute_inner_field(xx, yy, zz, simulation)
 
-    fig, ax = plt.subplots()
+    if ax is None:
+        fig, ax = plt.subplots(figsize=figsize)
     im = ax.imshow(p_field, origin='lower', extent=extent, norm=colors.CenteredNorm(), cmap=cmap)
     ax.set_xlabel(x_label + ', м')
     ax.set_ylabel(y_label + ', м')
     ax.set_title('Pressure field at ' + title + ', Па')
-    plt.colorbar(im)
-    draw_particles(simulation, x_label, y_label, color=particle_color, linewidth=particle_linewidth)
+    cax = make_axes_locatable(ax).append_axes("right", size="5%", pad=0.05)
+    plt.colorbar(im, cax=cax)
+    draw_particles(simulation, x_label, y_label, ax, color=particle_color, linewidth=particle_linewidth)
     plt.show()

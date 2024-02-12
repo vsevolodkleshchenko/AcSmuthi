@@ -43,9 +43,9 @@ class PlaneWave(InitialField):
             if medium.hard_substrate:
                 r = fresnel_r_hard()
             elif medium.cs_sub is None:
-                r = fresnel_r(abs(self.k * self.direction[0]), self.k, medium.cp, medium.cp_sub, medium.density, medium.density_sub)
+                r = fresnel_r(self.k * np.linalg.norm(self.direction[:-1]), self.k, medium.cp, medium.cp_sub, medium.density, medium.density_sub)
             else:
-                r = fresnel_elastic(abs(self.k * self.direction[0]), self.k, medium.cp, medium.cp_sub, medium.cs_sub, medium.density, medium.density_sub)
+                r = fresnel_elastic(self.k * np.linalg.norm(self.direction[:-1]), self.k, medium.cp, medium.cp_sub, medium.cs_sub, medium.density, medium.density_sub)
 
             reflected_coefficients = r * reflection_phase * wvfs.incident_coefficients(reflected_direction, order)
             if not np.array_equal(origin, self.reference_point):
@@ -66,9 +66,9 @@ class PlaneWave(InitialField):
             if medium.hard_substrate:
                 r = fresnel_r_hard()
             elif medium.cs_sub is None:
-                r = fresnel_r(abs(self.k * self.direction[0]), self.k, medium.cp, medium.cp_sub, medium.density, medium.density_sub)
+                r = fresnel_r(self.k * np.linalg.norm(self.direction[:-1]), self.k, medium.cp, medium.cp_sub, medium.density, medium.density_sub)
             else:
-                r = fresnel_elastic(abs(self.k * self.direction[0]), self.k, medium.cp, medium.cp_sub, medium.cs_sub, medium.density, medium.density_sub)
+                r = fresnel_elastic(self.k * np.linalg.norm(self.direction[:-1]), self.k, medium.cp, medium.cp_sub, medium.cs_sub, medium.density, medium.density_sub)
 
             if self.direction[2] < 0:
                 exact_field += r * self.amplitude * np.exp(1j * self.k * (
