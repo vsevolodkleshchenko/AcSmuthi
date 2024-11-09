@@ -75,4 +75,4 @@ def show_pressure_field(
     cax = make_axes_locatable(ax).append_axes("right", size="5%", pad=0.05)
     plt.colorbar(im, cax=cax)
     draw_particles(simulation, x_label, y_label, ax, color=particle_color, linewidth=particle_linewidth)
-    plt.show()
+    # plt.show()

@@ -3,6 +3,8 @@ import copy
 from typing import Literal
 from acsmuthi.utility import wavefunctions as wvfs
 
+# todo: rewrite
+
 
 class FieldExpansion:
     def __init__(self):

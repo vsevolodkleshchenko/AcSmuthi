@@ -1,5 +1,7 @@
 import numpy as np
 
+# todo: doesn't work properly for substrate
+
 
 def compute_incident_field(x, y, z, simulation):
     particles, initial_field = simulation.particles, simulation.initial_field

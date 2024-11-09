@@ -5,13 +5,13 @@ import acsmuthi.utility.wavefunctions as wvfs
 from acsmuthi.linear_system.coupling.coupling_basics import fresnel_r, fresnel_r_hard, fresnel_elastic
 
 
-class InitialField:
+class InitialField:     # todo: frequency, not k; validity conditions
     def __init__(self, k, amplitude):
         self.k = k
         self.amplitude = amplitude
         self.validity_conditions = []
 
-    def piecewice_field_expansion(self, particle, medium):
+    def piecewice_field_expansion(self, particle, medium):  # todo: delete if it is not used
         pass
 
     def spherical_wave_expansion(self, origin, medium, order):
@@ -27,7 +27,7 @@ class PlaneWave(InitialField):
         else:
             self.reference_point = reference_point
 
-    def spherical_wave_expansion(self, origin, medium, order):
+    def spherical_wave_expansion(self, origin, medium, order):      # todo: think about args; shrink, up, down, transfer pwe to sfe????
         reference_coefficients = wvfs.incident_coefficients(self.direction, order)
 
         if np.array_equal(origin, self.reference_point):
@@ -56,7 +56,7 @@ class PlaneWave(InitialField):
         return fldsex.SphericalWaveExpansion(amplitude=self.amplitude, k=self.k, origin=origin, kind='regular',
                                              order=order, coefficients=coefficients)
 
-    def compute_exact_field(self, x, y, z, medium):
+    def compute_exact_field(self, x, y, z, medium):     # todo: rename to pressure field, through the pfe
         exact_field = self.amplitude * np.exp(1j * self.k * (
                 self.direction[0] * (x - self.reference_point[0]) +
                 self.direction[1] * (y - self.reference_point[1]) +
@@ -83,7 +83,7 @@ class PlaneWave(InitialField):
         return self.amplitude ** 2 / (2 * density * sound_speed)
 
 
-class StandingWave(InitialField):
+class StandingWave(InitialField):    # todo: it doesn't work - delete or change or do something; maybe make summation method
     def __init__(self, k, amplitude, direction, reference_point=None):
         InitialField.__init__(self, k=k, amplitude=amplitude)
         self.direction = direction

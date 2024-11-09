@@ -1,7 +1,9 @@
 import numpy as np
 
+# todo: transfer here some functions like fresnel reflection
 
-class Medium:
+
+class Medium:   # todo: make it as list of layers??? checks
     def __init__(
             self,
             density: float,

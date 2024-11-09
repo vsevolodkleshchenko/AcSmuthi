@@ -1,3 +1,5 @@
+import matplotlib.pyplot as plt
+
 from acsmuthi.simulation import Simulation
 from acsmuthi.particles import SphericalParticle
 from acsmuthi.medium import Medium
@@ -5,6 +7,7 @@ from acsmuthi.initial_field import PlaneWave
 from acsmuthi.postprocessing import cross_sections as cs, forces
 from acsmuthi.postprocessing import rendering
 from acsmuthi.postprocessing import fields
+from acsmuthi.linear_system.coupling.coupling_basics import k_contour
 
 import numpy as np
 
@@ -12,7 +15,7 @@ import numpy as np
 rho_fluid, c_fluid = 1.225, 331
 # parameters of acoustic field (plane wave)
 p0, freq = 1, 82
-direction = np.array([0.70711, 0, -0.70711])
+direction = np.array([0.70711, 0, -0.70711])  # todo: check the datatype
 k = 2 * np.pi * freq / c_fluid
 # parameters of particles
 r_particle, rho_particle, c_particle = 1., 997, 1403
@@ -24,11 +27,12 @@ order = 3
 incident_field = PlaneWave(k=k, amplitude=p0, direction=direction)
 
 # creating surrounded medium
-medium = Medium(density=rho_fluid, pressure_velocity=c_fluid, hard_substrate=True)
+medium = Medium(density=rho_fluid, pressure_velocity=c_fluid,
+                substrate_density=2650, substrate_velocity=5900, substrate_velocity_shear=3400)  # todo: like layers?
 
 # creating 3 spherical particles
 sphere1 = SphericalParticle(
-    position=np.array([-2., 0, 5.5]),
+    position=np.array([-2., 0, 5.5]),   # todo: as datatype?
     radius=r_particle,
     density=rho_particle,
     pressure_velocity=c_particle,
@@ -48,10 +52,11 @@ sphere3 = SphericalParticle(
     pressure_velocity=c_particle,
     order=order
 )
-particles = np.array([sphere1, sphere2, sphere3])
+particles = np.array([sphere1, sphere2, sphere3])   # Sequence/List
 
 # creating simulation object
-simulation = Simulation(particles=particles, medium=medium, initial_field=incident_field, frequency=freq, order=order)
+simulation = Simulation(particles=particles, medium=medium, initial_field=incident_field, frequency=freq, order=order,
+                        k_parallel=k_contour(3e-2, 1e-2, problems=np.array([c_fluid / 5900, c_fluid / 3400]))*k)
 # by default - solver is LU, but it is possible to use GMRES:
 # simulation = Simulation(..., solver='GMRES')
 
@@ -75,6 +80,7 @@ rendering.show_pressure_field(
     particle_color='gold',
     particle_linewidth=1.5
 )
+plt.tight_layout(), plt.show()
 
 
 # but also it is possible to compute field and draw it manually:

@@ -11,16 +11,16 @@ from acsmuthi.medium import Medium
 from acsmuthi.initial_field import InitialField
 
 
-class LinearSystem:
+class LinearSystem:     # todo: think about CUDA, logging, tqdm, saving?
     def __init__(
             self,
-            particles: np.ndarray[Particle],
+            particles: np.ndarray[Particle],    # todo: Sequence/list
             medium: Medium,
             initial_field: InitialField,
             frequency: float,
             order: int,
             solver: str,
-            use_integration: bool | None = None,
+            use_integration: bool | None = None,    # todo: strange thing
             k_parallel: np.ndarray = None
     ):
         self.order = order
@@ -231,7 +231,7 @@ class CouplingMatrixSommerfeld(SystemMatrix):
 
         for sph in range(len(self.particles)):
             for osph in range(len(self.particles)):
-                substrate_coupling_block = scmt.substrate_coupling_block_integrate(
+                substrate_coupling_block = scmt.substrate_coupling_block_integrate(     # todo: arguments as objects
                     self.particles[sph].position, self.particles[osph].position, self.k, self.order,
                     self.k_parallel, self.legendres, self.medium)
                 coup_mat[self.index_block(sph):self.index_block(sph + 1),
@@ -263,7 +263,7 @@ class MasterMatrix(SystemMatrix):
         self.linear_operator = scipy.sparse.linalg.aslinearoperator(m_mat)
 
 
-def _inner_coefficients(coupling_matrix, particles_array, scattered_coefficients, order):
+def _inner_coefficients(coupling_matrix, particles_array, scattered_coefficients, order):   # todo: maybe we should delete it / move to the specific particle class
     """Counts coefficients of decompositions fields inside spheres"""
     all_ef_inc_coef = np.split(coupling_matrix.linear_operator.A @ np.concatenate(scattered_coefficients), len(particles_array))
     in_coef = np.zeros_like(scattered_coefficients)

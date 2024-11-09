@@ -8,7 +8,7 @@ from acsmuthi.medium import Medium
 from acsmuthi.initial_field import InitialField
 
 
-class Simulation:
+class Simulation:   # todo: logging, sanity checks, saving?
     def __init__(
             self,
             particles: np.ndarray[Particle],

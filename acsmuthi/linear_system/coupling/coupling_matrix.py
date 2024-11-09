@@ -1,4 +1,4 @@
-
+# todo: check that it works as expected maybe use numba
 try:
     from acsmuthi.utility.cython_opt import cython_speedups as cysp
 

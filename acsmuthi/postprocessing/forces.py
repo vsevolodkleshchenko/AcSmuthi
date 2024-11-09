@@ -1,6 +1,8 @@
 from acsmuthi.utility import wavefunctions as wvfs
 import numpy as np
 
+# todo: old forces doesn't work properly for substrate - delete
+
 
 def force_on_sphere(particle, medium, initial_field):
     ef_inc_coef = np.linalg.inv(particle.t_matrix) @ particle.scattered_field.coefficients

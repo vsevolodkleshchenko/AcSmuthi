@@ -2,6 +2,8 @@ import math
 from acsmuthi.utility import wavefunctions as wvfs
 import numpy as np
 
+# todo: this module doesn't work properly for substrate; read and decide what to do
+
 
 def scattering_cs(simulation):
     particles, medium, initial_field = simulation.particles, simulation.medium, simulation.initial_field

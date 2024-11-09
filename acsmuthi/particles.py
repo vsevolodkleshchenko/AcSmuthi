@@ -1,11 +1,11 @@
 import numpy as np
 
 import acsmuthi.linear_system.t_matrix as tmt
-import acsmuthi.utility.memoizing as memo
+import acsmuthi.utility.memoizing as memo   # todo: ???
 
 
-class Particle:
-    def __init__(
+class Particle:     # todo: finally decide about abstract classes
+    def __init__(   # todo: names should be identical
             self,
             position: np.ndarray[float],
             density: float,
@@ -21,13 +21,13 @@ class Particle:
         self.scattered_field = None
         self.inner_field = None
         self.t_matrix = None
-        self.order = order
+        self.order = order      # todo: make check for the equality of the orders
 
-    def compute_t_matrix(self, c_medium, rho_medium, freq):
+    def compute_t_matrix(self, c_medium, rho_medium, freq):     # todo: raise error while not implemented
         pass
 
 
-class SphericalParticle(Particle):
+class SphericalParticle(Particle):  # todo: decide order / l_max
     def __init__(
             self,
             position: np.ndarray[float],
