@@ -37,9 +37,9 @@ except Exception as e:
 
     def substrate_coupling_block(receiver_pos, emitter_pos, k, order):
         block = np.zeros(((order + 1) ** 2, (order + 1) ** 2), dtype=complex)
-        for m, n in wvfs.multipoles(order):
+        for m, n in wvfs.mn_idx(order):
             imn = n ** 2 + n + m
-            for mu, nu in wvfs.multipoles(order):
+            for mu, nu in wvfs.mn_idx(order):
                 imunu = nu ** 2 + nu + mu
                 block[imn, imunu] = substrate_coupling_element(mu, nu, m, n, k, emitter_pos, receiver_pos)
         return block
@@ -69,11 +69,11 @@ def substrate_coupling_block_integrate(receiver_pos, emitter_pos, k, order, k_pa
     else:
         fresnel = fresnel_elastic(k_parallel, k, medium.cp, medium.cp_sub, medium.cs_sub, medium.density, medium.density_sub)
 
-    for m, n in wvfs.multipoles(order):
+    for m, n in wvfs.mn_idx(order):
         i_mn = n ** 2 + n + m
         leg_norm_mn = (legendres[0][m, n] if m >= 0 else legendres[1][-m, n]) * legendre_prefactor(m, n)
 
-        for mu, nu in wvfs.multipoles(order):
+        for mu, nu in wvfs.mn_idx(order):
             i_munu = nu ** 2 + nu + mu
             leg_norm_munu = (legendres[0][mu, nu] if mu >= 0 else legendres[1][-mu, nu]) * legendre_prefactor(mu, nu)
             leg_norm_munu = leg_norm_munu if (nu + mu) % 2 == 0 else - leg_norm_munu

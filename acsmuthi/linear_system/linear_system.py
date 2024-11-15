@@ -269,7 +269,7 @@ def _inner_coefficients(coupling_matrix, particles_array, scattered_coefficients
     in_coef = np.zeros_like(scattered_coefficients)
     for i_p, particle in enumerate(particles_array):
         k, k_p = particle.incident_field.k, particle.inner_field.k
-        for m, n in wvfs.multipoles(order):
+        for m, n in wvfs.mn_idx(order):
             imn = n ** 2 + n + m
             sc_coef = scattered_coefficients[i_p, imn]
             ef_inc_coef = all_ef_inc_coef[i_p][imn] + particle.incident_field.coefficients[imn]

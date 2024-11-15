@@ -28,7 +28,7 @@ class PlaneWave(InitialField):
             self.reference_point = reference_point
 
     def spherical_wave_expansion(self, origin, medium, order):      # todo: think about args; shrink, up, down, transfer pwe to sfe????
-        reference_coefficients = wvfs.incident_coefficients(self.direction, order)
+        reference_coefficients = wvfs.plane_wave_sfe_cfs(self.direction, order)
 
         if np.array_equal(origin, self.reference_point):
             coefficients = reference_coefficients
@@ -47,7 +47,7 @@ class PlaneWave(InitialField):
             else:
                 r = fresnel_elastic(self.k * np.linalg.norm(self.direction[:-1]), self.k, medium.cp, medium.cp_sub, medium.cs_sub, medium.density, medium.density_sub)
 
-            reflected_coefficients = r * reflection_phase * wvfs.incident_coefficients(reflected_direction, order)
+            reflected_coefficients = r * reflection_phase * wvfs.plane_wave_sfe_cfs(reflected_direction, order)
             if not np.array_equal(origin, self.reference_point):
                 reflected_coefficients *= np.exp(1j * self.k * reflected_direction @ (origin - self.reference_point))
 
@@ -93,8 +93,8 @@ class StandingWave(InitialField):    # todo: it doesn't work - delete or change 
             self.reference_point = reference_point
 
     def spherical_wave_expansion(self, origin, medium, order):
-        reference_coefficients_forward = wvfs.incident_coefficients(self.direction, order)
-        reference_coefficients_backward = wvfs.incident_coefficients(-self.direction, order)
+        reference_coefficients_forward = wvfs.plane_wave_sfe_cfs(self.direction, order)
+        reference_coefficients_backward = wvfs.plane_wave_sfe_cfs(-self.direction, order)
         if np.array_equal(origin, self.reference_point):
             coefficients = reference_coefficients_forward + reference_coefficients_backward
         else:

@@ -51,7 +51,7 @@ def t_element_elastic(n, c_medium, rho_medium, c_l, c_t, rho, r, freq):
 
 def t_matrix_sphere(order, c_medium, rho_medium, c_sphere_l, rho_sphere, r_sphere, freq, c_sphere_t=None):
     t = np.zeros(((order+1)**2, (order+1)**2), dtype=complex)
-    for m, n in wvfs.multipoles(order):
+    for m, n in wvfs.mn_idx(order):
         i = n ** 2 + n + m
         if c_sphere_t is not None:
             t[i, i] = t_element_elastic(n, c_medium, rho_medium, c_sphere_l, c_sphere_t, rho_sphere, r_sphere, freq)

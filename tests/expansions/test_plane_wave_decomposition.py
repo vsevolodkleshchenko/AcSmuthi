@@ -23,6 +23,6 @@ def test_incident_field_decomposition():
     incident_field = PlaneWave(k, 1, direction)
     desired_field = incident_field.compute_exact_field(x_p, y_p, z_p, Medium(1, c))
     incident_swe = SphericalWaveExpansion(1, k, np.array([0, 0, 0]), 'regular', order,
-                                          coefficients=wvfs.incident_coefficients(direction, order))
+                                          coefficients=wvfs.plane_wave_sfe_cfs(direction, order))
     actual_field = incident_swe.compute_pressure_field(x_p, y_p, z_p)
     np.testing.assert_allclose(actual_field, desired_field, rtol=1e-2)

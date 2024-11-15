@@ -23,7 +23,7 @@ def test_h_additional_theorem():
     desired_h = wvfs.outgoing_wvf(m, n, x_p - pos2[0], y_p - pos2[1], z_p - pos2[2], k)
 
     sow_array = np.zeros(((order+1) ** 2, *x_p.shape), dtype=complex)
-    for mu, nu in wvfs.multipoles(order):
+    for mu, nu in wvfs.mn_idx(order):
         i = nu ** 2 + nu + mu
         sow_array[i] = wvfs.regular_wvf(mu, nu, x_p - pos1[0], y_p - pos1[1], z_p - pos1[2], k) * \
                        seps.outgoing_separation_coefficient(m, mu, n, nu, k, dist)

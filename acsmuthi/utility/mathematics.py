@@ -20,7 +20,7 @@ def spherical_jn_der2(n, z):
                (n + 1) / z * ss.spherical_jn(n, z, derivative=True)
 
 
-def dec_to_sph(x, y, z):
+def dec_to_sph(x, y, z):  # todo: r, THETA, PHI
     """Transition from cartesian coordinates to spherical coordinates"""
     r = np.sqrt(x ** 2 + y ** 2 + z ** 2)
     theta = np.arccos(z / r)
