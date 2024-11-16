@@ -29,13 +29,12 @@ def two_water_spheres_in_oil(ka):
     r_sph, rho_sph, c_sph = 1, 1000, 1480
     freq = (ka / r_sph * c_fluid) / (2 * np.pi)
     incident_field = PlaneWave(k=ka / r_sph, amplitude=p0, direction=direction)
-    fluid = Medium(density=rho_fluid, pressure_velocity=c_fluid, substrate_density=rho_sph, substrate_velocity=c_sph)
+    fluid = Medium(density=rho_fluid, sound_speed_longitudinal=c_fluid, substrate_density=rho_sph,
+                   substrate_velocity=c_sph)
     sphere1 = SphericalParticle(position=np.array([-1.7, 0, 2.3]), radius=r_sph, density=rho_sph,
-                                pressure_velocity=c_sph,
-                                order=order)
+                                sound_speed_longitudinal=c_sph, multipole_order=order)
     sphere2 = SphericalParticle(position=np.array([1.8, 0., 2.5]), radius=r_sph, density=rho_sph,
-                                pressure_velocity=c_sph,
-                                order=order)
+                                sound_speed_longitudinal=c_sph, multipole_order=order)
     particles = np.array([sphere1, sphere2])
     sim = Simulation(particles, fluid, incident_field, freq, order)
     return sim
@@ -51,7 +50,7 @@ def count_spectrum(sim_func, name):
         sim.run()
         spectrum_table[i, 1] = cs.extinction_cs(sim)
         spectrum_table[i, 2:] = np.concatenate(forces.all_forces(sim))
-    header = ["ka", "cs", "f1x", "f1y", "f1z", "f2x", "f2y", "f2z"]
+    header = ["ka", "c_transverse", "f1x", "f1y", "f1z", "f2x", "f2y", "f2z"]
     write_csv(spectrum_table, header, name)
 
 
@@ -93,12 +92,12 @@ def two_hg_spheres_on_quartz(ka):
     rho_s, cp_s, cs_s = 2650, 5900, 3400
     freq = (ka / r_sph * c_fluid) / (2 * np.pi)
     incident_field = PlaneWave(k=ka / r_sph, amplitude=p0, direction=direction)
-    fluid = Medium(density=rho_fluid, pressure_velocity=c_fluid, substrate_density=rho_s, substrate_velocity=cp_s,
-                   substrate_velocity_shear=cs_s)
+    fluid = Medium(density=rho_fluid, sound_speed_longitudinal=c_fluid, substrate_density=rho_s,
+                   substrate_velocity=cp_s, substrate_velocity_shear=cs_s)
     sphere1 = SphericalParticle(position=np.array([-1.7, 0, 2.3]), radius=r_sph, density=rho_sph,
-                                pressure_velocity=c_sph, order=order)
+                                sound_speed_longitudinal=c_sph, multipole_order=order)
     sphere2 = SphericalParticle(position=np.array([1.8, 0., 2.5]), radius=r_sph, density=rho_sph,
-                                pressure_velocity=c_sph, order=order)
+                                sound_speed_longitudinal=c_sph, multipole_order=order)
     particles = np.array([sphere1, sphere2])
     sim = Simulation(particles, fluid, incident_field, freq, order)
     return sim

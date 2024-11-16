@@ -27,31 +27,16 @@ order = 3
 incident_field = PlaneWave(k=k, amplitude=p0, direction=direction)
 
 # creating surrounded medium
-medium = Medium(density=rho_fluid, pressure_velocity=c_fluid,
-                substrate_density=2650, substrate_velocity=5900, substrate_velocity_shear=3400)  # todo: like layers?
+medium = Medium(density=rho_fluid, sound_speed_longitudinal=c_fluid, substrate_density=2650, substrate_velocity=5900,
+                substrate_velocity_shear=3400)  # todo: like layers?
 
 # creating 3 spherical particles
-sphere1 = SphericalParticle(
-    position=np.array([-2., 0, 5.5]),   # todo: as datatype?
-    radius=r_particle,
-    density=rho_particle,
-    pressure_velocity=c_particle,
-    order=order
-)
-sphere2 = SphericalParticle(
-    position=np.array([3., 0, 2.5]),
-    radius=r_particle,
-    density=rho_particle,
-    pressure_velocity=c_particle,
-    order=order
-)
-sphere3 = SphericalParticle(
-    position=np.array([-0.5, 0, 1.5]),
-    radius=r_particle,
-    density=rho_particle,
-    pressure_velocity=c_particle,
-    order=order
-)
+sphere1 = SphericalParticle(position=np.array([-2., 0, 5.5]), radius=r_particle, density=rho_particle,
+                            sound_speed_longitudinal=c_particle, multipole_order=order)
+sphere2 = SphericalParticle(position=np.array([3., 0, 2.5]), radius=r_particle, density=rho_particle,
+                            sound_speed_longitudinal=c_particle, multipole_order=order)
+sphere3 = SphericalParticle(position=np.array([-0.5, 0, 1.5]), radius=r_particle, density=rho_particle,
+                            sound_speed_longitudinal=c_particle, multipole_order=order)
 particles = np.array([sphere1, sphere2, sphere3])   # Sequence/List
 
 # creating simulation object

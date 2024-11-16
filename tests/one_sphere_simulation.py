@@ -49,14 +49,14 @@ class OneSphericalParticleSimulation:
 
     def axisymmetric_outgoing_wvfs_array(self, x, y, z, k):
         as_ow_array = np.zeros((self.order + 1, *x.shape), dtype=complex)
-        r, phi, theta = mths.dec_to_sph(x, y, z)
+        r, phi, theta = mths.car_to_sph(x, y, z)
         for n in range(self.order + 1):
             as_ow_array[n] = mths.spherical_h1n(n, k * r) * ss.lpmv(0, n, np.cos(theta))
         return as_ow_array
 
     def axisymmetric_regular_wvfs_array(self, x, y, z, k):
         as_rw_array = np.zeros((self.order + 1, *x.shape), dtype=complex)
-        r, phi, theta = mths.dec_to_sph(x, y, z)
+        r, phi, theta = mths.car_to_sph(x, y, z)
         for n in range(self.order + 1):
             as_rw_array[n] = ss.spherical_jn(n, k * r) * ss.lpmv(0, n, np.cos(theta))
         return as_rw_array

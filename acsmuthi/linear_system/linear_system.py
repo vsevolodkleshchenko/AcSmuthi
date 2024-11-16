@@ -45,7 +45,7 @@ class LinearSystem:     # todo: think about CUDA, logging, tqdm, saving?
     def compute_t_matrix(self):
         for sph in range(len(self.particles)):
             self.particles[sph].compute_t_matrix(
-                c_medium=self.medium.cp,
+                c_medium=self.medium.c_longitudinal,
                 rho_medium=self.medium.density,
                 freq=self.freq
             )
@@ -81,7 +81,7 @@ class LinearSystem:     # todo: think about CUDA, logging, tqdm, saving?
     def prepare(self):
         for particle in self.particles:
             amplitude, k = self.incident_field.amplitude, self.incident_field.k
-            k_particle = 2 * np.pi * self.freq / particle.cp
+            k_particle = 2 * np.pi * self.freq / particle.c_longitudinal
 
             particle.incident_field = self.incident_field.spherical_wave_expansion(
                 origin=particle.position,

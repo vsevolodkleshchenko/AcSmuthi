@@ -49,7 +49,7 @@ import numpy as np
 import scipy.special as ss
 import scipy.integrate as si
 import acsmuthi.utility.wavefunctions as wvfs
-from acsmuthi.utility.mathematics import dec_to_cyl, legendre_prefactor
+from acsmuthi.utility.mathematics import car_to_cyl, legendre_prefactor
 from acsmuthi.linear_system.coupling.coupling_basics import fresnel_r_hard, fresnel_r, fresnel_elastic, k_contour
 
 
@@ -57,7 +57,7 @@ def substrate_coupling_block_integrate(receiver_pos, emitter_pos, k, order, k_pa
     block = np.zeros(((order + 1) ** 2, (order + 1) ** 2), dtype=complex)
 
     dist = receiver_pos - emitter_pos
-    d_rho, d_phi, d_z = dec_to_cyl(dist[0], dist[1], dist[2])
+    d_rho, d_phi, d_z = car_to_cyl(dist[0], dist[1], dist[2])
     ds = np.abs(emitter_pos[2])
 
     k_z = np.emath.sqrt(k ** 2 - k_parallel ** 2)
@@ -65,9 +65,9 @@ def substrate_coupling_block_integrate(receiver_pos, emitter_pos, k, order, k_pa
     if medium.hard_substrate:
         fresnel = fresnel_r_hard()
     elif medium.cs_sub is None:
-        fresnel = fresnel_r(k_parallel, k, medium.cp, medium.cp_sub, medium.density, medium.density_sub)
+        fresnel = fresnel_r(k_parallel, k, medium.c_longitudinal, medium.cp_sub, medium.density, medium.density_sub)
     else:
-        fresnel = fresnel_elastic(k_parallel, k, medium.cp, medium.cp_sub, medium.cs_sub, medium.density, medium.density_sub)
+        fresnel = fresnel_elastic(k_parallel, k, medium.c_longitudinal, medium.cp_sub, medium.cs_sub, medium.density, medium.density_sub)
 
     for m, n in wvfs.mn_idx(order):
         i_mn = n ** 2 + n + m

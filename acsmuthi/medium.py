@@ -7,14 +7,14 @@ class Medium:   # todo: make it as list of layers??? checks
     def __init__(
             self,
             density: float,
-            pressure_velocity: float,
+            sound_speed_longitudinal: float,
             hard_substrate: bool = False,
             substrate_density: float | None = None,
             substrate_velocity: float | None = None,
             substrate_velocity_shear: float | None = None
     ):
         self.density = density
-        self.cp = pressure_velocity
+        self.c_longitudinal = sound_speed_longitudinal
         if hard_substrate or (substrate_velocity is not None and substrate_density is not None):
             self.is_substrate = True
         else:
@@ -25,7 +25,7 @@ class Medium:   # todo: make it as list of layers??? checks
         self.cs_sub = substrate_velocity_shear
 
     def k_substrate(self, k_medium):
-        omega = k_medium * self.cp
+        omega = k_medium * self.c_longitudinal
         if not self.is_substrate:
             return None
         elif self.hard_substrate:

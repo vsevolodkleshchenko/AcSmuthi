@@ -31,11 +31,13 @@ def test_two_water_spheres_in_air():
 
     incident_field = PlaneWave(k=k_l, amplitude=p0, direction=direction)
 
-    fluid = Medium(density=rho_fluid, pressure_velocity=c_fluid)
+    fluid = Medium(density=rho_fluid, sound_speed_longitudinal=c_fluid)
 
-    sphere1 = SphericalParticle(position=pos1, radius=r_sph, density=ro_sph, pressure_velocity=c_sph_l, order=order)
+    sphere1 = SphericalParticle(position=pos1, radius=r_sph, density=ro_sph, sound_speed_longitudinal=c_sph_l,
+                                multipole_order=order)
 
-    sphere2 = SphericalParticle(position=pos2, radius=r_sph, density=ro_sph, pressure_velocity=c_sph_l, order=order)
+    sphere2 = SphericalParticle(position=pos2, radius=r_sph, density=ro_sph, sound_speed_longitudinal=c_sph_l,
+                                multipole_order=order)
 
     particles = np.array([sphere1, sphere2])
     sim = Simulation(particles=particles, medium=fluid, initial_field=incident_field, frequency=freq, order=order)

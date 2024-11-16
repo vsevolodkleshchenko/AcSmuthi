@@ -1,29 +1,24 @@
+from abc import ABC, abstractmethod
 import numpy as np
 
 import acsmuthi.linear_system.t_matrix as tmt
-import acsmuthi.utility.memoizing as memo   # todo: ???
 
 
-class Particle:     # todo: finally decide about abstract classes
-    def __init__(   # todo: names should be identical
+class Particle(ABC):
+    def __init__(
             self,
             position: np.ndarray[float],
-            density: float,
-            pressure_velocity: float,
-            order: int,
-            shear_velocity: float = None
+            multipole_order: int,  # todo: change orders
     ):
         self.position = position
-        self.density = density
-        self.cp = pressure_velocity
-        self.cs = shear_velocity
         self.incident_field = None
         self.scattered_field = None
         self.inner_field = None
         self.t_matrix = None
-        self.order = order      # todo: make check for the equality of the orders
+        self.order = multipole_order  # todo: rename to n_max
 
-    def compute_t_matrix(self, c_medium, rho_medium, freq):     # todo: raise error while not implemented
+    @abstractmethod
+    def compute_t_matrix(self, c_medium, rho_medium, freq):     # todo: medium as argument
         pass
 
 
@@ -33,22 +28,24 @@ class SphericalParticle(Particle):  # todo: decide order / l_max
             position: np.ndarray[float],
             radius: float,
             density: float,
-            pressure_velocity: float,
-            order: int,
-            shear_velocity: float = None
+            sound_speed_longitudinal: float,
+            multipole_order: int,
     ):
-        super(SphericalParticle, self).__init__(position, density, pressure_velocity, order, shear_velocity)
+        super(SphericalParticle, self).__init__(position, multipole_order)
+        self.position = position
+        self.density = density
+        self.c_longitudinal = sound_speed_longitudinal
         self.radius = radius
 
     def compute_t_matrix(self, c_medium, rho_medium, freq):
-        t = _compute_sphere_t_matrix(self.order, c_medium, rho_medium, self.cp, self.density, self.radius, freq,
-                                     self.cs)
+        t = _compute_sphere_t_matrix(self.order, c_medium, rho_medium, self.c_longitudinal, self.density, self.radius,
+                                     freq)
         self.t_matrix = t
         return t
 
 
-# @memo.Memoize
-def _compute_sphere_t_matrix(order, c_medium, rho_medium, c_sphere_l, rho_sphere, r_sphere, freq, c_sphere_t=None):
-    return tmt.t_matrix_sphere(order, c_medium, rho_medium, c_sphere_l, rho_sphere, r_sphere, freq, c_sphere_t)
+# todo: @memo.Memoize
+def _compute_sphere_t_matrix(n_max, c_medium, rho_medium, c_particle, rho_particle, radius, freq):
+    return tmt.t_matrix_sphere(n_max, c_medium, rho_medium, c_particle, rho_particle, radius, freq)
 
 

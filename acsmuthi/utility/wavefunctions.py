@@ -13,7 +13,6 @@ def n_idx(n_max: int) -> npt.NDArray[int]:
     :return: array of multipole orders
 
     >>> n_idx(3)
-    10
     array([0, 1, 1, 1, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3])
     """
     return np.repeat(np.arange(n_max + 1), np.arange(n_max + 1) * 2 + 1)
@@ -48,7 +47,7 @@ def plane_wave_sfe_cft(m: int, n: int, direction: npt.NDArray[float]) -> complex
     :param direction: unit vector cartesian coordinates of plane wave propagation direction
     :return: expansion coefficient m, n of plane wave decomposition
     """
-    dir_abs, dir_phi, dir_theta = mths.dec_to_sph(direction[0], direction[1], direction[2])
+    dir_abs, dir_phi, dir_theta = mths.car_to_sph(direction[0], direction[1], direction[2])
     return 4 * np.pi * 1j ** n * np.conj(ss.sph_harm(m, n, dir_phi, dir_theta))
 
 
@@ -98,7 +97,7 @@ def regular_wvf(
     :param k: wavenumber
     :return: wavefunction values at points
     """
-    r, phi, theta = mths.dec_to_sph(x, y, z)
+    r, phi, theta = mths.car_to_sph(x, y, z)
     return ss.spherical_jn(n, k * r) * ss.sph_harm(m, n, phi, theta)
 
 
@@ -144,7 +143,7 @@ def outgoing_wvf(
     :param k: wavenumber
     :return: wavefunction values at points
     """
-    r, phi, theta = mths.dec_to_sph(x, y, z)
+    r, phi, theta = mths.car_to_sph(x, y, z)
     return mths.spherical_h1n(n, k * r) * ss.sph_harm(m, n, phi, theta)
 
 

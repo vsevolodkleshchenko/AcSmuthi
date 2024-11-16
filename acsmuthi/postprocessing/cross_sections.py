@@ -26,7 +26,7 @@ def scattering_cs(simulation):
                     idx2 += 1
     omega = 2*np.pi*freq
     dimensional_coef = initial_field.amplitude ** 2 / (2 * omega * medium.density * initial_field.k)
-    sigma_sc = (math.fsum(sigma_sc1) + math.fsum(sigma_sc2)) * dimensional_coef / initial_field.intensity(medium.density, medium.cp)
+    sigma_sc = (math.fsum(sigma_sc1) + math.fsum(sigma_sc2)) * dimensional_coef / initial_field.intensity(medium.density, medium.c_longitudinal)
     return sigma_sc / (np.pi * particles[0].radius ** 2)
 
 
@@ -54,7 +54,7 @@ def extinction_cs(simulation, by_multipoles=False):
             scattered_coefs, incident_coefs = particle.scattered_field.coefficients, particle.incident_field.coefficients
             extinction_array[s] = math.fsum(np.real(scattered_coefs * np.conj(incident_coefs)))
         extinction = -np.sum(extinction_array)
-    return extinction * dimensional_coef / initial_field.intensity(medium.density, medium.cp)
+    return extinction * dimensional_coef / initial_field.intensity(medium.density, medium.c_longitudinal)
 
 
 def cross_section(simulation):
