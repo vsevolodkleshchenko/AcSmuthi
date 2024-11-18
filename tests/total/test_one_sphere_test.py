@@ -21,7 +21,7 @@ def test_one_sphere():
 
     incident_field = PlaneWave(k_l, p0, direction)
     fluid = Medium(rho_fluid, c_fluid)
-    spheres = np.array([particles.SphericalParticle(position, r_sph, rho_sph, c_sph, order)])
+    spheres = np.array([particles.SphericalParticle(position=position, radius=r_sph, density=rho_sph, sound_speed_longitudinal=c_sph, multipole_order=order)])
     sim = Simulation(spheres, fluid, incident_field, freq, order)
     sim.run()
     scs, ecs = cs.cross_section(sim)

@@ -101,28 +101,6 @@ def regular_wvf(
     return ss.spherical_jn(n, k * r) * ss.sph_harm(m, n, phi, theta)
 
 
-def regular_wvfs_array(
-        n_max: int,
-        x: float | npt.NDArray[float],
-        y: float | npt.NDArray[float],
-        z: float | npt.NDArray[float],
-        k: float
-) -> npt.NDArray[complex]:
-    """Builds array of all regular basis spherical wave functions values up to n_max
-
-    :param n_max: maximum multipole order of expansion (non-negative)
-    :param x: x-coordinate (should be of the same shape as y and z)
-    :param y: x-coordinate (should be of the same shape as x and z)
-    :param z: z-coordinate (should be of the same shape as x and y)
-    :param k: wavenumber
-    :return: values of wavefunctions at coordinate points
-    """
-    regular_wvfs = np.zeros(((n_max + 1) ** 2, *x.shape), dtype=complex)
-    for i, (m, n) in enumerate(mn_idx(n_max)):
-        regular_wvfs[i] = regular_wvf(m, n, x, y, z, k)
-    return regular_wvfs
-
-
 def outgoing_wvf(
         m: int,
         n: int,
@@ -147,23 +125,3 @@ def outgoing_wvf(
     return mths.spherical_h1n(n, k * r) * ss.sph_harm(m, n, phi, theta)
 
 
-def outgoing_wvfs_array(
-        n_max: int,
-        x: float | npt.NDArray[float],
-        y: float | npt.NDArray[float],
-        z: float | npt.NDArray[float],
-        k: float
-) -> npt.NDArray[complex]:
-    """Builds array of all outgoing basis spherical wave functions values up to n_max
-
-    :param n_max: maximum multipole order of expansion (non-negative)
-    :param x: x-coordinate (should be of the same shape as y and z)
-    :param y: x-coordinate (should be of the same shape as x and z)
-    :param z: z-coordinate (should be of the same shape as x and y)
-    :param k: wavenumber
-    :return: values of wavefunctions at coordinate points
-    """
-    outgoing_wfs = np.zeros(((n_max + 1) ** 2, *x.shape), dtype=complex)
-    for i, (m, n) in enumerate(mn_idx(n_max)):
-        outgoing_wfs[i] = outgoing_wvf(m, n, x, y, z, k)
-    return outgoing_wfs

@@ -7,9 +7,9 @@ import numpy as np
 def force_on_sphere(particle, medium, initial_field):
     ef_inc_coef = np.linalg.inv(particle.t_matrix) @ particle.scattered_field.coefficients
     scale = particle.t_matrix
-    fxy_array = np.zeros((particle.order + 1) ** 2, dtype=complex)
-    fz_array = np.zeros((particle.order + 1) ** 2, dtype=complex)
-    for m, n in wvfs.mn_idx(particle.order - 1):
+    fxy_array = np.zeros((particle.n_max + 1) ** 2, dtype=complex)
+    fz_array = np.zeros((particle.n_max + 1) ** 2, dtype=complex)
+    for m, n in wvfs.mn_idx(particle.n_max - 1):
         imn, imn1, imn2 = n ** 2 + n + m, (n + 1) ** 2 + (n + 1) + (m + 1), n ** 2 + n - m
         imn3, imn4 = (n + 1) ** 2 + (n + 1) - (m + 1), (n + 1) ** 2 + (n + 1) + m
         s_coef = scale[imn, imn] + np.conj(scale[imn1, imn1]) + 2 * scale[imn, imn] * np.conj(scale[imn1, imn1])
@@ -44,9 +44,9 @@ def all_forces(simulation):
     for s, particle in enumerate(particles):
         ef_inc_coef = all_ef_inc_coef[s] + particle.incident_field.coefficients
         scale = particle.t_matrix
-        fxy_array = np.zeros((particle.order + 1) ** 2, dtype=complex)
-        fz_array = np.zeros((particle.order + 1) ** 2, dtype=complex)
-        for m, n in wvfs.mn_idx(particle.order - 1):
+        fxy_array = np.zeros((particle.n_max + 1) ** 2, dtype=complex)
+        fz_array = np.zeros((particle.n_max + 1) ** 2, dtype=complex)
+        for m, n in wvfs.mn_idx(particle.n_max - 1):
             imn, imn1, imn2 = n ** 2 + n + m, (n + 1) ** 2 + (n + 1) + (m + 1), n ** 2 + n - m
             imn3, imn4 = (n + 1) ** 2 + (n + 1) - (m + 1), (n + 1) ** 2 + (n + 1) + m
             s_coef = scale[imn, imn] + np.conj(scale[imn1, imn1]) + 2 * scale[imn, imn] * np.conj(scale[imn1, imn1])

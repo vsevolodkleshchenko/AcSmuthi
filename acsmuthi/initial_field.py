@@ -53,8 +53,8 @@ class PlaneWave(InitialField):
 
             coefficients += reflected_coefficients
 
-        return fldsex.SphericalWaveExpansion(amplitude=self.amplitude, k=self.k, origin=origin, kind='regular',
-                                             order=order, coefficients=coefficients)
+        return fldsex.SphericalWaveExpansion(amplitude=self.amplitude, k=self.k, reference_point=origin, kind='regular',
+                                             n_max=order, coefficients=coefficients)
 
     def compute_exact_field(self, x, y, z, medium):     # todo: rename to pressure field, through the pfe
         exact_field = self.amplitude * np.exp(1j * self.k * (
@@ -102,8 +102,8 @@ class StandingWave(InitialField):    # todo: it doesn't work - delete or change 
             phase_backward = np.exp(-1j * self.k * self.direction @ (origin - self.reference_point))
             coefficients = phase_forward * reference_coefficients_forward + \
                            phase_backward * reference_coefficients_backward
-        return fldsex.SphericalWaveExpansion(amplitude=self.amplitude, k=self.k, origin=origin, kind='regular',
-                                             order=order, coefficients=coefficients)
+        return fldsex.SphericalWaveExpansion(amplitude=self.amplitude, k=self.k, reference_point=origin, kind='regular',
+                                             n_max=order, coefficients=coefficients)
 
     def compute_exact_field(self, x, y, z):
         exact_field = self.amplitude * np.exp(1j * self.k * (

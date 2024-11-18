@@ -47,7 +47,7 @@ class LinearSystem:     # todo: think about CUDA, logging, tqdm, saving?
             self.particles[sph].compute_t_matrix(
                 c_medium=self.medium.c_longitudinal,
                 rho_medium=self.medium.density,
-                freq=self.freq
+                frequency=self.freq
             )
         self.t_matrix = TMatrix(
             particles=self.particles,
@@ -88,22 +88,12 @@ class LinearSystem:     # todo: think about CUDA, logging, tqdm, saving?
                 medium=self.medium,
                 order=self.order
             )
-            particle.scattered_field = fldsex.SphericalWaveExpansion(
-                amplitude=amplitude,
-                k=k,
-                origin=particle.position,
-                kind='outgoing',
-                order=self.order,
-                inner_r=particle.radius
-            )
-            particle.inner_field = fldsex.SphericalWaveExpansion(
-                amplitude=amplitude,
-                k=k_particle,
-                origin=particle.position,
-                kind='regular',
-                order=self.order,
-                outer_r=particle.radius
-            )
+            particle.scattered_field = fldsex.SphericalWaveExpansion(amplitude=amplitude, k=k,
+                                                                     reference_point=particle.position, kind='outgoing',
+                                                                     n_max=self.order, inner_r=particle.radius)
+            particle.inner_field = fldsex.SphericalWaveExpansion(amplitude=amplitude, k=k_particle,
+                                                                 reference_point=particle.position, kind='regular',
+                                                                 n_max=self.order, outer_r=particle.radius)
         self.compute_t_matrix()
         self.compute_coupling_matrix()
         self.compute_right_hand_side()
