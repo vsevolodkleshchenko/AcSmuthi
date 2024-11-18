@@ -105,15 +105,19 @@ class SphericalWaveExpansion(FieldExpansion):
 
     def pressure_field(self, x, y, z):  # todo: compare with direct realization
         """Pressure field evaluation using spherical basis functions and expansion coefficients."""
-        if self.kind == 'regular':
-            wvf = _regular_wvfs_array
-        elif self.kind == 'outgoing':
-            wvf = _outgoing_wvfs_array
         xr, yr, zr = x - self.reference_point[0], y - self.reference_point[1], z - self.reference_point[2]
         r = np.sqrt(xr ** 2 + yr ** 2 + zr ** 2)
-        wave_functions_array = wvf(self.n_max, xr, yr, zr, self.k)
-        coefficients_array = np.broadcast_to(self.coefficients, wave_functions_array.T.shape).T
-        field_array = coefficients_array * wave_functions_array
+
+        wave_functions = np.zeros(((self.n_max + 1) ** 2, *x.shape), dtype=complex)
+        for i, (m, n) in enumerate(mn_idx(self.n_max)):
+            if self.kind == 'regular':
+                wave_functions[i] = regular_wvf(m, n, xr, yr, zr, self.k)
+            elif self.kind == 'outgoing':
+                wave_functions[i] = outgoing_wvf(m, n, xr, yr, zr, self.k)
+
+        coefficients = np.broadcast_to(self.coefficients, wave_functions.T.shape).T
+
+        field_array = coefficients * wave_functions
         field = self.ampl * np.sum(field_array, axis=0)
         return np.where((r >= self.inner_r) & (r < self.outer_r), field, 0)
 
@@ -132,47 +136,3 @@ class SphericalWaveExpansion(FieldExpansion):
     #                                      outer_r=min(self.outer_r, other.outer_r))
     #     swe_sum.coefficients = self.coefficients + other.coefficients
     #     return swe_sum
-
-
-def _regular_wvfs_array(
-        n_max: int,
-        x: float | npt.NDArray[float],
-        y: float | npt.NDArray[float],
-        z: float | npt.NDArray[float],
-        k: float
-) -> npt.NDArray[complex]:
-    """Builds array of all regular basis spherical wave functions values up to n_max
-
-    :param n_max: maximum multipole order of expansion (non-negative)
-    :param x: x-coordinate (should be of the same shape as y and z)
-    :param y: x-coordinate (should be of the same shape as x and z)
-    :param z: z-coordinate (should be of the same shape as x and y)
-    :param k: wavenumber
-    :return: values of wavefunctions at coordinate points
-    """
-    regular_wvfs = np.zeros(((n_max + 1) ** 2, *x.shape), dtype=complex)
-    for i, (m, n) in enumerate(mn_idx(n_max)):
-        regular_wvfs[i] = regular_wvf(m, n, x, y, z, k)
-    return regular_wvfs
-
-
-def _outgoing_wvfs_array(
-        n_max: int,
-        x: float | npt.NDArray[float],
-        y: float | npt.NDArray[float],
-        z: float | npt.NDArray[float],
-        k: float
-) -> npt.NDArray[complex]:
-    """Builds array of all outgoing basis spherical wave functions values up to n_max
-
-    :param n_max: maximum multipole order of expansion (non-negative)
-    :param x: x-coordinate (should be of the same shape as y and z)
-    :param y: x-coordinate (should be of the same shape as x and z)
-    :param z: z-coordinate (should be of the same shape as x and y)
-    :param k: wavenumber
-    :return: values of wavefunctions at coordinate points
-    """
-    outgoing_wfs = np.zeros(((n_max + 1) ** 2, *x.shape), dtype=complex)
-    for i, (m, n) in enumerate(mn_idx(n_max)):
-        outgoing_wfs[i] = outgoing_wvf(m, n, x, y, z, k)
-    return outgoing_wfs
