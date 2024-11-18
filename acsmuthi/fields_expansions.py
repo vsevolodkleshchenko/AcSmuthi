@@ -1,28 +1,23 @@
 from abc import ABC, abstractmethod
-import numpy as np
-import copy
 from typing import Literal, Self
 
-from numpy import typing as npt
+import numpy as np
 
-from acsmuthi.utility import wavefunctions as wvfs
 from acsmuthi.utility.wavefunctions import mn_idx, outgoing_wvf, regular_wvf
-
-
-# todo: rewrite
 
 
 class FieldExpansion(ABC):
     """Abstract class for field expansions."""
 
-    def __init__(self):
-        """Field expansion constructor.
+    # def __init__(self):
+    #     """Field expansion constructor.
+    #
+    #     validity_conditions data attribute represent the spatial validity of the field representation.
+    #     """
+    #     # self.validity_conditions = []   # todo: delete or use somewhere ???
 
-        validity_conditions data attribute represent the spatial validity of the field representation.
-        """
-        self.validity_conditions = []   # todo: delete or use somewhere ???
-
-    def is_valid(self, x: np.ndarray, y: np.ndarray, z: np.ndarray):
+    @abstractmethod
+    def valid(self, x: np.ndarray, y: np.ndarray, z: np.ndarray):
         """Test if points are in definition range of the expansion.
 
         :param x: x-coordinates of query points
@@ -30,18 +25,15 @@ class FieldExpansion(ABC):
         :param z: z-coordinates of query points
         :return: array indicating if points are inside definition domain
         """
-        validity = np.ones(x.shape, dtype=bool)
-        for check in self.validity_conditions:
-            validity = np.logical_and(validity, check(x, y, z))
-        return validity
-
-    # @abstractmethod
-    # def diverging(self, x, y, z):
-    #     pass
+        pass
+        # validity = np.ones(x.shape, dtype=bool)
+        # for check in self.validity_conditions:
+        #     validity = np.logical_and(validity, check(x, y, z))
+        # return validity
 
     @abstractmethod
     def pressure_field(self, x: np.ndarray, y: np.ndarray, z: np.ndarray):
-        """Abstract class for pressure field evaluation.
+        """Evaluate pressure field.
 
         :param x: x-coordinates of query points
         :param y: y-coordinates of query points
@@ -49,10 +41,6 @@ class FieldExpansion(ABC):
         :return: pressure scalar field
         """
         pass
-
-    # @abstractmethod
-    # def velocity_field(self, x, y, z):
-    #     pass
 
 
 class SphericalWaveExpansion(FieldExpansion):
@@ -71,6 +59,7 @@ class SphericalWaveExpansion(FieldExpansion):
             n_max: int,
             inner_r: float = 0,
             outer_r: float = np.inf,
+            lower_z: float = - np.inf,
             coefficients: np.ndarray = None
     ):
         """Spherical field expansion constructor.
@@ -92,34 +81,50 @@ class SphericalWaveExpansion(FieldExpansion):
         self.n_max = n_max
         self.inner_r = inner_r
         self.outer_r = outer_r
+        self.lower_z = lower_z
         self.coefficients = coefficients
 
-    # def diverging(self, x, y, z):
-    #     r = np.sqrt((x - self.reference_point[0]) ** 2 + (y - self.reference_point[1]) ** 2 + (z - self.reference_point[2]) ** 2)
-    #     if self.kind == 'regular':
-    #         return r >= self.outer_r
-    #     if self.kind == 'outgoing':
-    #         return r <= self.inner_r
-    #     else:
-    #         return None
+    def valid(self, x, y, z):
+        """Test if points are in definition range of the expansion.
 
-    def pressure_field(self, x, y, z):  # todo: compare with direct realization
-        """Pressure field evaluation using spherical basis functions and expansion coefficients."""
+        :param x: x-coordinates of query points
+        :param y: y-coordinates of query points
+        :param z: z-coordinates of query points
+        :return: array indicating if points are inside definition domain
+        """
+        return np.logical_and(z >= self.lower_z, np.logical_not(self.diverging(x, y, z)))
+
+    def diverging(self, x, y, z):
+        """Test if points are in domain where expansion could diverge.
+
+        :param x: x-coordinates of query points
+        :param y: y-coordinates of query points
+        :param z: z-coordinates of query points
+        :return: array indicating if points are outside domain of convergence
+        """
         xr, yr, zr = x - self.reference_point[0], y - self.reference_point[1], z - self.reference_point[2]
         r = np.sqrt(xr ** 2 + yr ** 2 + zr ** 2)
+        if self.kind == 'regular':
+            return r >= self.outer_r    # todo: decide >, >= etc.
+        if self.kind == 'outgoing':
+            return r < self.inner_r
 
+    def pressure_field(self, x, y, z):
+        """Pressure field evaluation using spherical basis functions and expansion coefficients.
+        """
+        xr, yr, zr = x - self.reference_point[0], y - self.reference_point[1], z - self.reference_point[2]
         wave_functions = np.zeros(((self.n_max + 1) ** 2, *x.shape), dtype=complex)
+        vld = self.valid(x, y, z)
         for i, (m, n) in enumerate(mn_idx(self.n_max)):
             if self.kind == 'regular':
-                wave_functions[i] = regular_wvf(m, n, xr, yr, zr, self.k)
+                wave_functions[i, vld] = regular_wvf(m, n, xr[vld], yr[vld], zr[vld], self.k)
             elif self.kind == 'outgoing':
-                wave_functions[i] = outgoing_wvf(m, n, xr, yr, zr, self.k)
+                wave_functions[i, vld] = outgoing_wvf(m, n, xr[vld], yr[vld], zr[vld], self.k)
 
         coefficients = np.broadcast_to(self.coefficients, wave_functions.T.shape).T
 
-        field_array = coefficients * wave_functions
-        field = self.ampl * np.sum(field_array, axis=0)
-        return np.where((r >= self.inner_r) & (r < self.outer_r), field, 0)
+        multipole_fields = coefficients * wave_functions
+        return self.ampl * np.sum(multipole_fields, axis=0)
 
     # def compatible(self, other: Self):
     #     return (type(other).__name__ == "SphericalWaveExpansion"  # todo: maybe it is possible to do it easier
