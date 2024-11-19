@@ -1,37 +1,6 @@
 import numpy as np
 
 
-def fresnel_r_hard():
-    return 1
-
-
-def fresnel_r(k_parallel, k_medium, c_medium, c_substrate, rho_medium, rho_substrate):
-    k_substrate = k_medium * c_medium / c_substrate
-    kz_medium = np.emath.sqrt(k_medium ** 2 - k_parallel ** 2)
-    kz_substrate = np.emath.sqrt(k_substrate ** 2 - k_parallel ** 2)
-    return ((rho_substrate * kz_medium - rho_medium * kz_substrate) /
-            (rho_substrate * kz_medium + rho_medium * kz_substrate))
-
-
-def fresnel_elastic(k_parallel, k_medium, c_medium, c_substrate_p, c_substrate_s, rho_medium, rho_substrate):
-
-    omega = k_medium * c_medium
-    k_substrate_p = omega / c_substrate_p
-    k_substrate_s = omega / c_substrate_s
-
-    ai = np.emath.arcsin(k_parallel / k_medium)
-    al = np.emath.arcsin(k_parallel / k_substrate_p)
-    at = np.emath.arcsin(k_parallel / k_substrate_s)
-    z = rho_medium * c_medium
-    # zt = rho_substrate * c_substrate_s
-    zl = rho_substrate * c_substrate_p
-    v = c_substrate_s / c_substrate_p
-
-    num = v**2 * np.sin(2 * at) * np.sin(2 * al) + np.cos(2 * at)**2 - z * np.cos(al) / zl / np.cos(ai)
-    den = v**2 * np.sin(2 * at) * np.sin(2 * al) + np.cos(2 * at)**2 + z * np.cos(al) / zl / np.cos(ai)
-    return num / den
-
-
 def reasonable_waypoints(imag_deflection, finish=None, problems=None, offset=2):
     if problems is None:
         problems = [1.]

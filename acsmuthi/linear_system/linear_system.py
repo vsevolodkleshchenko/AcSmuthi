@@ -7,7 +7,7 @@ import acsmuthi.linear_system.coupling.coupling_matrix as cmt
 import acsmuthi.linear_system.coupling.substrate_coupling_matrix as scmt
 from acsmuthi.utility import mathematics as mths, wavefunctions as wvfs
 from acsmuthi.particles import Particle
-from acsmuthi.medium import Medium
+from acsmuthi.medium import MediumOld
 from acsmuthi.initial_field import InitialField
 
 
@@ -15,7 +15,7 @@ class LinearSystem:     # todo: think about CUDA, logging, tqdm, saving?
     def __init__(
             self,
             particles: np.ndarray[Particle],    # todo: Sequence/list
-            medium: Medium,
+            medium: MediumOld,
             initial_field: InitialField,
             frequency: float,
             order: int,
@@ -164,7 +164,7 @@ class CouplingMatrixExplicit(SystemMatrix):
     def __init__(
             self,
             particles: np.ndarray[Particle],
-            medium: Medium,
+            medium: MediumOld,
             order: int,
             k: float
     ):
@@ -198,7 +198,7 @@ class CouplingMatrixSommerfeld(SystemMatrix):
     def __init__(
             self,
             particles: np.ndarray[Particle],
-            medium: Medium,
+            medium: MediumOld,
             order: int,
             k: float,
             k_parallel: np.ndarray | None = None

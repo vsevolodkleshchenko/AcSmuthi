@@ -50,7 +50,8 @@ import scipy.special as ss
 import scipy.integrate as si
 import acsmuthi.utility.wavefunctions as wvfs
 from acsmuthi.utility.mathematics import car_to_cyl, legendre_prefactor
-from acsmuthi.linear_system.coupling.coupling_basics import fresnel_r_hard, fresnel_r, fresnel_elastic, k_contour
+from acsmuthi.linear_system.coupling.coupling_basics import k_contour
+from acsmuthi.medium import fresnel_r_hard, fresnel_r, fresnel_r_elastic
 
 
 def substrate_coupling_block_integrate(receiver_pos, emitter_pos, k, order, k_parallel, legendres, medium):
@@ -67,7 +68,8 @@ def substrate_coupling_block_integrate(receiver_pos, emitter_pos, k, order, k_pa
     elif medium.cs_sub is None:
         fresnel = fresnel_r(k_parallel, k, medium.c_longitudinal, medium.cp_sub, medium.density, medium.density_sub)
     else:
-        fresnel = fresnel_elastic(k_parallel, k, medium.c_longitudinal, medium.cp_sub, medium.cs_sub, medium.density, medium.density_sub)
+        fresnel = fresnel_r_elastic(k_parallel, k, medium.c_longitudinal, medium.cp_sub, medium.cs_sub, medium.density,
+                                    medium.density_sub)
 
     for m, n in wvfs.mn_idx(order):
         i_mn = n ** 2 + n + m

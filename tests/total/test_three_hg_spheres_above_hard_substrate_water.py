@@ -1,6 +1,6 @@
 from acsmuthi.simulation import Simulation
 from acsmuthi.particles import SphericalParticle
-from acsmuthi.medium import Medium
+from acsmuthi.medium import MediumOld
 from acsmuthi.initial_field import PlaneWave
 from acsmuthi.postprocessing import forces, rendering, cross_sections as cs
 import numpy as np
@@ -30,7 +30,7 @@ def test_three_hg_spheres_above_hard_substrate():
 
     incident_field = PlaneWave(k=k_l, amplitude=p0, direction=direction)
 
-    fluid = Medium(density=rho_fluid, sound_speed_longitudinal=c_fluid, hard_substrate=True)
+    fluid = MediumOld(density=rho_fluid, sound_speed_longitudinal=c_fluid, hard_substrate=True)
 
     sphere1 = SphericalParticle(position=pos1, radius=r_sph, density=ro_sph, sound_speed_longitudinal=c_sph,
                                 multipole_order=order)

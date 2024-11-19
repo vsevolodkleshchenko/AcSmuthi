@@ -112,9 +112,9 @@ class SphericalWaveExpansion(FieldExpansion):
     def pressure_field(self, x, y, z):
         """Pressure field evaluation using spherical basis functions and expansion coefficients.
         """
-        xr, yr, zr = x - self.reference_point[0], y - self.reference_point[1], z - self.reference_point[2]
-        wave_functions = np.zeros(((self.n_max + 1) ** 2, *x.shape), dtype=complex)
         vld = self.valid(x, y, z)
+        wave_functions = np.zeros(((self.n_max + 1) ** 2, *x.shape), dtype=complex)
+        xr, yr, zr = x - self.reference_point[0], y - self.reference_point[1], z - self.reference_point[2]
         for i, (m, n) in enumerate(mn_idx(self.n_max)):
             if self.kind == 'regular':
                 wave_functions[i, vld] = regular_wvf(m, n, xr[vld], yr[vld], zr[vld], self.k)

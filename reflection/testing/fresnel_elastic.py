@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
-from acsmuthi.linear_system.coupling.coupling_basics import fresnel_elastic
+from acsmuthi.medium import fresnel_r_elastic
 
 
 def check_r_vs_angle():
@@ -10,10 +10,10 @@ def check_r_vs_angle():
     f = 10000
     k0 = 2 * np.pi * f / c0
     kp = -np.sin(ang) * k0
-    r = fresnel_elastic(kp, k0, c0, cp, cs, rho0, rho)
+    r = fresnel_r_elastic(kp, k0, c0, cp, cs, rho0, rho)
     points = np.array([2 * np.pi * f / cp, 2 * np.pi * f / cs, k0])
     print(points)
-    r_points = fresnel_elastic(points, k0, c0, cp, cs, rho0, rho)
+    r_points = fresnel_r_elastic(points, k0, c0, cp, cs, rho0, rho)
     plt.plot(ang, np.abs(r))
     # plt.scatter(points, np.abs(r_points))
     plt.show()

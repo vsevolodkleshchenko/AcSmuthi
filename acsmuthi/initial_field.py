@@ -2,7 +2,7 @@ import numpy as np
 
 import acsmuthi.fields_expansions as fldsex
 import acsmuthi.utility.wavefunctions as wvfs
-from acsmuthi.linear_system.coupling.coupling_basics import fresnel_r, fresnel_r_hard, fresnel_elastic
+from acsmuthi.medium import fresnel_r_hard, fresnel_r, fresnel_r_elastic
 
 
 class InitialField:     # todo: frequency, not k; validity conditions
@@ -45,7 +45,8 @@ class PlaneWave(InitialField):
             elif medium.cs_sub is None:
                 r = fresnel_r(self.k * np.linalg.norm(self.direction[:-1]), self.k, medium.c_longitudinal, medium.cp_sub, medium.density, medium.density_sub)
             else:
-                r = fresnel_elastic(self.k * np.linalg.norm(self.direction[:-1]), self.k, medium.c_longitudinal, medium.cp_sub, medium.cs_sub, medium.density, medium.density_sub)
+                r = fresnel_r_elastic(self.k * np.linalg.norm(self.direction[:-1]), self.k, medium.c_longitudinal,
+                                      medium.cp_sub, medium.cs_sub, medium.density, medium.density_sub)
 
             reflected_coefficients = r * reflection_phase * wvfs.plane_wave_sfe_cfs(reflected_direction, order)
             if not np.array_equal(origin, self.reference_point):
@@ -68,7 +69,8 @@ class PlaneWave(InitialField):
             elif medium.cs_sub is None:
                 r = fresnel_r(self.k * np.linalg.norm(self.direction[:-1]), self.k, medium.c_longitudinal, medium.cp_sub, medium.density, medium.density_sub)
             else:
-                r = fresnel_elastic(self.k * np.linalg.norm(self.direction[:-1]), self.k, medium.c_longitudinal, medium.cp_sub, medium.cs_sub, medium.density, medium.density_sub)
+                r = fresnel_r_elastic(self.k * np.linalg.norm(self.direction[:-1]), self.k, medium.c_longitudinal,
+                                      medium.cp_sub, medium.cs_sub, medium.density, medium.density_sub)
 
             if self.direction[2] < 0:
                 exact_field += r * self.amplitude * np.exp(1j * self.k * (
