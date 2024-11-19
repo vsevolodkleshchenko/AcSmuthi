@@ -7,7 +7,7 @@ from acsmuthi.postprocessing import forces
 
 from acsmuthi.initial_field import PlaneWave
 from acsmuthi.particles import SphericalParticle
-from acsmuthi.medium import MediumOld
+from acsmuthi.medium import MediumSystem, FluidMedium, RigidBoundary
 
 
 '''
@@ -31,7 +31,8 @@ def main_proc(orders, distance):
         print("     Order:", i, "of", len(orders))
 
         incident_field = PlaneWave(k, p0, direction)
-        medium = MediumOld(rho_medium, c_medium, hard_substrate=True)
+        # medium = MediumOld(rho_medium, c_medium, hard_substrate=True)
+        medium = MediumSystem([FluidMedium(density=rho_medium, sound_speed_longitudinal=c_medium), RigidBoundary()])
 
         sphere1 = SphericalParticle(np.array([0, 0, distance]), r_sph, rho_sph, cp_sph, order)
         particles = np.array([sphere1])

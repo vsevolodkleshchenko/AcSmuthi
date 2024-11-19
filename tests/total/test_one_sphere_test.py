@@ -1,6 +1,6 @@
 import numpy as np
 from acsmuthi.initial_field import PlaneWave
-from acsmuthi.medium import MediumOld
+from acsmuthi.medium import FluidMedium, MediumSystem
 from acsmuthi import particles
 from acsmuthi.simulation import Simulation
 from acsmuthi.postprocessing import cross_sections as cs, fields, forces
@@ -20,7 +20,8 @@ def test_one_sphere():
     order = 6
 
     incident_field = PlaneWave(k_l, p0, direction)
-    fluid = MediumOld(rho_fluid, c_fluid)
+    # fluid = MediumOld(rho_fluid, c_fluid)
+    fluid = MediumSystem([FluidMedium(density=rho_fluid, sound_speed_longitudinal=c_fluid)])
     spheres = np.array([particles.SphericalParticle(position=position, radius=r_sph, density=rho_sph, sound_speed_longitudinal=c_sph, multipole_order=order)])
     sim = Simulation(spheres, fluid, incident_field, freq, order)
     sim.run()

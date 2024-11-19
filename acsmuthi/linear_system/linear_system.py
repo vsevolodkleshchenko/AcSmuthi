@@ -7,7 +7,7 @@ import acsmuthi.linear_system.coupling.coupling_matrix as cmt
 import acsmuthi.linear_system.coupling.substrate_coupling_matrix as scmt
 from acsmuthi.utility import mathematics as mths, wavefunctions as wvfs
 from acsmuthi.particles import Particle
-from acsmuthi.medium import MediumOld
+from acsmuthi.medium import MediumSystem, RigidBoundary
 from acsmuthi.initial_field import InitialField
 
 
@@ -15,7 +15,7 @@ class LinearSystem:     # todo: think about CUDA, logging, tqdm, saving?
     def __init__(
             self,
             particles: np.ndarray[Particle],    # todo: Sequence/list
-            medium: MediumOld,
+            medium: MediumSystem,
             initial_field: InitialField,
             frequency: float,
             order: int,
@@ -35,7 +35,7 @@ class LinearSystem:     # todo: think about CUDA, logging, tqdm, saving?
         self.k_parallel = k_parallel
 
         if use_integration is None:
-            if medium.is_substrate and not medium.hard_substrate:
+            if medium.is_substrate and not isinstance(medium.substrate, RigidBoundary):
                 self._use_integration = True
             else:
                 self._use_integration = False
@@ -45,8 +45,8 @@ class LinearSystem:     # todo: think about CUDA, logging, tqdm, saving?
     def compute_t_matrix(self):
         for sph in range(len(self.particles)):
             self.particles[sph].compute_t_matrix(
-                c_medium=self.medium.c_longitudinal,
-                rho_medium=self.medium.density,
+                c_medium=self.medium.sur_medium.c_longitudinal,
+                rho_medium=self.medium.sur_medium.density,
                 frequency=self.freq
             )
         self.t_matrix = TMatrix(
@@ -164,7 +164,7 @@ class CouplingMatrixExplicit(SystemMatrix):
     def __init__(
             self,
             particles: np.ndarray[Particle],
-            medium: MediumOld,
+            medium: MediumSystem,
             order: int,
             k: float
     ):
@@ -198,7 +198,7 @@ class CouplingMatrixSommerfeld(SystemMatrix):
     def __init__(
             self,
             particles: np.ndarray[Particle],
-            medium: MediumOld,
+            medium: MediumSystem,
             order: int,
             k: float,
             k_parallel: np.ndarray | None = None

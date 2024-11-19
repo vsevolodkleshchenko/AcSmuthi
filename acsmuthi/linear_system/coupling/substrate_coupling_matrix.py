@@ -51,10 +51,10 @@ import scipy.integrate as si
 import acsmuthi.utility.wavefunctions as wvfs
 from acsmuthi.utility.mathematics import car_to_cyl, legendre_prefactor
 from acsmuthi.linear_system.coupling.coupling_basics import k_contour
-from acsmuthi.medium import fresnel_r_hard, fresnel_r, fresnel_r_elastic
+from acsmuthi.medium import fresnel_r_hard, fresnel_r, fresnel_r_elastic, MediumSystem, RigidBoundary, FluidMedium, ElasticMedium
 
 
-def substrate_coupling_block_integrate(receiver_pos, emitter_pos, k, order, k_parallel, legendres, medium):
+def substrate_coupling_block_integrate(receiver_pos, emitter_pos, k, order, k_parallel, legendres, medium: MediumSystem):
     block = np.zeros(((order + 1) ** 2, (order + 1) ** 2), dtype=complex)
 
     dist = receiver_pos - emitter_pos
@@ -63,13 +63,13 @@ def substrate_coupling_block_integrate(receiver_pos, emitter_pos, k, order, k_pa
 
     k_z = np.emath.sqrt(k ** 2 - k_parallel ** 2)
 
-    if medium.hard_substrate:
+    if isinstance(medium.substrate, RigidBoundary):
         fresnel = fresnel_r_hard()
-    elif medium.cs_sub is None:
-        fresnel = fresnel_r(k_parallel, k, medium.c_longitudinal, medium.cp_sub, medium.density, medium.density_sub)
+    elif isinstance(medium.substrate, FluidMedium):
+        fresnel = fresnel_r(k_parallel, k, medium.sur_medium.c_longitudinal, medium.substrate.c_longitudinal, medium.sur_medium.density, medium.substrate.density)
     else:
-        fresnel = fresnel_r_elastic(k_parallel, k, medium.c_longitudinal, medium.cp_sub, medium.cs_sub, medium.density,
-                                    medium.density_sub)
+        fresnel = fresnel_r_elastic(k_parallel, k, medium.sur_medium.c_longitudinal, medium.substrate.c_longitudinal, medium.substrate.c_transversal, medium.sur_medium.density,
+                                    medium.substrate.density)
 
     for m, n in wvfs.mn_idx(order):
         i_mn = n ** 2 + n + m
@@ -88,8 +88,14 @@ def substrate_coupling_block_integrate(receiver_pos, emitter_pos, k, order, k_pa
     return block
 
 
-def create_default_k_parallel(k_medium, medium):
-    k_substrate = medium.k_substrate(k_medium)
+def create_default_k_parallel(k_medium, medium: MediumSystem):
+    frequency = k_medium * medium.sur_medium.c_longitudinal / 2 / np.pi
+    if isinstance(medium.substrate, FluidMedium):
+        k_substrate = np.array([medium.substrate.wavenumber(frequency)])
+    elif isinstance(medium.substrate, ElasticMedium):
+        k_substrate = np.array([medium.substrate.wavenumber(frequency), medium.substrate.wavenumber_transversal(frequency)])
+    else:
+        k_substrate = None
     if k_substrate is not None:
         branch_points = k_substrate / k_medium
     else:

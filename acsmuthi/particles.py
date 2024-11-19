@@ -57,7 +57,7 @@ class SphericalParticle(Particle):
         self.c_longitudinal = sound_speed_longitudinal
         self.radius = radius
 
-    def compute_t_matrix(self, c_medium, rho_medium, frequency):
+    def compute_t_matrix(self, c_medium, rho_medium, frequency):    # todo: medium!
         """T-matrix of a spherical particle."""
         t = _compute_sphere_t_matrix(self.n_max, c_medium, rho_medium, self.c_longitudinal, self.density, self.radius,
                                      frequency)

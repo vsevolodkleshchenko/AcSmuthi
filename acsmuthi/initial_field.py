@@ -2,7 +2,7 @@ import numpy as np
 
 import acsmuthi.fields_expansions as fldsex
 import acsmuthi.utility.wavefunctions as wvfs
-from acsmuthi.medium import fresnel_r_hard, fresnel_r, fresnel_r_elastic
+from acsmuthi.medium import fresnel_r_hard, fresnel_r, fresnel_r_elastic, MediumSystem, RigidBoundary, ElasticMedium, FluidMedium
 
 
 class InitialField:     # todo: frequency, not k; validity conditions
@@ -27,7 +27,7 @@ class PlaneWave(InitialField):
         else:
             self.reference_point = reference_point
 
-    def spherical_wave_expansion(self, origin, medium, order):      # todo: think about args; shrink, up, down, transfer pwe to sfe????
+    def spherical_wave_expansion(self, origin, medium: MediumSystem, order):      # todo: think about args; shrink, up, down, transfer pwe to sfe????
         reference_coefficients = wvfs.plane_wave_sfe_cfs(self.direction, order)
 
         if np.array_equal(origin, self.reference_point):
@@ -40,13 +40,13 @@ class PlaneWave(InitialField):
             reflection_phase = np.exp(-2j * self.direction[2] * self.k * self.reference_point[2])
             reflected_direction = np.array([self.direction[0], self.direction[1], -self.direction[2]])
 
-            if medium.hard_substrate:
+            if isinstance(medium.substrate, RigidBoundary):
                 r = fresnel_r_hard()
-            elif medium.cs_sub is None:
-                r = fresnel_r(self.k * np.linalg.norm(self.direction[:-1]), self.k, medium.c_longitudinal, medium.cp_sub, medium.density, medium.density_sub)
+            elif isinstance(medium.substrate, FluidMedium):
+                r = fresnel_r(self.k * np.linalg.norm(self.direction[:-1]), self.k, medium.sur_medium.c_longitudinal, medium.substrate.c_longitudinal, medium.sur_medium.density, medium.substrate.density)
             else:
-                r = fresnel_r_elastic(self.k * np.linalg.norm(self.direction[:-1]), self.k, medium.c_longitudinal,
-                                      medium.cp_sub, medium.cs_sub, medium.density, medium.density_sub)
+                r = fresnel_r_elastic(self.k * np.linalg.norm(self.direction[:-1]), self.k, medium.sur_medium.c_longitudinal,
+                                      medium.substrate.c_longitudinal, medium.substrate.c_transversal, medium.sur_medium.density, medium.substrate.density)
 
             reflected_coefficients = r * reflection_phase * wvfs.plane_wave_sfe_cfs(reflected_direction, order)
             if not np.array_equal(origin, self.reference_point):
@@ -64,13 +64,16 @@ class PlaneWave(InitialField):
                 self.direction[2] * (z - self.reference_point[2])
         ))
         if medium.is_substrate:
-            if medium.hard_substrate:
+            if isinstance(medium.substrate, RigidBoundary):
                 r = fresnel_r_hard()
-            elif medium.cs_sub is None:
-                r = fresnel_r(self.k * np.linalg.norm(self.direction[:-1]), self.k, medium.c_longitudinal, medium.cp_sub, medium.density, medium.density_sub)
+            elif isinstance(medium.substrate, FluidMedium):
+                r = fresnel_r(self.k * np.linalg.norm(self.direction[:-1]), self.k, medium.sur_medium.c_longitudinal,
+                              medium.substrate.c_longitudinal, medium.sur_medium.density, medium.substrate.density)
             else:
-                r = fresnel_r_elastic(self.k * np.linalg.norm(self.direction[:-1]), self.k, medium.c_longitudinal,
-                                      medium.cp_sub, medium.cs_sub, medium.density, medium.density_sub)
+                r = fresnel_r_elastic(self.k * np.linalg.norm(self.direction[:-1]), self.k,
+                                      medium.sur_medium.c_longitudinal,
+                                      medium.substrate.c_longitudinal, medium.substrate.c_transversal,
+                                      medium.sur_medium.density, medium.substrate.density)
 
             if self.direction[2] < 0:
                 exact_field += r * self.amplitude * np.exp(1j * self.k * (
@@ -85,7 +88,7 @@ class PlaneWave(InitialField):
         return self.amplitude ** 2 / (2 * density * sound_speed)
 
 
-class StandingWave(InitialField):    # todo: it doesn't work - delete or change or do something; maybe make summation method
+class StandingWave(InitialField):    #  todo: it doesn't work - delete or change or do something; maybe make summation method
     def __init__(self, k, amplitude, direction, reference_point=None):
         InitialField.__init__(self, k=k, amplitude=amplitude)
         self.direction = direction

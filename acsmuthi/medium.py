@@ -124,7 +124,7 @@ class MediumSystem:
         return True if len(self.mediums) == 2 else False
 
     @property
-    def sur_medium(self) -> Medium | None:
+    def sur_medium(self) -> Medium:
         """Access to first (upper) medium which surrounds the particles."""
         return self.mediums[0]
 

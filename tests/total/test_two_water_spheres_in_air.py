@@ -1,6 +1,6 @@
 from acsmuthi.simulation import Simulation
 from acsmuthi.particles import SphericalParticle
-from acsmuthi.medium import MediumOld
+from acsmuthi.medium import MediumSystem, FluidMedium
 from acsmuthi.initial_field import PlaneWave
 from acsmuthi.postprocessing import forces, cross_sections as cs
 import numpy as np
@@ -31,7 +31,8 @@ def test_two_water_spheres_in_air():
 
     incident_field = PlaneWave(k=k_l, amplitude=p0, direction=direction)
 
-    fluid = MediumOld(density=rho_fluid, sound_speed_longitudinal=c_fluid)
+    # fluid = MediumOld(density=rho_fluid, sound_speed_longitudinal=c_fluid)
+    fluid = MediumSystem([FluidMedium(density=rho_fluid, sound_speed_longitudinal=c_fluid)])
 
     sphere1 = SphericalParticle(position=pos1, radius=r_sph, density=ro_sph, sound_speed_longitudinal=c_sph_l,
                                 multipole_order=order)

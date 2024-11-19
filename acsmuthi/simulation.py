@@ -4,7 +4,7 @@ from typing import Literal
 
 from acsmuthi.linear_system.linear_system import LinearSystem
 from acsmuthi.particles import Particle
-from acsmuthi.medium import MediumOld
+from acsmuthi.medium import MediumSystem
 from acsmuthi.initial_field import InitialField
 
 
@@ -12,7 +12,7 @@ class Simulation:   # todo: logging, sanity checks, saving?
     def __init__(
             self,
             particles: np.ndarray[Particle],
-            medium: MediumOld,
+            medium: MediumSystem,
             initial_field: InitialField,
             frequency: float,
             order: int,

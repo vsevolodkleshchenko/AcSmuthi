@@ -57,11 +57,11 @@ def all_forces(simulation):
             term2 = s_coef * ef_inc_coef[imn] * np.conj(ef_inc_coef[imn4])
             fxy_array[imn], fz_array[imn] = coef1 * term1, coef2 * term2
         k = particle.incident_field.k
-        prefactor1 = 1j * initial_field.amplitude ** 2 / (2 * medium.density * medium.c_longitudinal ** 2) / 2 / k ** 2
-        prefactor2 = initial_field.amplitude ** 2 / (2 * medium.density * medium.c_longitudinal ** 2) / k ** 2
+        prefactor1 = 1j * initial_field.amplitude ** 2 / (2 * medium.sur_medium.density * medium.sur_medium.c_longitudinal ** 2) / 2 / k ** 2
+        prefactor2 = initial_field.amplitude ** 2 / (2 * medium.sur_medium.density * medium.sur_medium.c_longitudinal ** 2) / k ** 2
         fxy = prefactor1 * np.sum(fxy_array)
         fx, fy = np.real(fxy), np.imag(fxy)
         fz = prefactor2 * np.imag(np.sum(fz_array))
-        norm = initial_field.intensity(medium.density, medium.c_longitudinal) * np.pi * particle.radius ** 2 / medium.c_longitudinal
+        norm = initial_field.intensity(medium.sur_medium.density, medium.sur_medium.c_longitudinal) * np.pi * particle.radius ** 2 / medium.sur_medium.c_longitudinal
         forces_array[s] = np.array([fx, fy, fz])  # / norm
     return forces_array

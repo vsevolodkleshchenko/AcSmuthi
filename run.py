@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 
 from acsmuthi.simulation import Simulation
 from acsmuthi.particles import SphericalParticle
-from acsmuthi.medium import MediumOld
+from acsmuthi.medium import FluidMedium, ElasticMedium, MediumSystem
 from acsmuthi.initial_field import PlaneWave
 from acsmuthi.postprocessing import cross_sections as cs, forces
 from acsmuthi.postprocessing import rendering
@@ -27,8 +27,11 @@ order = 3
 incident_field = PlaneWave(k=k, amplitude=p0, direction=direction)
 
 # creating surrounded medium
-medium = MediumOld(density=rho_fluid, sound_speed_longitudinal=c_fluid, substrate_density=2650, substrate_velocity=5900,
-                   substrate_velocity_shear=3400)  # todo: like layers?
+# medium = MediumOld(density=rho_fluid, sound_speed_longitudinal=c_fluid, substrate_density=2650, substrate_velocity=5900,
+#                    substrate_velocity_shear=3400)  # todo: like layers?
+
+medium = MediumSystem([FluidMedium(density=rho_fluid, sound_speed_longitudinal=c_fluid),
+                   ElasticMedium(density=2650, sound_speed_longitudinal=5900, sound_speed_transversal=3400)])
 
 # creating 3 spherical particles
 sphere1 = SphericalParticle(position=np.array([-2., 0, 5.5]), radius=r_particle, density=rho_particle,
