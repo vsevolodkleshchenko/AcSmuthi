@@ -1,3 +1,5 @@
+from typing import Sequence
+
 import numpy as np
 import scipy.special as ss
 import scipy.sparse.linalg
@@ -14,7 +16,7 @@ from acsmuthi.initial_field import InitialField
 class LinearSystem:     # todo: think about CUDA, logging, tqdm, saving?
     def __init__(
             self,
-            particles: np.ndarray[Particle],    # todo: Sequence/list
+            particles: Sequence[Particle],
             medium: MediumSystem,
             initial_field: InitialField,
             frequency: float,
@@ -44,32 +46,20 @@ class LinearSystem:     # todo: think about CUDA, logging, tqdm, saving?
 
     def compute_t_matrix(self):
         for sph in range(len(self.particles)):
-            self.particles[sph].compute_t_matrix(
-                c_medium=self.medium.sur_medium.c_longitudinal,
-                rho_medium=self.medium.sur_medium.density,
-                frequency=self.freq
-            )
+            self.particles[sph].compute_t_matrix(medium=self.medium.sur_medium, frequency=self.freq)
         self.t_matrix = TMatrix(
-            particles=self.particles,
-            order=self.order,
-            store_t_matrix=False if self.solver == "GMRES" else True
+            particles=self.particles, order=self.order, store_t_matrix=False if self.solver == "GMRES" else True
         )
 
     def compute_coupling_matrix(self):
         if not self._use_integration:
             self.coupling_matrix = CouplingMatrixExplicit(
-                particles=self.particles,
-                medium=self.medium,
-                order=self.order,
-                k=self.incident_field.k
+                particles=self.particles, medium=self.medium, order=self.order, k=self.incident_field.k
             )
         else:
             self.coupling_matrix = CouplingMatrixSommerfeld(
-                particles=self.particles,
-                medium=self.medium,
-                order=self.order,
-                k=self.incident_field.k,
-                k_parallel=self.k_parallel
+                particles=self.particles, medium=self.medium, order=self.order,
+                k=self.incident_field.k, k_parallel=self.k_parallel
             )
 
     def compute_right_hand_side(self):
@@ -84,16 +74,16 @@ class LinearSystem:     # todo: think about CUDA, logging, tqdm, saving?
             k_particle = 2 * np.pi * self.freq / particle.c_longitudinal
 
             particle.incident_field = self.incident_field.spherical_wave_expansion(
-                origin=particle.position,
-                medium=self.medium,
-                order=self.order
+                origin=particle.position, medium=self.medium, order=self.order
             )
-            particle.scattered_field = fldsex.SphericalWaveExpansion(amplitude=amplitude, k=k,
-                                                                     reference_point=particle.position, kind='outgoing',
-                                                                     n_max=self.order, inner_r=particle.radius)
-            particle.inner_field = fldsex.SphericalWaveExpansion(amplitude=amplitude, k=k_particle,
-                                                                 reference_point=particle.position, kind='regular',
-                                                                 n_max=self.order, outer_r=particle.radius)
+            particle.scattered_field = fldsex.SphericalWaveExpansion(
+                amplitude=amplitude, k=k, reference_point=particle.position, kind='outgoing', n_max=self.order,
+                inner_r=particle.circumscribing_sphere_radius
+            )
+            particle.inner_field = fldsex.SphericalWaveExpansion(
+                amplitude=amplitude, k=k_particle, reference_point=particle.position, kind='regular', n_max=self.order,
+                outer_r=particle.circumscribing_sphere_radius
+            )
         self.compute_t_matrix()
         self.compute_coupling_matrix()
         self.compute_right_hand_side()
@@ -114,11 +104,7 @@ class LinearSystem:     # todo: think about CUDA, logging, tqdm, saving?
 
 
 class SystemMatrix:
-    def __init__(
-            self,
-            particles: np.ndarray[Particle],
-            order: int
-    ):
+    def __init__(self, particles: Sequence[Particle], order: int):
         self.particles = particles
         self.order = order
         self.shape = (len(particles) * (order + 1) ** 2, len(particles) * (order + 1) ** 2)
@@ -128,12 +114,7 @@ class SystemMatrix:
 
 
 class TMatrix(SystemMatrix):
-    def __init__(
-            self,
-            particles: np.ndarray[Particle],
-            order: int,
-            store_t_matrix: bool
-    ):
+    def __init__(self, particles: Sequence[Particle], order: int, store_t_matrix: bool):
         SystemMatrix.__init__(self, particles=particles, order=order)
 
         if not store_t_matrix:
@@ -145,10 +126,7 @@ class TMatrix(SystemMatrix):
                 return tv
 
             self.linear_operator = scipy.sparse.linalg.LinearOperator(
-                shape=self.shape,
-                matvec=apply_t_matrix,
-                matmat=apply_t_matrix,
-                dtype=complex
+                shape=self.shape, matvec=apply_t_matrix, matmat=apply_t_matrix, dtype=complex
             )
         else:
             t_mat = np.zeros(self.shape, dtype=complex)
@@ -161,13 +139,7 @@ class TMatrix(SystemMatrix):
 
 
 class CouplingMatrixExplicit(SystemMatrix):
-    def __init__(
-            self,
-            particles: np.ndarray[Particle],
-            medium: MediumSystem,
-            order: int,
-            k: float
-    ):
+    def __init__(self, particles: Sequence[Particle], medium: MediumSystem, order: int, k: float):
         SystemMatrix.__init__(self, particles=particles, order=order)
         self.medium = medium
         self.k = k
@@ -196,11 +168,7 @@ class CouplingMatrixExplicit(SystemMatrix):
 
 class CouplingMatrixSommerfeld(SystemMatrix):
     def __init__(
-            self,
-            particles: np.ndarray[Particle],
-            medium: MediumSystem,
-            order: int,
-            k: float,
+            self, particles: Sequence[Particle], medium: MediumSystem, order: int, k: float,
             k_parallel: np.ndarray | None = None
     ):
         SystemMatrix.__init__(self, particles=particles, order=order)
@@ -241,15 +209,9 @@ class CouplingMatrixSommerfeld(SystemMatrix):
 
 
 class MasterMatrix(SystemMatrix):
-    def __init__(
-            self,
-            t_matrix: TMatrix,
-            coupling_matrix: CouplingMatrixExplicit
-    ):
+    def __init__(self, t_matrix: TMatrix, coupling_matrix: CouplingMatrixExplicit):
         SystemMatrix.__init__(self, particles=t_matrix.particles, order=t_matrix.order)
-
         m_mat = np.eye(coupling_matrix.shape[0]) - t_matrix.linear_operator.matmat(coupling_matrix.linear_operator.A)
-
         self.linear_operator = scipy.sparse.linalg.aslinearoperator(m_mat)
 
 

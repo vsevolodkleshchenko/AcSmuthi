@@ -2,7 +2,7 @@ import numpy as np
 
 import acsmuthi.fields_expansions as fldsex
 import acsmuthi.utility.wavefunctions as wvfs
-from acsmuthi.medium import fresnel_r_hard, fresnel_r, fresnel_r_elastic, MediumSystem, RigidBoundary, ElasticMedium, FluidMedium
+from acsmuthi.medium import MediumSystem
 
 
 class InitialField:     # todo: frequency, not k; validity conditions
@@ -27,7 +27,7 @@ class PlaneWave(InitialField):
         else:
             self.reference_point = reference_point
 
-    def spherical_wave_expansion(self, origin, medium: MediumSystem, order):      # todo: think about args; shrink, up, down, transfer pwe to sfe????
+    def spherical_wave_expansion(self, origin, medium: MediumSystem, order):      # todo: think about args; transfer pwe to sfe????
         reference_coefficients = wvfs.plane_wave_sfe_cfs(self.direction, order)
 
         if np.array_equal(origin, self.reference_point):
@@ -39,15 +39,8 @@ class PlaneWave(InitialField):
         if medium.is_substrate and self.direction[2] < 0:
             reflection_phase = np.exp(-2j * self.direction[2] * self.k * self.reference_point[2])
             reflected_direction = np.array([self.direction[0], self.direction[1], -self.direction[2]])
-
-            if isinstance(medium.substrate, RigidBoundary):
-                r = fresnel_r_hard()
-            elif isinstance(medium.substrate, FluidMedium):
-                r = fresnel_r(self.k * np.linalg.norm(self.direction[:-1]), self.k, medium.sur_medium.c_longitudinal, medium.substrate.c_longitudinal, medium.sur_medium.density, medium.substrate.density)
-            else:
-                r = fresnel_r_elastic(self.k * np.linalg.norm(self.direction[:-1]), self.k, medium.sur_medium.c_longitudinal,
-                                      medium.substrate.c_longitudinal, medium.substrate.c_transversal, medium.sur_medium.density, medium.substrate.density)
-
+            frequency = self.k * medium.sur_medium.c_longitudinal / 2 / np.pi
+            r = medium.fresnel_r(k_parallel=self.k * np.linalg.norm(self.direction[:-1]), frequency=frequency)
             reflected_coefficients = r * reflection_phase * wvfs.plane_wave_sfe_cfs(reflected_direction, order)
             if not np.array_equal(origin, self.reference_point):
                 reflected_coefficients *= np.exp(1j * self.k * reflected_direction @ (origin - self.reference_point))
@@ -57,23 +50,15 @@ class PlaneWave(InitialField):
         return fldsex.SphericalWaveExpansion(amplitude=self.amplitude, k=self.k, reference_point=origin, kind='regular',
                                              n_max=order, coefficients=coefficients)
 
-    def compute_exact_field(self, x, y, z, medium):     # todo: rename to pressure field, through the pfe
+    def compute_exact_field(self, x, y, z, medium: MediumSystem):     # todo: rename to pressure field, through the pfe
         exact_field = self.amplitude * np.exp(1j * self.k * (
                 self.direction[0] * (x - self.reference_point[0]) +
                 self.direction[1] * (y - self.reference_point[1]) +
                 self.direction[2] * (z - self.reference_point[2])
         ))
         if medium.is_substrate:
-            if isinstance(medium.substrate, RigidBoundary):
-                r = fresnel_r_hard()
-            elif isinstance(medium.substrate, FluidMedium):
-                r = fresnel_r(self.k * np.linalg.norm(self.direction[:-1]), self.k, medium.sur_medium.c_longitudinal,
-                              medium.substrate.c_longitudinal, medium.sur_medium.density, medium.substrate.density)
-            else:
-                r = fresnel_r_elastic(self.k * np.linalg.norm(self.direction[:-1]), self.k,
-                                      medium.sur_medium.c_longitudinal,
-                                      medium.substrate.c_longitudinal, medium.substrate.c_transversal,
-                                      medium.sur_medium.density, medium.substrate.density)
+            frequency = self.k * medium.sur_medium.c_longitudinal / 2 / np.pi
+            r = medium.fresnel_r(k_parallel=self.k * np.linalg.norm(self.direction[:-1]), frequency=frequency)
 
             if self.direction[2] < 0:
                 exact_field += r * self.amplitude * np.exp(1j * self.k * (

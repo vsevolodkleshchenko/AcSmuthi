@@ -133,18 +133,16 @@ class MediumSystem:
         """Access to second (lower) medium."""
         return self.mediums[1] if self.is_substrate else None
 
-    @staticmethod
-    def fresnel_r(k_parallel: float | np.ndarray, medium1: Medium, medium2: Medium, frequency: float):
+    def fresnel_r(self, k_parallel: float | np.ndarray, frequency: float):
         """Fresnel reflection coefficient for two mediums.
 
         Allowed interfaces are: fluid/fluid, fluid/elastic(solid), hard boundary.
 
         :param k_parallel: in-plane wavenumber
-        :param medium1: upper medium
-        :param medium2: lower medium
         :param frequency: frequency
         :return: Fresnel coefficient
         """
+        medium1, medium2 = self.sur_medium, self.substrate
         if isinstance(medium1, FluidMedium) and isinstance(medium2, FluidMedium):
             return fresnel_r(
                 k_parallel=k_parallel, k_medium=medium1.wavenumber(frequency), c_medium=medium1.c_longitudinal,

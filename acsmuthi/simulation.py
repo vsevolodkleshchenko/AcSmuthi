@@ -1,6 +1,6 @@
 import numpy as np
 import time
-from typing import Literal
+from typing import Literal, Sequence
 
 from acsmuthi.linear_system.linear_system import LinearSystem
 from acsmuthi.particles import Particle
@@ -11,7 +11,7 @@ from acsmuthi.initial_field import InitialField
 class Simulation:   # todo: logging, sanity checks, saving?
     def __init__(
             self,
-            particles: np.ndarray[Particle],
+            particles: Sequence[Particle],
             medium: MediumSystem,
             initial_field: InitialField,
             frequency: float,

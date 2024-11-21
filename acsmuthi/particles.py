@@ -1,5 +1,7 @@
 from abc import ABC, abstractmethod
 import numpy as np
+import numpy.typing as npt
+from acsmuthi.medium import Medium, FluidMedium
 
 import acsmuthi.linear_system.t_matrix as tmt
 
@@ -7,7 +9,7 @@ import acsmuthi.linear_system.t_matrix as tmt
 class Particle(ABC):
     """Abstract class for scattering particle."""
 
-    def __init__(self, position: np.ndarray[float], multipole_order: int):  # todo: change order ?
+    def __init__(self, position: npt.NDArray[float], multipole_order: int):  # todo: change order ?
         """Particle constructor.
 
         :param position: cartesian coordinates of the particle position
@@ -20,12 +22,18 @@ class Particle(ABC):
         self.t_matrix = None
         self.n_max = multipole_order
 
+    @property
     @abstractmethod
-    def compute_t_matrix(self, c_medium: float, rho_medium: float, frequency: float) -> np.ndarray:  # todo: medium as argument ?
+    def circumscribing_sphere_radius(self) -> float:
+        """Radius of the sphere that circumscribes the particle.
+        """
+        pass
+
+    @abstractmethod
+    def compute_t_matrix(self, medium: Medium, frequency: float) -> np.ndarray:
         """T-matrix of a particle.
 
-        :param c_medium: speed of sound (longitudinal) in surrounding medium
-        :param rho_medium: density of surrounding medium
+        :param medium: medium surrounding particle
         :param frequency: frequency
         :return: T-matrix
         """
@@ -37,7 +45,7 @@ class SphericalParticle(Particle):
 
     def __init__(
             self,
-            position: np.ndarray[float],
+            position: npt.NDArray[float],
             multipole_order: int,
             radius: float,
             density: float,
@@ -51,23 +59,35 @@ class SphericalParticle(Particle):
         :param density: density of the particle
         :param sound_speed_longitudinal: speed of sound (longitudinal) in the particle
         """
-        super(SphericalParticle, self).__init__(position, multipole_order)
+        super(SphericalParticle, self).__init__(position=position, multipole_order=multipole_order)
         self.position = position
         self.density = density
         self.c_longitudinal = sound_speed_longitudinal
         self.radius = radius
 
-    def compute_t_matrix(self, c_medium, rho_medium, frequency):    # todo: medium!
-        """T-matrix of a spherical particle."""
-        t = _compute_sphere_t_matrix(self.n_max, c_medium, rho_medium, self.c_longitudinal, self.density, self.radius,
-                                     frequency)
+    @property
+    def circumscribing_sphere_radius(self) -> float:
+        """Radius of the sphere that circumscribes the particle.
+        """
+        return self.radius
+
+    def compute_t_matrix(self, medium: Medium, frequency):
+        """T-matrix of a spherical particle.
+        """
+        if not isinstance(medium, FluidMedium):
+            raise TypeError("Only fluid medium is supported")
+        t = _compute_sphere_t_matrix(
+            n_max=self.n_max, c_medium=medium.c_longitudinal, rho_medium=medium.density,
+            c_particle=self.c_longitudinal, rho_particle=self.density, radius=self.radius, freq=frequency
+        )
         self.t_matrix = t
         return t
 
 
 # todo: @memo.Memoize
 def _compute_sphere_t_matrix(n_max, c_medium, rho_medium, c_particle, rho_particle, radius, freq):
-    """Private t-matrix method function"""
+    """Private t-matrix method function.
+    """
     return tmt.t_matrix_sphere(n_max, c_medium, rho_medium, c_particle, rho_particle, radius, freq)
 
 
