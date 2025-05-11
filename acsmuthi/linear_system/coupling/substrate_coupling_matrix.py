@@ -54,7 +54,7 @@ from acsmuthi.linear_system.coupling.coupling_basics import k_contour
 from acsmuthi.medium import fresnel_r_hard, fresnel_r, fresnel_r_elastic, MediumSystem, RigidBoundary, FluidMedium, ElasticMedium
 
 
-def substrate_coupling_block_integrate(receiver_pos, emitter_pos, k, order, k_parallel, legendres, medium: MediumSystem):
+def substrate_coupling_block_integrate(receiver_pos, emitter_pos, k, order, k_parallel, legendres, medium: MediumSystem):  # todo: if legendres is None - compute them
     block = np.zeros(((order + 1) ** 2, (order + 1) ** 2), dtype=complex)
 
     dist = receiver_pos - emitter_pos
@@ -63,7 +63,7 @@ def substrate_coupling_block_integrate(receiver_pos, emitter_pos, k, order, k_pa
 
     k_z = np.emath.sqrt(k ** 2 - k_parallel ** 2)
 
-    if isinstance(medium.substrate, RigidBoundary):
+    if isinstance(medium.substrate, RigidBoundary):  # todo: hide inside
         fresnel = fresnel_r_hard()
     elif isinstance(medium.substrate, FluidMedium):
         fresnel = fresnel_r(k_parallel, k, medium.sur_medium.c_longitudinal, medium.substrate.c_longitudinal, medium.sur_medium.density, medium.substrate.density)
@@ -90,7 +90,7 @@ def substrate_coupling_block_integrate(receiver_pos, emitter_pos, k, order, k_pa
 
 def create_default_k_parallel(k_medium, medium: MediumSystem):
     frequency = k_medium * medium.sur_medium.c_longitudinal / 2 / np.pi
-    if isinstance(medium.substrate, FluidMedium):
+    if isinstance(medium.substrate, FluidMedium):    # todo: to the MediumSystem
         k_substrate = np.array([medium.substrate.wavenumber(frequency)])
     elif isinstance(medium.substrate, ElasticMedium):
         k_substrate = np.array([medium.substrate.wavenumber(frequency), medium.substrate.wavenumber_transversal(frequency)])

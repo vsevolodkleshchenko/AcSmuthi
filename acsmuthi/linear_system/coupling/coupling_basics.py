@@ -30,8 +30,8 @@ def reasonable_waypoints(imag_deflection, finish=None, problems=None, offset=2):
         return waypoints
 
 
-def k_contour(imag_deflection, step, finish=None, problems=None):
-    k_waypoints = reasonable_waypoints(imag_deflection, finish=finish, problems=problems)
+def k_contour(imag_deflection, step, finish=None, problems=None, offset=2):
+    k_waypoints = reasonable_waypoints(imag_deflection, finish=finish, problems=problems, offset=offset)
 
     path_pieces = []
     for i in range(len(k_waypoints) - 1):

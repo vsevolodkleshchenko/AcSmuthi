@@ -4,7 +4,7 @@ from typing import Sequence
 import numpy as np
 
 
-class Medium(ABC):
+class Medium(ABC):  # todo: add impedance property
     """Abstract class for medium.
     """
     @abstractmethod
@@ -196,18 +196,31 @@ def fresnel_r_elastic(k_parallel, k_medium, c_medium, cl_substrate, ct_substrate
     :return: Fresnel reflection coefficient
     """
     # todo: rewrite it is not correct
+    # omega = k_medium * c_medium
+    # k_substrate_p = omega / cl_substrate
+    # k_substrate_s = omega / ct_substrate
+
+    # ai = np.emath.arcsin(k_parallel / k_medium)
+    # al = np.emath.arcsin(k_parallel / k_substrate_p)
+    # at = np.emath.arcsin(k_parallel / k_substrate_s)
+    # z = rho_medium * c_medium
+    # # zt = rho_substrate * c_substrate_s
+    # zl = rho_substrate * cl_substrate
+    # v = ct_substrate / cl_substrate
+
+    # num = v**2 * np.sin(2 * at) * np.sin(2 * al) + np.cos(2 * at)**2 - z * np.cos(al) / zl / np.cos(ai)
+    # den = v**2 * np.sin(2 * at) * np.sin(2 * al) + np.cos(2 * at)**2 + z * np.cos(al) / zl / np.cos(ai)
+    # return num / den
+
     omega = k_medium * c_medium
-    k_substrate_p = omega / cl_substrate
-    k_substrate_s = omega / ct_substrate
+    k_sub_d = omega / cl_substrate
+    k_sub_s = omega / ct_substrate
 
-    ai = np.emath.arcsin(k_parallel / k_medium)
-    al = np.emath.arcsin(k_parallel / k_substrate_p)
-    at = np.emath.arcsin(k_parallel / k_substrate_s)
-    z = rho_medium * c_medium
-    # zt = rho_substrate * c_substrate_s
-    zl = rho_substrate * cl_substrate
-    v = ct_substrate / cl_substrate
+    kz_med = np.emath.sqrt(k_medium**2 - k_parallel**2)
+    gz_d = np.emath.sqrt(k_parallel**2 - k_sub_d**2)
+    gz_s = np.emath.sqrt(k_parallel**2 - k_sub_s**2)
 
-    num = v**2 * np.sin(2 * at) * np.sin(2 * al) + np.cos(2 * at)**2 - z * np.cos(al) / zl / np.cos(ai)
-    den = v**2 * np.sin(2 * at) * np.sin(2 * al) + np.cos(2 * at)**2 + z * np.cos(al) / zl / np.cos(ai)
-    return num / den
+    term1 = (2 * k_parallel**2 - k_sub_s**2)**2
+    term2 = 4 * k_parallel**2 * gz_s * gz_d
+    term3 = 1j * rho_medium / rho_substrate * k_sub_s**4 * gz_d / kz_med
+    return (term1 - term2 - term3) / (term1 - term2 + term3)
