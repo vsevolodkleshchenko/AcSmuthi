@@ -20,9 +20,9 @@ order = 17
 
 
 def test_incident_field_decomposition():
-    incident_field = PlaneWave(k, 1, direction)
+    incident_field = PlaneWave(frequency=freq, amplitude=1, direction=direction)
     # desired_field = incident_field.compute_exact_field(x_p, y_p, z_p, MediumOld(1, c))
-    desired_field = incident_field.compute_exact_field(x_p, y_p, z_p, MediumSystem([FluidMedium(1, c)]))
+    desired_field = incident_field.pressure_field(x_p, y_p, z_p, MediumSystem([FluidMedium(1, c)]))
     incident_swe = SphericalWaveExpansion(1, k, np.array([0, 0, 0]), 'regular', order,
                                           coefficients=wvfs.plane_wave_sfe_cfs(direction, order))
     actual_field = incident_swe.pressure_field(x_p, y_p, z_p)

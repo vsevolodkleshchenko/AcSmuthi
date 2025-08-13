@@ -28,7 +28,7 @@ def test_three_hg_spheres_above_hard_substrate():
 
     order = 6
 
-    incident_field = PlaneWave(k=k_l, amplitude=p0, direction=direction)
+    incident_field = PlaneWave(frequency=freq, amplitude=p0, direction=direction)
 
     # fluid = MediumOld(density=rho_fluid, sound_speed_longitudinal=c_fluid, hard_substrate=True)
     fluid = MediumSystem([FluidMedium(density=rho_fluid, sound_speed_longitudinal=c_fluid), RigidBoundary()])

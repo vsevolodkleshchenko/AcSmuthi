@@ -19,7 +19,7 @@ def test_one_sphere():
 
     order = 6
 
-    incident_field = PlaneWave(k_l, p0, direction)
+    incident_field = PlaneWave(frequency=freq, amplitude=p0, direction=direction)
     # fluid = MediumOld(rho_fluid, c_fluid)
     fluid = MediumSystem([FluidMedium(density=rho_fluid, sound_speed_longitudinal=c_fluid)])
     spheres = np.array([particles.SphericalParticle(position=position, radius=r_sph, density=rho_sph, sound_speed_longitudinal=c_sph, multipole_order=order)])

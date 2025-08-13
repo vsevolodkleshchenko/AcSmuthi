@@ -29,7 +29,7 @@ def test_two_water_spheres_in_air():
 
     order = 9
 
-    incident_field = PlaneWave(k=k_l, amplitude=p0, direction=direction)
+    incident_field = PlaneWave(frequency=freq, amplitude=p0, direction=direction)
 
     # fluid = MediumOld(density=rho_fluid, sound_speed_longitudinal=c_fluid)
     fluid = MediumSystem([FluidMedium(density=rho_fluid, sound_speed_longitudinal=c_fluid)])

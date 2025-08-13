@@ -30,7 +30,7 @@ def main_proc(orders, distance):
     for i, order in enumerate(orders):
         print("     Order:", i, "of", len(orders))
 
-        incident_field = PlaneWave(k, p0, direction)
+        incident_field = PlaneWave(frequency=freq, amplitude=p0, direction=direction)
         # medium = MediumOld(rho_medium, c_medium, hard_substrate=True)
         medium = MediumSystem([FluidMedium(density=rho_medium, sound_speed_longitudinal=c_medium), RigidBoundary()])
 

@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Literal, Self
+from typing import Literal
 
 import numpy as np
 
@@ -47,7 +47,7 @@ class SphericalWaveExpansion(FieldExpansion):
     """Representation of field in spherical waves (multipole) expansion.
 
     :math:`\\sum_{n,m} c^n_m z_n(kr) Y^m_n(\\vec{r})`, where :math:`c^m_n` are the expansion coefficients, and
-    :math:`z_n(x) = h_n^1(x)` for outgoing (scattered) field and `z_n(x) = j_n(x)` for incoming (incident) field.
+    :math:`z_n(x) = h_n^1(x)` for outgoing (scattered) field and :math:`z_n(x) = j_n(x)` for incoming (incident) field.
 
     """
     def __init__(

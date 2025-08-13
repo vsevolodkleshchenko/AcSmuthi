@@ -1,13 +1,16 @@
 import math
-from acsmuthi.utility import wavefunctions as wvfs
 import numpy as np
+
+from acsmuthi.simulation import Simulation
+from acsmuthi.utility import wavefunctions as wvfs
 
 # todo: this module doesn't work properly for substrate; read and decide what to do
 
 
-def scattering_cs(simulation):
+def scattering_cs(simulation: Simulation):
     particles, medium, initial_field = simulation.particles, simulation.medium, simulation.initial_field
     freq, order = simulation.freq, simulation.order
+    k = medium.sur_medium.wavenumber(freq)
     sigma_sc1 = np.zeros(len(particles))
     sigma_sc2 = np.zeros((len(particles) * (order + 1) ** 2) ** 2)
     idx2 = 0
@@ -22,18 +25,19 @@ def scattering_cs(simulation):
                     imunu = nu ** 2 + nu + mu
                     distance = particles[sph].position - particles[osph].position
                     sigma_sc2[idx2] = np.real(np.conj(scattered_coefs_sph[imn]) * scattered_coefs_osph[imunu] * \
-                                              wvfs.regular_separation_coefficient(mu, m, nu, n, initial_field.k, distance))
+                                              wvfs.regular_separation_coefficient(mu, m, nu, n, k, distance))
                     idx2 += 1
     omega = 2*np.pi*freq
-    dimensional_coef = initial_field.amplitude ** 2 / (2 * omega * medium.sur_medium.density * initial_field.k)
-    sigma_sc = (math.fsum(sigma_sc1) + math.fsum(sigma_sc2)) * dimensional_coef / initial_field.intensity(medium.sur_medium.density, medium.sur_medium.c_longitudinal)
+    dimensional_coef = initial_field.amplitude ** 2 / (2 * omega * medium.sur_medium.density * k)
+    sigma_sc = (math.fsum(sigma_sc1) + math.fsum(sigma_sc2)) * dimensional_coef / initial_field.intensity(medium)
     return sigma_sc / (np.pi * particles[0].radius ** 2)
 
 
-def extinction_cs(simulation, by_multipoles=False):
+def extinction_cs(simulation: Simulation, by_multipoles=False):
     particles, medium, initial_field, freq = simulation.particles, simulation.medium, simulation.initial_field, simulation.freq
     omega = 2*np.pi*freq
-    dimensional_coef = initial_field.amplitude ** 2 / (2 * omega * medium.sur_medium.density * initial_field.k)
+    k = medium.sur_medium.wavenumber(freq)
+    dimensional_coef = initial_field.amplitude ** 2 / (2 * omega * medium.sur_medium.density * k)
 
     if by_multipoles:
         block_size = len(particles[0].incident_field.coefficients)
@@ -54,7 +58,7 @@ def extinction_cs(simulation, by_multipoles=False):
             scattered_coefs, incident_coefs = particle.scattered_field.coefficients, particle.incident_field.coefficients
             extinction_array[s] = math.fsum(np.real(scattered_coefs * np.conj(incident_coefs)))
         extinction = -np.sum(extinction_array)
-    return extinction * dimensional_coef / initial_field.intensity(medium.sur_medium.density, medium.sur_medium.c_longitudinal)
+    return extinction * dimensional_coef / initial_field.intensity(medium)
 
 
 def cross_section(simulation):

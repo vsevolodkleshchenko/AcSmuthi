@@ -27,7 +27,7 @@ def test_two_water_spheres_above_water_substrate():
 
     order = 8
 
-    incident_field = PlaneWave(k=k_l, amplitude=p0, direction=direction)
+    incident_field = PlaneWave(frequency=freq, amplitude=p0, direction=direction)
 
     # fluid = MediumOld(density=rho_fluid, sound_speed_longitudinal=c_fluid, substrate_density=ro_sph,
     #                   substrate_velocity=c_sph)

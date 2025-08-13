@@ -52,14 +52,15 @@ class LinearSystem:     # todo: think about CUDA, logging, tqdm, saving?
         )
 
     def compute_coupling_matrix(self):
+        k = self.medium.sur_medium.wavenumber(self.freq)
         if not self._use_integration:
             self.coupling_matrix = CouplingMatrixExplicit(
-                particles=self.particles, medium=self.medium, order=self.order, k=self.incident_field.k
+                particles=self.particles, medium=self.medium, order=self.order, k=k
             )
         else:
             self.coupling_matrix = CouplingMatrixSommerfeld(
                 particles=self.particles, medium=self.medium, order=self.order,
-                k=self.incident_field.k, k_parallel=self.k_parallel
+                k=k, k_parallel=self.k_parallel
             )
 
     def compute_right_hand_side(self):
@@ -70,11 +71,12 @@ class LinearSystem:     # todo: think about CUDA, logging, tqdm, saving?
 
     def prepare(self):
         for particle in self.particles:
-            amplitude, k = self.incident_field.amplitude, self.incident_field.k
+            amplitude = self.incident_field.amplitude
+            k = self.medium.sur_medium.wavenumber(self.freq)
             k_particle = 2 * np.pi * self.freq / particle.c_longitudinal
 
             particle.incident_field = self.incident_field.spherical_wave_expansion(
-                origin=particle.position, medium=self.medium, order=self.order
+                reference_point=particle.position, medium=self.medium, order=self.order
             )
             particle.scattered_field = fldsex.SphericalWaveExpansion(
                 amplitude=amplitude, k=k, reference_point=particle.position, kind='outgoing', n_max=self.order,

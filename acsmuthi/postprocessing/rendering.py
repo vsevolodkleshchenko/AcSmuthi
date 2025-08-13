@@ -69,9 +69,9 @@ def show_pressure_field(
     if ax is None:
         fig, ax = plt.subplots(figsize=figsize)
     im = ax.imshow(p_field, origin='lower', extent=extent, norm=colors.CenteredNorm(), cmap=cmap)
-    ax.set_xlabel(x_label + ', м')
-    ax.set_ylabel(y_label + ', м')
-    ax.set_title('Pressure field at ' + title + ', Па')
+    ax.set_xlabel(x_label)
+    ax.set_ylabel(y_label)
+    ax.set_title('Pressure field at ' + title)
     cax = make_axes_locatable(ax).append_axes("right", size="5%", pad=0.05)
     plt.colorbar(im, cax=cax)
     draw_particles(simulation, x_label, y_label, ax, color=particle_color, linewidth=particle_linewidth)

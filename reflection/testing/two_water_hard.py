@@ -32,7 +32,7 @@ def two_water_spheres_above_hard_substrate(order):
     pos1 = np.array([-1.5, 0, 1.7])  # [m]
     pos2 = np.array([1.7, 0., 1.6])  # [m]
 
-    incident_field = PlaneWave(k=k_l, amplitude=p0, direction=direction)
+    incident_field = PlaneWave(frequency=freq, amplitude=p0, direction=direction)
 
     fluid = MediumSystem([FluidMedium(density=rho_fluid, sound_speed_longitudinal=c_fluid), RigidBoundary()])
 

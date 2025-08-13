@@ -28,7 +28,7 @@ def two_water_spheres_in_oil(ka):
     direction = np.array([0.587785, 0., -0.809017])
     r_sph, rho_sph, c_sph = 1, 1000, 1480
     freq = (ka / r_sph * c_fluid) / (2 * np.pi)
-    incident_field = PlaneWave(k=ka / r_sph, amplitude=p0, direction=direction)
+    incident_field = PlaneWave(frequency=freq, amplitude=p0, direction=direction)
     # fluid = MediumOld(density=rho_fluid, sound_speed_longitudinal=c_fluid, substrate_density=rho_sph,
     #                   substrate_velocity=c_sph)
     fluid = MediumSystem([FluidMedium(density=rho_fluid, sound_speed_longitudinal=c_fluid),
@@ -93,7 +93,7 @@ def two_hg_spheres_on_quartz(ka):
     r_sph, rho_sph, c_sph = 1, 19300, 1420
     rho_s, cp_s, cs_s = 2650, 5900, 3400
     freq = (ka / r_sph * c_fluid) / (2 * np.pi)
-    incident_field = PlaneWave(k=ka / r_sph, amplitude=p0, direction=direction)
+    incident_field = PlaneWave(frequency=freq, amplitude=p0, direction=direction)
     fluid = MediumOld(density=rho_fluid, sound_speed_longitudinal=c_fluid, substrate_density=rho_s,
                       substrate_velocity=cp_s, substrate_velocity_shear=cs_s)
     fluid = MediumOld(density=rho_fluid, sound_speed_longitudinal=c_fluid, substrate_density=rho_s,

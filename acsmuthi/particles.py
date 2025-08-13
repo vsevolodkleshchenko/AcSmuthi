@@ -89,5 +89,3 @@ def _compute_sphere_t_matrix(n_max, c_medium, rho_medium, c_particle, rho_partic
     """Private t-matrix method function.
     """
     return tmt.t_matrix_sphere(n_max, c_medium, rho_medium, c_particle, rho_particle, radius, freq)
-
-
