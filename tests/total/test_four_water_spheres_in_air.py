@@ -48,7 +48,7 @@ def test_four_water_spheres_in_air():
 
     particles = np.array([sphere1, sphere2, sphere3, sphere4])
 
-    sim = Simulation(particles=particles, medium=fluid, initial_field=incident_field, frequency=freq, order=order)
+    sim = Simulation(particles=particles, medium=fluid, initial_field=incident_field, order=order)
     sim.run()
 
     scs = cs.extinction_cs(simulation=sim)

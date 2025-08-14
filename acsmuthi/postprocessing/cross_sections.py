@@ -9,7 +9,7 @@ from acsmuthi.utility import wavefunctions as wvfs
 
 def scattering_cs(simulation: Simulation):
     particles, medium, initial_field = simulation.particles, simulation.medium, simulation.initial_field
-    freq, order = simulation.freq, simulation.order
+    freq, order = initial_field.freq, simulation.order
     k = medium.sur_medium.wavenumber(freq)
     sigma_sc1 = np.zeros(len(particles))
     sigma_sc2 = np.zeros((len(particles) * (order + 1) ** 2) ** 2)
@@ -34,8 +34,9 @@ def scattering_cs(simulation: Simulation):
 
 
 def extinction_cs(simulation: Simulation, by_multipoles=False):
-    particles, medium, initial_field, freq = simulation.particles, simulation.medium, simulation.initial_field, simulation.freq
-    omega = 2*np.pi*freq
+    particles, medium, initial_field = simulation.particles, simulation.medium, simulation.initial_field
+    freq = initial_field.freq
+    omega = 2 * np.pi * freq
     k = medium.sur_medium.wavenumber(freq)
     dimensional_coef = initial_field.amplitude ** 2 / (2 * omega * medium.sur_medium.density * k)
 

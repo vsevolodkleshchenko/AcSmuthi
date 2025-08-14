@@ -76,7 +76,6 @@ simulation = Simulation(
     particles=particles,
     medium=medium,
     initial_field=incident_field,
-    frequency=freq,
     order=order,
     k_parallel=kpar*k
 )

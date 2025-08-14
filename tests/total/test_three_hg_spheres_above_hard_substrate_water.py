@@ -41,7 +41,7 @@ def test_three_hg_spheres_above_hard_substrate():
                                 multipole_order=order)
     particles = np.array([sphere1, sphere2, sphere3])
 
-    sim = Simulation(particles=particles, medium=fluid, initial_field=incident_field, frequency=freq, order=order)
+    sim = Simulation(particles=particles, medium=fluid, initial_field=incident_field, order=order)
     sim.run()
 
     scs = cs.extinction_cs(simulation=sim)

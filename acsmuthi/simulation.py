@@ -14,7 +14,6 @@ class Simulation:   # todo: logging, sanity checks, saving?
             particles: Sequence[Particle],
             medium: MediumSystem,
             initial_field: InitialField,
-            frequency: float,
             order: int,
             solver: Literal['LU', 'GMRES'] = 'LU',
             use_integration: bool | None = None,
@@ -22,7 +21,6 @@ class Simulation:   # todo: logging, sanity checks, saving?
     ):
         self.particles = particles
         self.medium = medium
-        self.freq = frequency
         self.order = order
         self.initial_field = initial_field
         self.solver = solver
@@ -35,7 +33,6 @@ class Simulation:   # todo: logging, sanity checks, saving?
             particles=self.particles,
             medium=self.medium,
             initial_field=self.initial_field,
-            frequency=self.freq,
             order=self.order,
             solver=self.solver,
             use_integration=self._use_integration,
