@@ -17,13 +17,13 @@ class LinearSystem:     # todo: think about CUDA, logging, tqdm, saving?
     """Process linear system of equations for the scattering problem coefficients.
     """
     def __init__(
-            self,
-            particles: Sequence[Particle],
-            medium: MediumSystem,
-            initial_field: InitialField,
-            solver: Literal['LU', 'GMRES'] = 'LU',
-            use_integration: bool | None = None,    # todo: strange thing
-            k_parallel: np.ndarray = None,
+        self,
+        particles: Sequence[Particle],
+        medium: MediumSystem,
+        initial_field: InitialField,
+        solver: Literal['LU', 'GMRES'] = 'LU',
+        use_integration: bool | None = None,    # todo: strange thing
+        k_parallel: np.ndarray = None,
     ):
         """Initialize the linear system object.
 
@@ -180,6 +180,7 @@ class TMatrix(SystemMatrix):
         SystemMatrix.__init__(self, particles=particles)
 
         if not store_t_matrix:
+
             def apply_t_matrix(vector):
                 tv = np.zeros(vector.shape, dtype=complex)
                 for i_p, particle in enumerate(particles):
@@ -194,6 +195,7 @@ class TMatrix(SystemMatrix):
                 matmat=apply_t_matrix,
                 dtype=complex
             )
+
         else:
             t_mat = np.zeros(self.shape, dtype=complex)
 
@@ -230,24 +232,26 @@ class CouplingMatrixExplicit(SystemMatrix):
         """
         coup_mat = np.zeros(self.shape, dtype=complex)
 
-        for i_p in range(len(self.particles)):
-            for j_p in range(len(self.particles)):
+        for i_p, particle_i in enumerate(self.particles):
+            for j_p, particle_j in enumerate(self.particles):
+
                 if self.medium.is_substrate:
                     substrate_coupling_block = scmt.substrate_coupling_block(
-                        receiver_pos=self.particles[i_p].position,
-                        emitter_pos=self.particles[j_p].position,
-                        k=self.medium.sur_medium.wavenumber(self.freq),
-                        order=self.particles[i_p].n_max
+                        receiver=particle_i,
+                        emitter=particle_j,
+                        medium=self.medium,
+                        frequency=self.freq,
                     )
                     coup_mat[self.index_block(i_p), self.index_block(j_p)] += substrate_coupling_block
 
                 if i_p == j_p:
                     continue
+
                 coup_mat[self.index_block(i_p), self.index_block(j_p)] += cmt.coupling_block(
-                    particle_pos=self.particles[i_p].position,
-                    other_particle_pos=self.particles[j_p].position,
-                    k_medium=self.medium.sur_medium.wavenumber(self.freq),
-                    order=self.particles[i_p].n_max
+                    receiver=particle_i,
+                    emitter=particle_j,
+                    medium=self.medium,
+                    frequency=self.freq,
                 )
 
         return coup_mat
@@ -258,11 +262,11 @@ class CouplingMatrixSommerfeld(SystemMatrix):
     For coupling elements evaluation the integration over the k_parallel contour is used.
     """
     def __init__(
-            self,
-            particles: Sequence[Particle],
-            medium: MediumSystem,
-            frequency: float,
-            k_parallel: np.ndarray | None = None  # todo: make normalized
+        self,
+        particles: Sequence[Particle],
+        medium: MediumSystem,
+        frequency: float,
+        k_parallel: np.ndarray | None = None  # todo: make normalized
     ):
         """Initialize the Sommerfeld coupling matrix.
 
@@ -291,26 +295,27 @@ class CouplingMatrixSommerfeld(SystemMatrix):
         """
         coup_mat = np.zeros(self.shape, dtype=complex)
 
-        for i_p in range(len(self.particles)):
-            for j_p in range(len(self.particles)):
-                substrate_coupling_block = scmt.substrate_coupling_block_integrate(     # todo: arguments as objects
-                    receiver_pos=self.particles[i_p].position,
-                    emitter_pos=self.particles[j_p].position,
-                    k=self.medium.sur_medium.wavenumber(self.freq),
-                    order=self.particles[i_p].n_max,
+        for i_p, particle_i in enumerate(self.particles):
+            for j_p, particle_j in enumerate(self.particles):
+
+                substrate_coupling_block = scmt.substrate_coupling_block_integrate(
+                    receiver=particle_i,
+                    emitter=particle_j,
+                    medium=self.medium,
+                    frequency=self.freq,
                     k_parallel=self.k_parallel,
                     legendres=self.legendres,
-                    medium=self.medium
                 )
                 coup_mat[self.index_block(i_p), self.index_block(j_p)] += substrate_coupling_block
 
                 if i_p == j_p:
                     continue
+
                 coup_mat[self.index_block(i_p), self.index_block(j_p)] += cmt.coupling_block(
-                    particle_pos=self.particles[i_p].position,
-                    other_particle_pos=self.particles[j_p].position,
-                    k_medium=self.medium.sur_medium.wavenumber(self.freq),
-                    order=self.particles[i_p].n_max,
+                    receiver=particle_i,
+                    emitter=particle_j,
+                    medium=self.medium,
+                    frequency=self.freq,
                 )
 
         return coup_mat
@@ -344,24 +349,28 @@ class MasterMatrix(SystemMatrix):
         self.linear_operator = scipy.sparse.linalg.aslinearoperator(master_matrix)
 
 
-def _inner_coefficients(
+def _inner_coefficients(  # todo: maybe delete it / move to the specific particle class
     coupling_matrix: CouplingMatrixExplicit | CouplingMatrixSommerfeld,
     particles: Sequence[Particle],
     scattered_coefficients: np.ndarray
 ) -> np.ndarray:
-    # todo: maybe delete it / move to the specific particle class
-    """Counts coefficients of decompositions fields inside spheres"""
+    """Counts coefficients of decompositions fields inside spheres
+    """
     wc_coefs = coupling_matrix.linear_operator.A @ np.concatenate(scattered_coefficients)
     all_ef_inc_coef = np.split(wc_coefs, len(particles))
     in_coef = np.zeros_like(scattered_coefficients)
+
     for i_p, particle in enumerate(particles):
         k, k_p = particle.incident_field.k, particle.inner_field.k
+
         for m, n in wvfs.mn_idx(particle.n_max):
             imn = n ** 2 + n + m
+
             sc_coef = scattered_coefficients[i_p, imn]
             ef_inc_coef = all_ef_inc_coef[i_p][imn] + particle.incident_field.coefficients[imn]
             jn_ka = ss.spherical_jn(n, k * particle.radius)
             h1n_ka = mths.spherical_h1n(n, k * particle.radius)
             jn_kpa = ss.spherical_jn(n, k_p * particle.radius)
             in_coef[i_p, imn] = (jn_ka * ef_inc_coef + h1n_ka * sc_coef) / jn_kpa
+
     return in_coef

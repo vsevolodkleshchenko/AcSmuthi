@@ -14,42 +14,6 @@ class Medium(ABC):  # todo: add impedance property
         pass
 
 
-# class MediumOld(Medium):
-#     def __init__(
-#             self,
-#             density: float,
-#             sound_speed_longitudinal: float,
-#             hard_substrate: bool = False,
-#             substrate_density: float | None = None,
-#             substrate_velocity: float | None = None,
-#             substrate_velocity_shear: float | None = None
-#     ):
-#         self.density = density
-#         self.c_longitudinal = sound_speed_longitudinal
-#         if hard_substrate or (substrate_velocity is not None and substrate_density is not None):
-#             self.is_substrate = True
-#         else:
-#             self.is_substrate = False
-#         self.hard_substrate = hard_substrate
-#         self.density_sub = substrate_density
-#         self.cp_sub = substrate_velocity
-#         self.cs_sub = substrate_velocity_shear
-
-#     def wavenumber(self, frequency: float):
-#         return 2 * np.pi * frequency / self.c_longitudinal
-
-#     def k_substrate(self, k_medium):
-#         omega = k_medium * self.c_longitudinal
-#         if not self.is_substrate:
-#             return None
-#         elif self.hard_substrate:
-#             return None
-#         elif self.cs_sub is None:
-#             return np.array([omega / self.cp_sub])
-#         else:
-#             return np.array([omega / self.cp_sub, omega / self.cs_sub])
-
-
 class FluidMedium(Medium):
     """Fluid medium where only longitudinal waves are allowed.
     """
@@ -145,14 +109,23 @@ class MediumSystem:
         medium1, medium2 = self.sur_medium, self.substrate
         if isinstance(medium1, FluidMedium) and isinstance(medium2, FluidMedium):
             return fresnel_r(
-                k_parallel=k_parallel, k_medium=medium1.wavenumber(frequency), c_medium=medium1.c_longitudinal,
-                c_substrate=medium2.c_longitudinal, rho_medium=medium1.density, rho_substrate=medium2.density
+                k_parallel=k_parallel,
+                k_medium=medium1.wavenumber(frequency),
+                c_medium=medium1.c_longitudinal,
+                c_substrate=medium2.c_longitudinal,
+                rho_medium=medium1.density,
+                rho_substrate=medium2.density,
             )
         elif isinstance(medium1, FluidMedium) and isinstance(medium2, ElasticMedium):
-            return fresnel_r_elastic(k_parallel=k_parallel, k_medium=medium1.wavenumber(frequency),
-                                     c_medium=medium1.c_longitudinal, cl_substrate=medium2.c_longitudinal,
-                                     ct_substrate=medium2.c_transversal, rho_medium=medium1.density,
-                                     rho_substrate=medium2.density)
+            return fresnel_r_elastic(
+                k_parallel=k_parallel,
+                k_medium=medium1.wavenumber(frequency),
+                c_medium=medium1.c_longitudinal,
+                cl_substrate=medium2.c_longitudinal,
+                ct_substrate=medium2.c_transversal,
+                rho_medium=medium1.density,
+                rho_substrate=medium2.density,
+            )
         elif isinstance(medium1, FluidMedium) and isinstance(medium2, RigidBoundary):
             return fresnel_r_hard()
         else:
