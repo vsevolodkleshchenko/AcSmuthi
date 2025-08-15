@@ -37,7 +37,7 @@ def main_proc(orders, distance):
         sphere1 = SphericalParticle(np.array([0, 0, distance]), r_sph, rho_sph, cp_sph, order)
         particles = np.array([sphere1])
 
-        sim = Simulation(particles, medium, incident_field, order)
+        sim = Simulation(particles, medium, incident_field)
         sim.run()
         ecs = cs.extinction_cs(sim)
         all_forces = forces.all_forces(sim)

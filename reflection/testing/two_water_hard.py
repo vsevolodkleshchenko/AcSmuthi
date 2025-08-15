@@ -42,7 +42,7 @@ def two_water_spheres_above_hard_substrate(order):
                                 multipole_order=order)
     particles = np.array([sphere1, sphere2])
 
-    sim = Simulation(particles=particles, medium=fluid, initial_field=incident_field, order=order)
+    sim = Simulation(particles=particles, medium=fluid, initial_field=incident_field)
     sim.run()
 
     # scs = c_transverse.extinction_cs(simulation=sim)

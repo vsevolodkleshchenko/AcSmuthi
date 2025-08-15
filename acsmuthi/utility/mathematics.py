@@ -68,7 +68,10 @@ def car_to_cyl(x, y, z):
     return rho, phi, z
 
 
-def legendres_table(z: npt.NDArray[float | complex], n_max: int):
+def legendres_table(
+    z: npt.NDArray[float | complex], 
+    n_max: int
+) -> tuple[npt.NDArray[float], npt.NDArray[float]]:
     """Table of associated Legendre function of the first kind for complex arguments.
 
     Values :math:`P^m_n(z)` of orders 0...n and degrees -m...0 and 0...m for one-dimensional array of z-values
@@ -83,8 +86,8 @@ def legendres_table(z: npt.NDArray[float | complex], n_max: int):
 
 
 def legendre_prefactor(
-        m: int | npt.NDArray[int] | Iterable[int],
-        n: int | npt.NDArray[int] | Iterable[int]
+    m: int | npt.NDArray[int] | Iterable[int],
+    n: int | npt.NDArray[int] | Iterable[int]
 ) -> npt.NDArray[float]:
     """Compute Legendre pre factors.
 

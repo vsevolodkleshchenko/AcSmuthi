@@ -14,14 +14,12 @@ class Simulation:   # todo: logging, sanity checks, saving?
             particles: Sequence[Particle],
             medium: MediumSystem,
             initial_field: InitialField,
-            order: int,
             solver: Literal['LU', 'GMRES'] = 'LU',
             use_integration: bool | None = None,
             k_parallel: np.ndarray = None
     ):
         self.particles = particles
         self.medium = medium
-        self.order = order
         self.initial_field = initial_field
         self.solver = solver
         self.linear_system = None
@@ -33,7 +31,6 @@ class Simulation:   # todo: logging, sanity checks, saving?
             particles=self.particles,
             medium=self.medium,
             initial_field=self.initial_field,
-            order=self.order,
             solver=self.solver,
             use_integration=self._use_integration,
             k_parallel=self.k_parallel

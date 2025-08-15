@@ -76,7 +76,6 @@ simulation = Simulation(
     particles=particles,
     medium=medium,
     initial_field=incident_field,
-    order=order,
     k_parallel=kpar*k
 )
 # by default - solver is LU, but it is possible to use GMRES:

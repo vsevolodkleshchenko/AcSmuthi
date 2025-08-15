@@ -38,7 +38,7 @@ def two_water_spheres_in_oil(ka):
     sphere2 = SphericalParticle(position=np.array([1.8, 0., 2.5]), radius=r_sph, density=rho_sph,
                                 sound_speed_longitudinal=c_sph, multipole_order=order)
     particles = np.array([sphere1, sphere2])
-    sim = Simulation(particles, fluid, incident_field, order)
+    sim = Simulation(particles, fluid, incident_field)
     return sim
 
 
@@ -103,7 +103,7 @@ def two_hg_spheres_on_quartz(ka):
     sphere2 = SphericalParticle(position=np.array([1.8, 0., 2.5]), radius=r_sph, density=rho_sph,
                                 sound_speed_longitudinal=c_sph, multipole_order=order)
     particles = np.array([sphere1, sphere2])
-    sim = Simulation(particles, fluid, incident_field, order)
+    sim = Simulation(particles, fluid, incident_field)
     return sim
 
 

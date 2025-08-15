@@ -40,7 +40,7 @@ def test_two_water_spheres_above_water_substrate():
                                 multipole_order=order)
     particles = np.array([sphere1, sphere2])
 
-    sim = Simulation(particles=particles, medium=fluid, initial_field=incident_field, order=order)
+    sim = Simulation(particles=particles, medium=fluid, initial_field=incident_field)
     sim.run()
 
     scs = cs.extinction_cs(simulation=sim)
