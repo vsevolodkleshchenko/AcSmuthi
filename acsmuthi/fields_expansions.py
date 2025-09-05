@@ -103,19 +103,23 @@ class SphericalWaveExpansion(FieldExpansion):  # todo: remove amplitude
         :param z: z-coordinates of query points
         :return: array indicating if points are outside domain of convergence
         """
-        xr, yr, zr = x - self.reference_point[0], y - self.reference_point[1], z - self.reference_point[2]
+        xr = x - self.reference_point[0]
+        yr = y - self.reference_point[1]
+        zr = z - self.reference_point[2]
         r = np.sqrt(xr ** 2 + yr ** 2 + zr ** 2)
         if self.kind == 'regular':
-            return r >= self.outer_r    # todo: decide >, >= etc.
+            return r > self.outer_r
         if self.kind == 'outgoing':
-            return r < self.inner_r
+            return r <= self.inner_r
 
     def pressure_field(self, x, y, z):
         """Pressure field evaluation using spherical basis functions and expansion coefficients.
         """
         vld = self.valid(x, y, z)
         wave_functions = np.zeros(((self.n_max + 1) ** 2, *x.shape), dtype=complex)
-        xr, yr, zr = x - self.reference_point[0], y - self.reference_point[1], z - self.reference_point[2]
+        xr = x - self.reference_point[0]
+        yr = y - self.reference_point[1]
+        zr = z - self.reference_point[2]
         for i, (m, n) in enumerate(mn_idx(self.n_max)):
             if self.kind == 'regular':
                 wave_functions[i, vld] = regular_wvf(m, n, xr[vld], yr[vld], zr[vld], self.k)

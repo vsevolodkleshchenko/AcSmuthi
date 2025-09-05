@@ -1,13 +1,12 @@
 from typing import Sequence, Literal
 
 import numpy as np
-import scipy.special as ss
 import scipy.sparse.linalg
 
 from acsmuthi import fields_expansions as fldsex
 import acsmuthi.linear_system.coupling.coupling_matrix as cmt
 import acsmuthi.linear_system.coupling.substrate_coupling_matrix as scmt
-from acsmuthi.utility import mathematics as mths, wavefunctions as wvfs
+from acsmuthi.utility import mathematics as mths
 from acsmuthi.particles import Particle
 from acsmuthi.medium import MediumSystem, RigidBoundary
 from acsmuthi.initial_field import InitialField
@@ -108,15 +107,9 @@ class LinearSystem:     # todo: think about CUDA, logging, tqdm, saving?
                 reference_point=particle.position,
                 kind='outgoing',
                 n_max=particle.n_max,
-                inner_r=particle.circumscribing_sphere_radius
-            )
-            particle.inner_field = fldsex.SphericalWaveExpansion(
-                amplitude=amplitude,
-                k=2 * np.pi * freq / particle.c_longitudinal,
-                reference_point=particle.position,
-                kind='regular',
-                n_max=particle.n_max,
-                outer_r=particle.circumscribing_sphere_radius
+                inner_r=particle.circumscribing_sphere_radius,
+                outer_r=np.inf,
+                lower_z=-np.inf,
             )
         self.compute_t_matrix()
         self.compute_coupling_matrix()
@@ -132,15 +125,8 @@ class LinearSystem:     # todo: think about CUDA, logging, tqdm, saving?
             scattered_coefs1d = scipy.linalg.solve(master_matrix.linear_operator.A, self.rhs)
 
         scattered_coefs = scattered_coefs1d.reshape((len(self.particles), -1))
-        inner_coefs = _inner_coefficients(
-            coupling_matrix=self.coupling_matrix,
-            particles=self.particles,
-            scattered_coefficients=scattered_coefs,
-        )
-
         for i_p, particle in enumerate(self.particles):
             particle.scattered_field.coefficients = scattered_coefs[i_p]
-            particle.inner_field.coefficients = inner_coefs[i_p]
 
 
 class SystemMatrix:
@@ -347,30 +333,3 @@ class MasterMatrix(SystemMatrix):
         tw_matrix = t_matrix.linear_operator.matmat(coupling_matrix.linear_operator.A)
         master_matrix = identity_matrix - tw_matrix
         self.linear_operator = scipy.sparse.linalg.aslinearoperator(master_matrix)
-
-
-def _inner_coefficients(  # todo: maybe delete it / move to the specific particle class
-    coupling_matrix: CouplingMatrixExplicit | CouplingMatrixSommerfeld,
-    particles: Sequence[Particle],
-    scattered_coefficients: np.ndarray
-) -> np.ndarray:
-    """Counts coefficients of decompositions fields inside spheres
-    """
-    wc_coefs = coupling_matrix.linear_operator.A @ np.concatenate(scattered_coefficients)
-    all_ef_inc_coef = np.split(wc_coefs, len(particles))
-    in_coef = np.zeros_like(scattered_coefficients)
-
-    for i_p, particle in enumerate(particles):
-        k, k_p = particle.incident_field.k, particle.inner_field.k
-
-        for m, n in wvfs.mn_idx(particle.n_max):
-            imn = n ** 2 + n + m
-
-            sc_coef = scattered_coefficients[i_p, imn]
-            ef_inc_coef = all_ef_inc_coef[i_p][imn] + particle.incident_field.coefficients[imn]
-            jn_ka = ss.spherical_jn(n, k * particle.radius)
-            h1n_ka = mths.spherical_h1n(n, k * particle.radius)
-            jn_kpa = ss.spherical_jn(n, k_p * particle.radius)
-            in_coef[i_p, imn] = (jn_ka * ef_inc_coef + h1n_ka * sc_coef) / jn_kpa
-
-    return in_coef

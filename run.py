@@ -108,5 +108,6 @@ plt.tight_layout(), plt.show()
 # but also it is possible to compute field and draw it manually:
 xx, zz = np.meshgrid(np.linspace(-6, 6, 201), np.linspace(-1, 11, 201))
 yy = np.full_like(xx, 0)
-total_field = fields.compute_total_field(xx, yy, zz, simulation)
-plt.imshow(total_field)
+total_field = fields.compute_scattered_field(xx, yy, zz, simulation)
+plt.pcolormesh(xx, zz, total_field)
+# plt.show()
